@@ -2,7 +2,7 @@
 Contributors: everpress
 Tags: snapshots, dev, database, backup
 Requires at least: 4.5
-Tested up to: 5.4
+Tested up to: 5.5
 Requires PHP: 7.0
 Stable tag: 1.0
 License: GPLv2 or later
