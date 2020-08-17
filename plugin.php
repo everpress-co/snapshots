@@ -16,11 +16,8 @@ class Snapshots_Plugin {
 
 		if ( array_key_exists( 'snapshot_restore', $_GET ) ) {
 			if ( current_user_can( 'manage_options' ) ) {
-
 				$redirect = $this->restore( $_GET['snapshot_restore'] );
-
 				$this->login_user( wp_get_current_user() );
-
 				wp_redirect( $redirect );
 				exit;
 			}
@@ -35,13 +32,21 @@ class Snapshots_Plugin {
 				exit;
 			}
 		}
+
+		if ( array_key_exists( 'snapshot_delete', $_GET ) ) {
+			if ( current_user_can( 'manage_options' ) ) {
+				$this->delete( $_GET['snapshot_delete'] );
+				wp_redirect( remove_query_arg( 'snapshot_delete' ) );
+				exit;
+			}
+		}
 	}
 
 
 	public function toolbar_snapshots( $wp_admin_bar ) {
 
-		$files = $this->get_snaps();
-		$count = count( $files );
+		$snapshots = $this->get_snaps();
+		$count     = count( $snapshots );
 
 		$title = $count ? $count : esc_html__( 'Click here to create your first Snapshot!', 'snapshots' );
 
@@ -57,19 +62,30 @@ class Snapshots_Plugin {
 		);
 
 		if ( $count ) {
-			foreach ( $files as $i => $file ) {
-				$data = json_decode( file_get_contents( $file ) );
+			foreach ( $snapshots as $i => $snapshot ) {
+				$file = trailingslashit( $snapshot ) . 'manifest.json';
+				if ( ! file_exists( $file ) ) {
+					$data = array(
+						'name'    => esc_html__( 'SNAPSHOT IS BROKEN!', 'snapshots' ),
+						'created' => (int) explode( '_', basename( $snapshot ) )[1],
+					);
+				} else {
+					$data = json_decode( file_get_contents( $file ), true );
+				}
 				$wp_admin_bar->add_node(
 					array(
 						'id'     => 'snapshot-' . $i,
-						'title'  => '<span title="' . esc_attr( sprintf( '%s ago', human_time_diff( $data->created ) ) ) . '" style="display:inline-block;width:120px;overflow:hidden; text-overflow:ellipsis;">' . esc_html( $data->name ) . '</span> <span style="display:inline-block;overflow:hidden;">' . wp_date( 'Y-m-d H:i', $data->created ) . '</span>',
-						'href'   => add_query_arg( array( 'snapshot_restore' => basename( $file ) ) ),
+						'title'  => '<span title="' . esc_attr( sprintf( '%s ago', human_time_diff( $data['created'] ) ) ) . '" style="display:inline-block;width:120px;overflow:hidden; text-overflow:ellipsis;">' . esc_html( $data['name'] ) . '</span>',
+						'href'   => add_query_arg( array( 'snapshot_restore' => basename( $snapshot ) ) ),
 						'parent' => 'snapshots',
 						'meta'   => array(
-							'html'    => '',
+							'html'    => '<div style="' . ( $i + 1 < $count ? 'border-bottom:1px solid' : '' ) . ';overflow:hidden;"><span style="padding:0 10px;display:inline-block;font-size:80%;float:left">' . wp_date( 'Y-m-d H:i', $data['created'] ) . '</span> <a style="display:inline-block;float:right;font-size: 130%;transform: translateY(-10px);" title="' . esc_attr( sprintf( 'delete %s', $data['name'] ) ) . '" href="' . add_query_arg( array( 'snapshot_delete' => basename( $snapshot ) ) ) . '" onclick="return confirm(\'' . sprintf(
+								esc_attr__( 'Delete this Backup from %s?', 'snapshots' ),
+								wp_date( 'Y-m-d H:i', $data['created'] )
+							) . '\');">&times;</a></div>',
 							'onclick' => 'return confirm(\"' . sprintf(
-								esc_attr__( 'Restore this Backup from %s?' ),
-								wp_date( 'Y-m-d H:i', $data->created )
+								esc_attr__( 'Restore this Backup from %s?', 'snapshots' ),
+								wp_date( 'Y-m-d H:i', $data['created'] )
 							) . '\");',
 						),
 					)
@@ -85,15 +101,20 @@ class Snapshots_Plugin {
 			return array();
 		}
 
-		$files = glob( snapshots_option( 'folder' ) . '/*.json' );
-		$list  = array();
+		if ( ! function_exists( 'list_files' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/file.php';
+		}
+
+		$files = list_files( snapshots_option( 'folder' ), 1 );
+		$files = preg_grep( '/([a-z-]+)_(\d+)\/$/', $files );
 		usort(
 			$files,
 			function( $a, $b ) {
-				return filemtime( $a ) < filemtime( $b );
+				$a = (int) explode( '_', basename( $a ) )[1];
+				$b = (int) explode( '_', basename( $b ) )[1];
+				return $a < $b;
 			}
 		);
-
 		return $files;
 
 	}
@@ -122,6 +143,15 @@ class Snapshots_Plugin {
 		}
 
 		return remove_query_arg( 'snapshot_restore' );
+
+	}
+
+	public function delete( $name ) {
+		$name    = is_null( $name ) ? '' : ' ' . basename( $name );
+		$command = 'snapshot delete' . $name;
+		$result  = $this->command( $command );
+
+		return $result;
 
 	}
 

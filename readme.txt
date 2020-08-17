@@ -4,7 +4,7 @@ Tags: snapshots, dev, database, backup
 Requires at least: 4.5
 Tested up to: 5.5
 Requires PHP: 7.0
-Stable tag: 1.0
+Stable tag: 2.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -49,6 +49,10 @@ Yes, the plugin has been tested with the amazoing tool from Flywheel and works o
 1. SnapShots adds a small menu to the WP Admin bar
 
 == Changelog ==
+
+= 2.0 =
+* Breaking changes: Snapshosts are now stored in a subdirectory.
+* added option to remove snapshots from the UI
 
 = 1.0 =
 * Initial release

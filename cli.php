@@ -67,7 +67,7 @@ class Snapshots extends WP_CLI_Command {
 	 *     Restores the latest SnapShot with an id:
 	 *        wp snapshot restore my-snapshot
 	 *     Restores SnapShot with an id and timestamp:
-	 *        wp snapshot restore my-snapshot.1587039434
+	 *        wp snapshot restore my-snapshot_1587039434
 	 *
 	 * ## USAGE
 	 *
@@ -85,6 +85,43 @@ class Snapshots extends WP_CLI_Command {
 
 		} else {
 			WP_CLI::error( 'Snapshot not restored!' );
+		}
+
+	}
+
+	/**
+	 * Deletes a SnapShot of your current database and content folder
+	 *
+	 * ## OPTIONS
+	 *
+	 * <name>
+	 * : Name of your SnapShot.
+	 *   *
+	 * ## EXAMPLES
+	 *
+	 *     Restores the latest SnapShot with a given name:
+	 *        wp snapshot delete "My SnapShot"
+	 *     Restores the latest SnapShot with an id:
+	 *        wp snapshot delete my-snapshot
+	 *     Restores SnapShot with an id and timestamp:
+	 *        wp snapshot delete my-snapshot_1587039434
+	 *
+	 * ## USAGE
+	 *
+	 * @subcommand delete
+	 * @synopsis [<name>]
+	 */
+	public function delete( $args, $assoc_args ) {
+
+		do_action( 'snapshots_before_delete', $args, $assoc_args );
+
+		if ( $this->snapshots_delete( $args, $assoc_args ) ) {
+			do_action( 'snapshots_before_delete', $args, $assoc_args );
+
+			WP_CLI::success( 'Snapshot deleted!' );
+
+		} else {
+			WP_CLI::error( 'Snapshot not deleted!' );
 		}
 
 	}
@@ -136,7 +173,7 @@ class Snapshots extends WP_CLI_Command {
 				break;
 			}
 
-			$manifest = json_decode( file_get_contents( $file ) );
+			$manifest = json_decode( file_get_contents( $file . 'manifest.json' ) );
 
 			$name     = $manifest->name;
 			$filename = pathinfo( $file, PATHINFO_FILENAME );
@@ -161,21 +198,27 @@ class Snapshots extends WP_CLI_Command {
 	}
 
 
-	private function get_snapshot_files( $name = '*' ) {
+	private function get_snapshot_files( $name = null ) {
 
 		if ( ! is_dir( snapshots_option( 'folder' ) ) ) {
 			return array();
 		}
 
-		$files = glob( trailingslashit( snapshots_option( 'folder' ) ) . $name . '.*.json' );
+		$backups = list_files( snapshots_option( 'folder' ), 1 );
+		$backups = preg_grep( '/([a-z-]+)_(\d+)\/$/', $backups );
+		if ( ! is_null( $name ) ) {
+			$backups = preg_grep( '/' . preg_quote( $name ) . '_(\d+)\/$/', $backups );
+		}
+		rsort( $backups );
+
 		usort(
-			$files,
+			$backups,
 			function( $a, $b ) {
-				return filemtime( $a ) < filemtime( $b );
+				return filemtime( $a . 'manifest.json' ) < filemtime( $b . 'manifest.json' );
 			}
 		);
 
-		return $files;
+		return $backups;
 
 	}
 
@@ -188,9 +231,14 @@ class Snapshots extends WP_CLI_Command {
 
 		$name          = $this->get_name( $args );
 		$timestamp     = time();
-		$snapshot_name = sanitize_title( $name ) . '.' . $timestamp;
+		$snapshot_name = sanitize_title( $name ) . '_' . $timestamp;
+		$folder        = trailingslashit( snapshots_option( 'folder' ) ) . $snapshot_name;
 
-		$location = trailingslashit( snapshots_option( 'folder' ) ) . $snapshot_name . '.sql';
+		if ( ! is_dir( $folder ) ) {
+			wp_mkdir_p( $folder );
+		}
+
+		$location = $folder . '/dump.sql';
 
 		$manifest = array(
 			'name'    => $name,
@@ -208,9 +256,9 @@ class Snapshots extends WP_CLI_Command {
 
 		if ( $files = WP_CLI\Utils\get_flag_value( $assoc_args, 'files', false ) ) {
 			$upload_dir = wp_upload_dir();
-			$folder     = $upload_dir['basedir'];
-			$zipfile    = trailingslashit( snapshots_option( 'folder' ) ) . $snapshot_name . '.zip';
-			$this->zip( $folder, $zipfile );
+			$basedir    = $upload_dir['basedir'];
+			$zipfile    = $folder . '/data.zip';
+			$this->zip( $basedir, $zipfile );
 			if ( ! file_exists( $zipfile ) ) {
 				WP_CLI::error( sprintf( 'No able to save zip file %s', $zipfile ) );
 			}
@@ -218,7 +266,7 @@ class Snapshots extends WP_CLI_Command {
 		if ( $location = WP_CLI\Utils\get_flag_value( $assoc_args, 'location', false ) ) {
 			$manifest['location'] = $location;
 		}
-		$manifestfile = trailingslashit( snapshots_option( 'folder' ) ) . $snapshot_name . '.json';
+		$manifestfile = $folder . '/manifest.json';
 
 		file_put_contents( $manifestfile, json_encode( $manifest ) );
 		if ( ! file_exists( $manifestfile ) ) {
@@ -240,49 +288,51 @@ class Snapshots extends WP_CLI_Command {
 		$snapshot_name = $this->get_name( $args );
 		$backup_dir    = false;
 
-		if ( $restore_file = $this->get_most_recent_file( $snapshot_name, 'sql' ) ) {
-			$location = trailingslashit( snapshots_option( 'folder' ) ) . $restore_file;
+		if ( $restore_file = $this->get_most_recent_file( $snapshot_name, 'dump.sql' ) ) {
+			$location = $restore_file;
 		} else {
 			WP_CLI::error( sprintf( 'No snapshots found for %s', $snapshot_name ) );
 		}
 
-		$manifest = $this->get_most_recent_file( $snapshot_name, 'json' );
+		$manifest = $this->get_most_recent_file( $snapshot_name, 'manifest.json' );
 
-		if ( file_exists( trailingslashit( snapshots_option( 'folder' ) ) . $snapshot_name . '.zip' ) ) {
+		$zip = $this->get_most_recent_file( $snapshot_name, 'data.zip' );
+
+		if ( file_exists( $zip ) ) {
 
 			$upload_dir = wp_upload_dir();
 			$backup_dir = $upload_dir['basedir'] . '.' . time();
-			if ( ! rename( $upload_dir['basedir'], $backup_dir ) ) {
-				WP_CLI::error( sprintf( 'Could not backup upload folder for %s', $snapshot_name ) );
-			}
 
-			if ( $unzip = $this->unzip( trailingslashit( snapshots_option( 'folder' ) ) . $snapshot_name . '.zip', $upload_dir['basedir'] ) ) {
-
+			if ( $unzip = $this->unzip( $zip, $backup_dir ) ) {
 			} else {
-				rename( $backup_dir, $upload_dir['basedir'] );
 				WP_CLI::error( sprintf( 'Not able to extract uploads directory for %s', $snapshot_name ) );
 			}
+
+			$this->delete_folder( $upload_dir['basedir'] );
+
+			// rename old directory (back it up)
+			if ( ! rename( $backup_dir, $upload_dir['basedir'] ) ) {
+				WP_CLI::error( sprintf( 'Could not backup upload folder for %s', $snapshot_name ) );
+			}
 		}
-		ob_start();
+
 		$db = new DB_Command();
 		$db->import( array( $location ), array() );
-		$result = explode( "\n", ob_get_clean() );
+		$result = explode( "\n", ob_get_contents() );
 
 		if ( preg_match_all( '/-- Table structure for table `(.*?)`/', file_get_contents( $location ), $matches ) ) {
 			$tables = $matches[1];
 			ob_start();
 			$db->tables( null, array( 'all-tables-with-prefix' => true ) );
-			$all_tables = explode( "\n", ob_get_clean() );
+			$all_tables = explode( "\n", ob_get_contents() );
 			$to_remove  = array_filter( array_diff( $all_tables, $tables ) );
 			if ( ! empty( $to_remove ) ) {
 				$db->query( array( 'DROP TABLE IF EXISTS `' . implode( '`; DROP TABLE IF EXISTS `', $to_remove ) . '`;' ), null );
 			}
 		}
-		if ( $backup_dir ) {
-			$this->delete( $backup_dir );
-		}
-		if ( file_exists( trailingslashit( snapshots_option( 'folder' ) ) . $manifest ) ) {
-			$manifest = json_decode( file_get_contents( trailingslashit( snapshots_option( 'folder' ) ) . $manifest ) );
+
+		if ( file_exists( $manifest ) ) {
+			$manifest = json_decode( file_get_contents( $manifest ) );
 			if ( isset( $manifest->location ) ) {
 				WP_CLI::line( 'Redirect to: ' . $manifest->location );
 			}
@@ -292,6 +342,25 @@ class Snapshots extends WP_CLI_Command {
 			require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 		}
 		wp_upgrade();
+
+		return true;
+
+	}
+
+
+	private function snapshots_delete( $args, $assoc_args ) {
+
+		$snapshot_name = $this->get_name( $args );
+
+		if ( $restore_file = $this->get_most_recent_file( $snapshot_name, 'dump.sql' ) ) {
+			$location = dirname( $restore_file );
+		} else {
+			WP_CLI::error( sprintf( 'No snapshots found for %s', $snapshot_name ) );
+		}
+
+		if ( ! $this->delete_folder( $location ) ) {
+			WP_CLI::error( sprintf( 'No able to save manifest file %s', $manifestfile ) );
+		}
 
 		return true;
 
@@ -328,7 +397,7 @@ class Snapshots extends WP_CLI_Command {
 		return unzip_file( $zipfile, $destination );
 	}
 
-	private function delete( $target, $recursive = true ) {
+	private function delete_folder( $target, $recursive = true ) {
 		global $wp_filesystem;
 		WP_Filesystem();
 
@@ -339,27 +408,41 @@ class Snapshots extends WP_CLI_Command {
 
 	private function get_most_recent_file( $backup_name, $extension ) {
 
-		$backupsdir = scandir( snapshots_option( 'folder' ), SCANDIR_SORT_DESCENDING );
-		foreach ( $backupsdir as $backup ) {
-			if ( strpos( $backup, $backup_name . '.' . $extension ) === 0 ) {
-				return $backup;
-			} elseif ( preg_match( '/^' . preg_quote( $backup_name ) . '(\.(\d+))?\.' . preg_quote( $extension ) . '/', $backup ) ) {
-				return $backup;
-			}
+		if ( false !== strpos( $backup_name, '_' ) ) {
+			return trailingslashit( snapshots_option( 'folder' ) ) . $backup_name . '/' . $extension;
 		}
 
-		// check for name
-		$manifests = glob( trailingslashit( snapshots_option( 'folder' ) ) . '*.json' );
+		$backups = $this->get_snaps( $backup_name, true );
+		return isset( $backups[0] ) ? trailingslashit( $backups[0] ) . $extension : null;
 
-		foreach ( $manifests as $manifest ) {
-			$m = json_decode( file_get_contents( $manifest ) );
-			if ( $m->name == $backup_name ) {
-				$backup = preg_replace( '/\.json$/', '.sql', basename( $manifest ) );
-				return $backup;
-			}
+	}
+
+	public function get_snaps( $name = null, $order = false ) {
+
+		if ( ! is_dir( snapshots_option( 'folder' ) ) ) {
+			return array();
 		}
 
-		return false;
+		if ( ! function_exists( 'list_files' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/file.php';
+		}
+
+		$files = list_files( snapshots_option( 'folder' ), 1 );
+		if ( ! is_null( $name ) ) {
+			$files = preg_grep( '/' . preg_quote( $name ) . '_(\d+)\/$/', $files );
+		} else {
+			$files = preg_grep( '/([a-z-]+)_(\d+)\/$/', $files );
+		}
+		if ( $order ) {
+			usort(
+				$files,
+				function( $a, $b ) {
+					return filemtime( $a . 'manifest.json' ) < filemtime( $b . 'manifest.json' );
+				}
+			);
+		}
+		return $files;
+
 	}
 
 	private function get_name( $args ) {
@@ -377,16 +460,20 @@ class Snapshots extends WP_CLI_Command {
 
 
 	private function destroy_snapshots( $name ) {
-		$skipped    = 0;
-		$backupsdir = scandir( snapshots_option( 'folder' ), SCANDIR_SORT_DESCENDING );
-		$name       = str_replace( strstr( $name, '.' ), '.', $name );
-		foreach ( $backupsdir as $backup ) {
-			if ( strpos( $backup, $name ) === 0 ) {
-				if ( $skipped >= snapshots_option( 'max_shots' ) * 3 ) {
-					unlink( trailingslashit( snapshots_option( 'folder' ) ) . $backup );
-				}
-				$skipped++;
+
+		if ( false !== strpos( $name, '_' ) ) {
+			$name = explode( '_', $name );
+			$name = $name[0];
+		}
+
+		$backups = $this->get_snaps( $name, true );
+
+		$skipped = 0;
+		foreach ( $backups as $backup ) {
+			if ( $skipped >= snapshots_option( 'max_shots' ) ) {
+				$this->delete_folder( $backup );
 			}
+			$skipped++;
 		}
 	}
 
