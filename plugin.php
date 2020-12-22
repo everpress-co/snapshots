@@ -8,8 +8,10 @@ class Snapshots_Plugin {
 		register_activation_hook( SNAPSHOTS_FILE, array( &$this, 'on_activate' ) );
 		register_deactivation_hook( SNAPSHOTS_FILE, array( &$this, 'on_deactivate' ) );
 
-		add_action( 'admin_bar_menu', array( $this, 'toolbar_snapshots' ), 20 );
 		add_action( 'init', array( $this, 'actions' ) );
+		add_action( 'init', array( $this, 'add_inline_style' ) );
+		add_action( 'admin_bar_menu', array( $this, 'toolbar_snapshots' ), 20 );
+
 	}
 
 	public function actions() {
@@ -40,6 +42,10 @@ class Snapshots_Plugin {
 				exit;
 			}
 		}
+	}
+
+	public function add_inline_style() {
+		wp_add_inline_style( 'admin-bar', '#wp-admin-bar-snapshots .ab-sub-wrapper{max-height: 90vh;overflow: auto;}#wp-admin-bar-snapshots .ab-sub-wrapper li{border-top:1px solid #666}#wp-admin-bar-snapshots .ab-sub-wrapper li > a.ab-item{_display:inline}#wp-admin-bar-snapshots .ab-sub-wrapper li div{min-height: 5px;}#wp-admin-bar-snapshots .ab-sub-wrapper li div a{display:block;font-size:130%;transform: translateY(-30px);position:absolute;right:0}' );
 	}
 
 
@@ -75,11 +81,11 @@ class Snapshots_Plugin {
 				$wp_admin_bar->add_node(
 					array(
 						'id'     => 'snapshot-' . $i,
-						'title'  => '<span title="' . esc_attr( sprintf( '%s ago', human_time_diff( $data['created'] ) ) ) . '" style="display:inline-block;width:120px;overflow:hidden; text-overflow:ellipsis;">' . esc_html( $data['name'] ) . '</span>',
+						'title'  => '<span title="' . esc_attr( sprintf( '%s ago', human_time_diff( $data['created'] ) ) ) . ' - ' . wp_date( 'Y-m-d H:i', $data['created'] ) . '" style="display:inline-block;width:120px;overflow:hidden; text-overflow:ellipsis;">' . esc_html( $data['name'] ) . '</span>',
 						'href'   => add_query_arg( array( 'snapshot_restore' => basename( $snapshot ) ) ),
 						'parent' => 'snapshots',
 						'meta'   => array(
-							'html'    => '<div style="' . ( $i + 1 < $count ? 'border-bottom:1px solid' : '' ) . ';overflow:hidden;"><span style="padding:0 10px;display:inline-block;font-size:80%;float:left">' . wp_date( 'Y-m-d H:i', $data['created'] ) . '</span> <a style="display:inline-block;float:right;font-size: 130%;transform: translateY(-10px);" title="' . esc_attr( sprintf( 'delete %s', $data['name'] ) ) . '" href="' . add_query_arg( array( 'snapshot_delete' => basename( $snapshot ) ) ) . '" onclick="return confirm(\'' . sprintf(
+							'html'    => '<div><a title="' . esc_attr( sprintf( 'delete %s', $data['name'] ) ) . '" href="' . add_query_arg( array( 'snapshot_delete' => basename( $snapshot ) ) ) . '" onclick="return confirm(\'' . sprintf(
 								esc_attr__( 'Delete this Backup from %s?', 'snapshots' ),
 								wp_date( 'Y-m-d H:i', $data['created'] )
 							) . '\');">&times;</a></div>',
