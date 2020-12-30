@@ -320,7 +320,10 @@ class Snapshots extends WP_CLI_Command {
 		$db->import( array( $location ), array() );
 		$result = explode( "\n", ob_get_contents() );
 
-		if ( preg_match_all( '/-- Table structure for table `(.*?)`/', file_get_contents( $location ), $matches ) ) {
+		$sql_data = file_get_contents( $location );
+
+		// drop all tables who do not belong to this import
+		if ( preg_match_all( '/-- Table structure for table `(.*?)`/', $sql_data, $matches ) ) {
 			$tables = $matches[1];
 			ob_start();
 			$db->tables( null, array( 'all-tables-with-prefix' => true ) );
@@ -328,6 +331,24 @@ class Snapshots extends WP_CLI_Command {
 			$to_remove  = array_filter( array_diff( $all_tables, $tables ) );
 			if ( ! empty( $to_remove ) ) {
 				$db->query( array( 'DROP TABLE IF EXISTS `' . implode( '`; DROP TABLE IF EXISTS `', $to_remove ) . '`;' ), null );
+			}
+		}
+
+		// maybe replace the URL if the current one doesn't match the one from the SQL file
+		if ( preg_match( "/'home','(https?:\/\/([^']+)?)'/", $sql_data, $match ) ) {
+			$sql_home_url = $match[1];
+			$home_url     = get_option( 'home' );
+
+			if ( $home_url != $sql_home_url ) {
+				shell_exec( 'wp search-replace ' . $sql_home_url . ' ' . $home_url );
+				// WP_CLI::runcommand(
+				// 'search-replace ' . $sql_home_url . ' ' . $home_url,
+				// array(
+				// 'return'     => true,
+				// 'exit_error' => false,
+				// )
+				// );
+
 			}
 		}
 
@@ -367,13 +388,23 @@ class Snapshots extends WP_CLI_Command {
 	}
 
 	private function zip( $folder, $destination = null ) {
+
+		if ( class_exists( 'ZipArchive', false ) && apply_filters( 'unzip_file_use_ziparchive', true ) ) {
+			return $this->zip_archive( $folder, $destination );
+		}
+
+		return $this->zip_pclzip( $folder, $destination );
+
+	}
+
+	private function zip_archive( $folder, $destination = null ) {
 		// Get real path for our folder
 		$rootPath = realpath( $folder );
 
-		$name = ! is_null( $destination ) ? $destination : trailingslashit( $rootPath ) . basename( $folder ) . '.zip';
+		$zipfile = ! is_null( $destination ) ? $destination : trailingslashit( $rootPath ) . basename( $folder ) . '.zip';
 
 		$zip = new ZipArchive();
-		$zip->open( $name, ZipArchive::CREATE | ZipArchive::OVERWRITE );
+		$zip->open( $zipfile, ZipArchive::CREATE | ZipArchive::OVERWRITE );
 
 		$files = list_files( $rootPath, 999 );
 		$count = 0;
@@ -390,8 +421,26 @@ class Snapshots extends WP_CLI_Command {
 		}
 
 		$zip->close();
+		return true;
 
 	}
+
+	private function zip_pclzip( $folder, $destination = null ) {
+		// Get real path for our folder
+		$rootPath = realpath( $folder );
+
+		$zipfile = ! is_null( $destination ) ? $destination : trailingslashit( $rootPath ) . basename( $folder ) . '.zip';
+
+		require_once ABSPATH . 'wp-admin/includes/class-pclzip.php';
+		$zip = new PclZip( $zipfile );
+
+		$files = list_files( $rootPath, 999 );
+		$count = 0;
+
+		return $zip->create( $files, '', $rootPath );
+
+	}
+
 	private function unzip( $zipfile, $destination ) {
 		WP_Filesystem();
 		return unzip_file( $zipfile, $destination );

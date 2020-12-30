@@ -6,7 +6,7 @@
  * Author:          EverPress
  * Author URI:      https://about.me/xaver
  * Text Domain:     snapshots
- * Version:         2.1
+ * Version:         2.2
  *
  * @package         Snapshots
  */

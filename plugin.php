@@ -162,7 +162,7 @@ class Snapshots_Plugin {
 	}
 
 	private function command( $cmd, $echo = false ) {
-		$cmd = 'cd ' . SNAPSHOTS_CLI_PATH . '; wp ' . $cmd;
+		$cmd = trailingslashit( SNAPSHOTS_CLI_PATH ) . 'wp ' . $cmd;
 		if ( snapshots_option( 'allow_root' ) ) {
 			$cmd .= ' --allow-root';
 		}
