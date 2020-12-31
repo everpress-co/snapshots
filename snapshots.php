@@ -1,14 +1,12 @@
 <?php
 /**
- * Plugin Name:     Snapshots
- * Plugin URI:
- * Description:     Quickly Create SnapShots of your development sites and restore them with a click.
- * Author:          EverPress
- * Author URI:      https://about.me/xaver
- * Text Domain:     snapshots
- * Version:         2.2
- *
- * @package         Snapshots
+Plugin Name:     Snapshots
+Plugin URI:
+Description:     Quickly Create SnapShots of your development sites and restore them with a click.
+Author:          EverPress
+Author URI:      https://about.me/xaver
+Text Domain:     snapshots
+Version:         2.2
  */
 
 define( 'SNAPSHOTS_FILE', __FILE__ );

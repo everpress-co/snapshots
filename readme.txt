@@ -30,6 +30,10 @@ You are developing things on a WordPress site and would like to have a *snapshot
 4. Restore the saved snapshot by clicking on the menu entry and confirm.
 5. All tables not used in the current SnapShot with the DB prefix will be removed!
 
+== Screenshots ==
+
+1. Minimal dropdown UI of SnapShots.
+
 == Frequently Asked Questions ==
 
 = What are the requirements for SnapShots =
