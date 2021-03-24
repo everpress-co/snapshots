@@ -2,9 +2,9 @@
 Contributors: everpress
 Tags: snapshots, dev, database, backup
 Requires at least: 4.5
-Tested up to: 5.6
+Tested up to: 5.7
 Requires PHP: 7.0
-Stable tag: 2.2
+Stable tag: 2.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -53,6 +53,9 @@ Yes, the plugin has been tested with the amazoing tool from Flywheel and works o
 1. SnapShots adds a small menu to the WP Admin bar
 
 == Changelog ==
+
+= 2.3 =
+* updated usage of CLI commands for better support
 
 = 2.2 =
 * checks for ZIPAchive and falls back to PCLZIP if not available

@@ -245,10 +245,7 @@ class Snapshots extends WP_CLI_Command {
 			'created' => $timestamp,
 		);
 
-		ob_start();
-		$db = new DB_Command();
-		$db->export( array( $location ), array() );
-		$result = explode( "\n", ob_get_clean() );
+		$this->command( 'db export ' . $location );
 
 		if ( ! file_exists( $location ) ) {
 			WP_CLI::error( sprintf( 'No snapshots found for %s', $snapshot_name ) );
@@ -316,21 +313,21 @@ class Snapshots extends WP_CLI_Command {
 			}
 		}
 
-		$db = new DB_Command();
-		$db->import( array( $location ), array() );
-		$result = explode( "\n", ob_get_contents() );
+		$this->command( 'db import ' . $location );
 
 		$sql_data = file_get_contents( $location );
 
 		// drop all tables who do not belong to this import
 		if ( preg_match_all( '/-- Table structure for table `(.*?)`/', $sql_data, $matches ) ) {
 			$tables = $matches[1];
-			ob_start();
-			$db->tables( null, array( 'all-tables-with-prefix' => true ) );
-			$all_tables = explode( "\n", ob_get_contents() );
+
+			$all_tables = $this->command( 'db tables --all-tables-with-prefix' );
 			$to_remove  = array_filter( array_diff( $all_tables, $tables ) );
 			if ( ! empty( $to_remove ) ) {
-				$db->query( array( 'DROP TABLE IF EXISTS `' . implode( '`; DROP TABLE IF EXISTS `', $to_remove ) . '`;' ), null );
+				global $wpdb;
+				foreach ( $to_remove as $t ) {
+					$wpdb->query( 'DROP TABLE IF EXISTS `' . $t . '`;' );
+				}
 			}
 		}
 
@@ -340,15 +337,8 @@ class Snapshots extends WP_CLI_Command {
 			$home_url     = get_option( 'home' );
 
 			if ( $home_url != $sql_home_url ) {
-				shell_exec( 'wp search-replace ' . $sql_home_url . ' ' . $home_url );
-				// WP_CLI::runcommand(
-				// 'search-replace ' . $sql_home_url . ' ' . $home_url,
-				// array(
-				// 'return'     => true,
-				// 'exit_error' => false,
-				// )
-				// );
-
+				// shell_exec( 'wp search-replace ' . $sql_home_url . ' ' . $home_url );
+				$this->command( 'search-replace ' . $sql_home_url . ' ' . $home_url );
 			}
 		}
 
@@ -365,6 +355,31 @@ class Snapshots extends WP_CLI_Command {
 		wp_upgrade();
 
 		return true;
+
+	}
+
+
+	private function command( $command, $return = true, $exit_error = false ) {
+		$options = array(
+			'return'     => true,
+			// 'parse'      => 'json',
+			'launch'     => false,
+			'exit_error' => $exit_error,
+		);
+
+		$result = WP_CLI::runcommand( $command, $options );
+
+		$result = trim( $result );
+
+		if ( strpos( $result, "\n" ) !== false ) {
+			$result = explode( "\n", $result );
+		}
+
+		if ( $return ) {
+			return $result;
+		}
+
+		echo $result;
 
 	}
 

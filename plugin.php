@@ -118,7 +118,7 @@ class Snapshots_Plugin {
 			function( $a, $b ) {
 				$a = (int) explode( '_', basename( $a ) )[1];
 				$b = (int) explode( '_', basename( $b ) )[1];
-				return $a < $b;
+				return $b <=> $a;
 			}
 		);
 		return $files;
