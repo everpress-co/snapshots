@@ -9,6 +9,10 @@ Text Domain:     snapshots
 Version:         2.3
  */
 
+if ( version_compare( PHP_VERSION, '7.0' ) < 0 ) {
+	return;
+}
+
 define( 'SNAPSHOTS_FILE', __FILE__ );
 
 
