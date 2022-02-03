@@ -89,11 +89,11 @@ All options are defined via constants and can get overwritten with a filter. The
 Best to define your custom option constants in the `wp-config.php` file.
 
 You can use filters options like
-`
+
 	add_filter( 'snapshots_[option_name]', function( $default_option ){
 		return $my_option;
 	});
-`
+
 
  
 
