@@ -46,7 +46,7 @@ No, WP CLI is essential here and SnapShots will not work without it. You will no
 
 = Does it work with "Local by Flywheel" =
 
-Yes, the plugin has been tested with the amazoing tool from Flywheel and works out of the box.
+Yes, the plugin has been tested with the amazing tool from Flywheel and works out of the box.
 
 == Screenshots ==
 
