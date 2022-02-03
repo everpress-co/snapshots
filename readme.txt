@@ -81,29 +81,29 @@ Best to define your custom option constants in the `wp-config.php` file.
 
 You can use filters options like
 `
-add_filter( 'snapshots_[option_name]', function( $default_option ){
-	return $my_option;
-});
+	add_filter( 'snapshots_[option_name]', function( $default_option ){
+		return $my_option;
+	});
 `
 
  = Default Options =
 
-`
-// Default save location.
-SNAPSHOTS_FOLDER : WP_CONTENT_DIR . '/.snapshots'
 
-// add '--allow-root' to each command if you run the commands as root.
-SNAPSHOTS_CLI_ALLOW_ROOT: false
+	// Default save location.
+	SNAPSHOTS_FOLDER : WP_CONTENT_DIR . '/.snapshots'
 
-// define the location of your 'wp' binaries.
-SNAPSHOTS_CLI_PATH: '/usr/local/bin'
+	// add '--allow-root' to each command if you run the commands as root.
+	SNAPSHOTS_CLI_ALLOW_ROOT: false
 
-// Number of shots kept with the same name.
-SNAPSHOTS_MAX_SHOTS: 2
+	// define the location of your 'wp' binaries.
+	SNAPSHOTS_CLI_PATH: '/usr/local/bin'
 
-// SnapShot includes files from content folder.
-SNAPSHOTS_SAVE_FILES: true
+	// Number of shots kept with the same name.
+	SNAPSHOTS_MAX_SHOTS: 2
 
-// SnapShot includes location (URL) during creation to redirect on restore.
-SNAPSHOTS_SAVE_LOCATION: true
-`
+	// SnapShot includes files from content folder.
+	SNAPSHOTS_SAVE_FILES: true
+
+	// SnapShot includes location (URL) during creation to redirect on restore.
+	SNAPSHOTS_SAVE_LOCATION: true
+
