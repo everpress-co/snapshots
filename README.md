@@ -1,13 +1,13 @@
 # SnapShots
 
-**Contributors:** everpress \
-**Tags:** snapshots, dev, database, backup \
-**Requires at least:** 4.5 \
-**Tested up to:** 5.9 \
-**Requires PHP:** 7.0 \
-**Stable tag:** 2.4 \
-**License:** GPLv2 or later \
-**License URI:** https://www.gnu.org/licenses/gpl-2.0.html
+Contributors: everpress  
+Tags: snapshots, dev, database, backup  
+Requires at least: 4.5  
+Tested up to: 5.9  
+Requires PHP: 7.0  
+Stable tag: 2.4  
+License: GPLv2 or later  
+License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
 Quickly Create SnapShots of your development sites and restore them with a click.
 
