@@ -1,6 +1,6 @@
 # SnapShots
 
-Contributors: everpress  
+Contributors: everpress, xaverb  
 Tags: snapshots, dev, database, backup  
 Requires at least: 4.5  
 Tested up to: 6.0  
