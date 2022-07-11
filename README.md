@@ -1,7 +1,7 @@
 # SnapShots
 
 Contributors: everpress, xaverb  
-Tags: snapshots, dev, database, backup  
+Tags: snapshots, dev, database, development  
 Requires at least: 4.5  
 Tested up to: 6.0  
 Requires PHP: 7.0  
