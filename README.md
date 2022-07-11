@@ -57,7 +57,7 @@ Yes, the plugin has been tested with the amazing tool from Flywheel and works ou
 
 ## Changelog
 
-### 2.5
+### 2.5.0
 
 -   store last use snapshots in localstorage
 
