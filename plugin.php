@@ -60,9 +60,9 @@ class Snapshots_Plugin {
 			array(
 				'id'    => 'snapshots',
 				'title' => '<span class="ab-icon dashicons dashicons-backup" style="margin-top:2px"></span> ' . $title,
-				'href'  => add_query_arg( array( 'snaphot_create' => '1' ) ),
+				'href'  => add_query_arg( 'snaphot_create', '1' ),
 				'meta'  => array(
-					'onclick' => 'var snapshotsname = prompt("' . esc_attr__( 'Please name your Snapshot.', 'snapshots' ) . '", "' . esc_attr( get_option( 'blogname', 'snapshots' ) ) . '"); this.href=this.href.replace(\"snaphot_create=1\", \"snaphot_create="+encodeURIComponent(snapshotsname)); return !!snapshotsname;',
+					'onclick' => 'var snapshotsname = prompt("' . esc_attr__( 'Please name your Snapshot.', 'snapshots' ) . '", localStorage.getItem("snapshot_current") || "' . esc_attr( get_option( 'blogname', 'snapshots' ) ) . '"); this.href=this.href.replace(\"snaphot_create=1\", \"snaphot_create="+encodeURIComponent(snapshotsname)); return !!snapshotsname;',
 				),
 			)
 		);
@@ -81,7 +81,7 @@ class Snapshots_Plugin {
 				$wp_admin_bar->add_node(
 					array(
 						'id'     => 'snapshot-' . $i,
-						'title'  => '<span title="' . esc_attr( sprintf( '%s ago', human_time_diff( $data['created'] ) ) ) . ' - ' . wp_date( 'Y-m-d H:i', $data['created'] ) . '" style="display:inline-block;width:120px;overflow:hidden; text-overflow:ellipsis;">' . esc_html( $data['name'] ) . '</span>',
+						'title'  => '<span title="' . sprintf( esc_attr__( 'created %s ago', 'snapshots' ), human_time_diff( $data['created'] ) ) . ' - ' . wp_date( 'Y-m-d H:i', $data['created'] ) . '" style="display:inline-block;overflow:hidden;text-overflow:ellipsis;padding-right:20px">' . esc_html( $data['name'] ) . '</span>',
 						'href'   => add_query_arg( array( 'snapshot_restore' => basename( $snapshot ) ) ),
 						'parent' => 'snapshots',
 						'meta'   => array(
@@ -92,7 +92,7 @@ class Snapshots_Plugin {
 							'onclick' => 'return confirm(\"' . sprintf(
 								esc_attr__( 'Restore this Backup from %s?', 'snapshots' ),
 								wp_date( 'Y-m-d H:i', $data['created'] )
-							) . '\");',
+							) . '\") && localStorage.setItem("snapshot_current", this.innerText);',
 						),
 					)
 				);
