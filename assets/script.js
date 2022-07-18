@@ -39,6 +39,7 @@
 				'snaphot_create=' + encodeURIComponent(snapshotsname)
 			);
 			$('#wp-admin-bar-snapshots').addClass('loading create');
+			localStorage.setItem('snapshot_current', snapshotsname);
 		}
 
 		return !!snapshotsname;
@@ -83,7 +84,6 @@
 					.first()
 					.find('span.restore-snapshot')
 					.trigger('click');
-				console.warn(foundElements.first());
 			}
 		}, 50);
 	}

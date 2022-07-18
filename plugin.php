@@ -29,7 +29,7 @@ class Snapshots_Plugin {
 
 		if ( array_key_exists( 'snaphot_create', $_GET ) ) {
 			$files    = snapshots_option( 'save_files' );
-			$location = snapshots_option( 'save_location' );
+			$location = snapshots_option( 'save_location' );			
 			$this->backup( $_GET['snaphot_create'], $files, $location );
 			wp_redirect( remove_query_arg( 'snaphot_create' ) );
 			exit;
@@ -133,7 +133,7 @@ class Snapshots_Plugin {
 		}
 
 		$files = list_files( snapshots_option( 'folder' ), 1 );
-		$files = preg_grep( '/([a-z-]+)_(\d+)\/$/', $files );
+		$files = preg_grep( '/([a-z0-9-]+)_(\d+)\/$/', $files );
 		usort(
 			$files,
 			function( $a, $b ) {
