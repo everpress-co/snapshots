@@ -9,47 +9,67 @@ class Snapshots_Plugin {
 		register_deactivation_hook( SNAPSHOTS_FILE, array( &$this, 'on_deactivate' ) );
 
 		add_action( 'init', array( $this, 'actions' ) );
-		add_action( 'init', array( $this, 'add_inline_style' ) );
+		add_action( 'init', array( $this, 'enqueue_scripts' ) );
 		add_action( 'admin_bar_menu', array( $this, 'toolbar_snapshots' ), 20 );
 
 	}
 
 	public function actions() {
 
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
 		if ( array_key_exists( 'snapshot_restore', $_GET ) ) {
-			if ( current_user_can( 'manage_options' ) ) {
-				$redirect = $this->restore( $_GET['snapshot_restore'] );
-				$this->login_user( wp_get_current_user() );
-				wp_redirect( $redirect );
-				exit;
-			}
+			$redirect = $this->restore( $_GET['snapshot_restore'] );
+			$this->login_user( wp_get_current_user() );
+			wp_redirect( $redirect );
+			exit;
 		}
 
 		if ( array_key_exists( 'snaphot_create', $_GET ) ) {
-			if ( current_user_can( 'manage_options' ) ) {
-				$files    = snapshots_option( 'save_files' );
-				$location = snapshots_option( 'save_location' );
-				$this->backup( $_GET['snaphot_create'], $files, $location );
-				wp_redirect( remove_query_arg( 'snaphot_create' ) );
-				exit;
-			}
+			$files    = snapshots_option( 'save_files' );
+			$location = snapshots_option( 'save_location' );			
+			$this->backup( $_GET['snaphot_create'], $files, $location );
+			wp_redirect( remove_query_arg( 'snaphot_create' ) );
+			exit;
 		}
 
 		if ( array_key_exists( 'snapshot_delete', $_GET ) ) {
-			if ( current_user_can( 'manage_options' ) ) {
-				$this->delete( $_GET['snapshot_delete'] );
-				wp_redirect( remove_query_arg( 'snapshot_delete' ) );
-				exit;
-			}
+			$this->delete( $_GET['snapshot_delete'] );
+			wp_redirect( remove_query_arg( 'snapshot_delete' ) );
+			exit;
 		}
 	}
 
-	public function add_inline_style() {
-		wp_add_inline_style( 'admin-bar', '#wp-admin-bar-snapshots .ab-sub-wrapper{max-height: 90vh;overflow: auto;}#wp-admin-bar-snapshots .ab-sub-wrapper li{border-top:1px solid #666}#wp-admin-bar-snapshots .ab-sub-wrapper li > a.ab-item{_display:inline}#wp-admin-bar-snapshots .ab-sub-wrapper li div{min-height: 5px;}#wp-admin-bar-snapshots .ab-sub-wrapper li div a{display:block;font-size:130%;transform: translateY(-30px);position:absolute;right:0}' );
+	public function enqueue_scripts() {
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
+		wp_enqueue_script( 'snapshots-script', plugin_dir_url( SNAPSHOTS_FILE ) . 'assets/script.js', array(), false, true );
+		wp_enqueue_style( 'snapshots-style', plugin_dir_url( SNAPSHOTS_FILE ) . 'assets/style.css', array() );
+
+		wp_localize_script(
+			'snapshots-script',
+			'snapshots',
+			array(
+				'prompt'    => esc_attr__( 'Create a new Snapshot. Please define a name:', 'snapshots' ),
+				'restore'   => esc_attr__( 'Restore this Backup from %s?', 'snapshots' ),
+				'delete'    => esc_attr__( 'Delete snapshot %1$s from %2$s?', 'snapshots' ),
+				'currently' => esc_attr__( 'You are currently on the %s snapshot', 'snapshots' ),
+				'blogname'  => get_option( 'blogname', 'snapshots' ),
+			)
+		);
 	}
 
 
 	public function toolbar_snapshots( $wp_admin_bar ) {
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
 
 		$snapshots = $this->get_snaps();
 		$count     = count( $snapshots );
@@ -61,13 +81,19 @@ class Snapshots_Plugin {
 				'id'    => 'snapshots',
 				'title' => '<span class="ab-icon dashicons dashicons-backup" style="margin-top:2px"></span> ' . $title,
 				'href'  => add_query_arg( 'snaphot_create', '1' ),
-				'meta'  => array(
-					'onclick' => 'var snapshotsname = prompt("' . esc_attr__( 'Please name your Snapshot.', 'snapshots' ) . '", localStorage.getItem("snapshot_current") || "' . esc_attr( get_option( 'blogname', 'snapshots' ) ) . '"); this.href=this.href.replace(\"snaphot_create=1\", \"snaphot_create="+encodeURIComponent(snapshotsname)); return !!snapshotsname;',
-				),
+
 			)
 		);
 
 		if ( $count ) {
+			$wp_admin_bar->add_node(
+				array(
+					'id'     => 'snapshot-search',
+					'title'  => '<span class="search-snapshot"><input type="search" placeholder="' . esc_attr__( 'Search Snapshots...', 'snapshots' ) . '"></span>',
+					'parent' => 'snapshots',
+				)
+			);
+
 			foreach ( $snapshots as $i => $snapshot ) {
 				$file = trailingslashit( $snapshot ) . 'manifest.json';
 				if ( ! file_exists( $file ) ) {
@@ -81,18 +107,13 @@ class Snapshots_Plugin {
 				$wp_admin_bar->add_node(
 					array(
 						'id'     => 'snapshot-' . $i,
-						'title'  => '<span title="' . sprintf( esc_attr__( 'created %s ago', 'snapshots' ), human_time_diff( $data['created'] ) ) . ' - ' . wp_date( 'Y-m-d H:i', $data['created'] ) . '" style="display:inline-block;overflow:hidden;text-overflow:ellipsis;padding-right:20px">' . esc_html( $data['name'] ) . '</span>',
+						'title'  => '<span class="restore-snapshot" title="' . sprintf( esc_attr__( 'created %s ago', 'snapshots' ), human_time_diff( $data['created'] ) ) . ' - ' . wp_date( 'Y-m-d H:i', $data['created'] ) . '" data-date="' . wp_date( 'Y-m-d H:i', $data['created'] ) . '">' . esc_html( $data['name'] ) . '</span>',
 						'href'   => add_query_arg( array( 'snapshot_restore' => basename( $snapshot ) ) ),
 						'parent' => 'snapshots',
 						'meta'   => array(
-							'html'    => '<div><a title="' . esc_attr( sprintf( 'delete %s', $data['name'] ) ) . '" href="' . add_query_arg( array( 'snapshot_delete' => basename( $snapshot ) ) ) . '" onclick="return confirm(\'' . sprintf(
-								esc_attr__( 'Delete this Backup from %s?', 'snapshots' ),
-								wp_date( 'Y-m-d H:i', $data['created'] )
-							) . '\');">&times;</a></div>',
-							'onclick' => 'return confirm(\"' . sprintf(
-								esc_attr__( 'Restore this Backup from %s?', 'snapshots' ),
-								wp_date( 'Y-m-d H:i', $data['created'] )
-							) . '\") && localStorage.setItem("snapshot_current", this.innerText);',
+							'rel'  => $data['name'] . ' ' . strtolower( $data['name'] ),
+							'html' => '<div><a class="delete-snapshot" title="' . esc_attr( sprintf( 'delete %s', $data['name'] ) ) . '" data-name="' . esc_attr( $data['name'] ) . '" data-date="' . wp_date( 'Y-m-d H:i', $data['created'] ) . '" href="' . add_query_arg( array( 'snapshot_delete' => basename( $snapshot ) ) ) . '">&times;</a></div>',
+
 						),
 					)
 				);
@@ -112,7 +133,7 @@ class Snapshots_Plugin {
 		}
 
 		$files = list_files( snapshots_option( 'folder' ), 1 );
-		$files = preg_grep( '/([a-z-]+)_(\d+)\/$/', $files );
+		$files = preg_grep( '/([a-z0-9-]+)_(\d+)\/$/', $files );
 		usort(
 			$files,
 			function( $a, $b ) {
