@@ -29,7 +29,7 @@ class Snapshots_Plugin {
 
 		if ( array_key_exists( 'snaphot_create', $_GET ) ) {
 			$files    = snapshots_option( 'save_files' );
-			$location = snapshots_option( 'save_location' );			
+			$location = snapshots_option( 'save_location' );
 			$this->backup( $_GET['snaphot_create'], $files, $location );
 			wp_redirect( remove_query_arg( 'snaphot_create' ) );
 			exit;
@@ -160,9 +160,12 @@ class Snapshots_Plugin {
 
 
 	public function restore( $name ) {
-		$name    = is_null( $name ) ? '' : ' ' . basename( $name );
-		$command = 'snapshot restore' . $name;
+		$name = is_null( $name ) ? '' : basename( $name );
+
+		$command = trim( 'snapshot restore ' . $name );
 		$result  = $this->command( $command );
+
+		do_action( 'snapshot_restored', $name, $result );
 
 		if ( $redirect = array_values( preg_grep( '/^Redirect to: (.*?)/', $result ) ) ) {
 			$redirect = trim( str_replace( 'Redirect to:', '', $redirect[0] ) );
@@ -174,8 +177,8 @@ class Snapshots_Plugin {
 	}
 
 	public function delete( $name ) {
-		$name    = is_null( $name ) ? '' : ' ' . basename( $name );
-		$command = 'snapshot delete' . $name;
+		$name    = is_null( $name ) ? '' : basename( $name );
+		$command = trim( 'snapshot delete ' . $name );
 		$result  = $this->command( $command );
 
 		return $result;
@@ -187,7 +190,7 @@ class Snapshots_Plugin {
 		if ( snapshots_option( 'allow_root' ) ) {
 			$cmd .= ' --allow-root';
 		}
-		$cmd .= ' --path=\'' . ABSPATH . '\'';
+		$cmd .= ' --path=\'' . ABSPATH . '\' 2>&1';
 		exec( $cmd, $output );
 		if ( $echo ) {
 			echo $output;
@@ -197,7 +200,6 @@ class Snapshots_Plugin {
 
 
 	private function login_user( $user ) {
-
 		if ( ! isset( $user->ID ) ) {
 			return false;
 		}
