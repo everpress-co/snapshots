@@ -2,6 +2,7 @@
 
 class Snapshots_Plugin {
 
+	private static $instance = null;
 
 	public function __construct() {
 
@@ -12,6 +13,14 @@ class Snapshots_Plugin {
 		add_action( 'init', array( $this, 'enqueue_scripts' ) );
 		add_action( 'admin_bar_menu', array( $this, 'toolbar_snapshots' ), 20 );
 
+	}
+	
+	public static function get_instance() {
+		if ( self::$instance === null ) {
+			self::$instance = new Snapshots_Plugin();
+		}
+
+		return self::$instance;
 	}
 
 	public function actions() {

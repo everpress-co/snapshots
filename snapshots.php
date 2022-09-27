@@ -51,7 +51,9 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) :
 else :
 
 	require_once dirname( __FILE__ ) . '/plugin.php';
+	require_once dirname( __FILE__ ) . '/upgrade.php';
 
-	new Snapshots_Plugin();
+	Snapshots_Plugin::get_instance();
+	Snapshots_Upgrade::get_instance();
 
 endif;
