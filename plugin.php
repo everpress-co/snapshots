@@ -14,7 +14,7 @@ class Snapshots_Plugin {
 		add_action( 'admin_bar_menu', array( $this, 'toolbar_snapshots' ), 20 );
 
 	}
-	
+
 	public static function get_instance() {
 		if ( self::$instance === null ) {
 			self::$instance = new Snapshots_Plugin();
@@ -98,7 +98,7 @@ class Snapshots_Plugin {
 			$wp_admin_bar->add_node(
 				array(
 					'id'     => 'snapshot-search',
-					'title'  => '<span class="search-snapshot"><input type="search" placeholder="' . esc_attr__( 'Search Snapshots...', 'snapshots' ) . '"></span>',
+					'title'  => '<span class="search-snapshot"><label for="snapshost_search">' . esc_attr__( 'Search Snapshots...', 'snapshots' ) . '</label><input id="snapshost_search" type="search" placeholder="' . esc_attr__( 'Search Snapshots...', 'snapshots' ) . '"></span>',
 					'parent' => 'snapshots',
 				)
 			);

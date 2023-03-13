@@ -3,7 +3,7 @@
 Contributors: everpress, xaverb  
 Tags: snapshots, dev, database, development  
 Requires at least: 4.5  
-Tested up to: 6.0  
+Tested up to: 6.1  
 Requires PHP: 7.0  
 Stable tag: 2.6.0  
 License: GPLv2 or later  

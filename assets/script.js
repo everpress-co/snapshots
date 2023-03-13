@@ -4,7 +4,8 @@
 	var last = getLastName(),
 		searchTimeout,
 		snapshotsElements = $('#wp-admin-bar-snapshots-default li'),
-		foundElements = $();
+		foundElements = $(),
+		currentFocus;
 
 	$(document)
 		.on('click', '#wp-admin-bar-snapshots > a', createSnapshot)
@@ -20,7 +21,8 @@
 			searchSnapshot
 		)
 		.on('mouseenter', '#wp-admin-bar-snapshots', enabledKeyboardSearch)
-		.on('mouseleave', '#wp-admin-bar-snapshots', disableKeyboardSearch);
+		.on('mouseleave', '#wp-admin-bar-snapshots', disableKeyboardSearch)
+		.on('keydown', toggleMenu);
 
 	if (last) {
 		$('#wp-admin-bar-snapshots > a').append(
@@ -69,6 +71,19 @@
 				$(this).data('date')
 			)
 		);
+	}
+
+	function toggleMenu(event) {
+		if (event.keyCode === 83 && event.ctrlKey && !event.shiftKey) {
+			if ($('#wp-admin-bar-snapshots').is('.hover')) {
+				$('#wp-admin-bar-snapshots').removeClass('hover');
+				currentFocus && $(currentFocus).focus();
+			} else {
+				currentFocus = document.activeElement;
+				$('#wp-admin-bar-snapshots').addClass('hover');
+				$('#wp-admin-bar-snapshots .search-snapshot input').focus();
+			}
+		}
 	}
 
 	function searchSnapshot(event) {
