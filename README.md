@@ -57,6 +57,13 @@ Yes, the plugin has been tested with the amazing tool from Flywheel and works ou
 
 ## Changelog
 
+### 2.7.0
+
+-   better error handling
+-   keyboard search
+-   tested up to 6.1
+-   implemented upgrade mechanism for future update routines
+
 ### 2.6.0
 
 -   fixed: Snapshots with numbers are now recognized.
