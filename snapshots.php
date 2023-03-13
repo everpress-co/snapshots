@@ -6,7 +6,7 @@ Description:     Quickly Create SnapShots of your development sites and restore 
 Author:          EverPress
 Author URI:      https://about.me/xaver
 Text Domain:     snapshots
-Version:         2.6.0
+Version:         2.7.0
  */
 
 if ( version_compare( PHP_VERSION, '7.0' ) < 0 ) {
@@ -51,7 +51,9 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) :
 else :
 
 	require_once dirname( __FILE__ ) . '/plugin.php';
+	require_once dirname( __FILE__ ) . '/upgrade.php';
 
-	new Snapshots_Plugin();
+	Snapshots_Plugin::get_instance();
+	Snapshots_Upgrade::get_instance();
 
 endif;

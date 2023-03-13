@@ -3,9 +3,9 @@
 Contributors: everpress, xaverb  
 Tags: snapshots, dev, database, development  
 Requires at least: 4.5  
-Tested up to: 6.0  
+Tested up to: 6.1  
 Requires PHP: 7.0  
-Stable tag: 2.6.0  
+Stable tag: 2.7.0  
 License: GPLv2 or later  
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -56,6 +56,13 @@ Yes, the plugin has been tested with the amazing tool from Flywheel and works ou
 1. SnapShots adds a small menu to the WP Admin bar
 
 ## Changelog
+
+### 2.7.0
+
+-   better error handling
+-   keyboard search
+-   tested up to 6.1
+-   implemented upgrade mechanism for future update routines
 
 ### 2.6.0
 

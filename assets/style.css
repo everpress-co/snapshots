@@ -18,7 +18,6 @@
 	position: absolute;
 	right: 0;
 }
-
 #wpadminbar .snapshot-extra-title {
 	font-size: 9px;
 	opacity: 0.4;
@@ -30,6 +29,9 @@
 }
 #wpadminbar #wp-admin-bar-snapshots ul li .ab-item.ab-empty-item {
 	height: 32px;
+}
+#wp-admin-bar-snapshots .search-snapshot label {
+	display: none;
 }
 #wp-admin-bar-snapshots .search-snapshot input {
 	border: 0;
