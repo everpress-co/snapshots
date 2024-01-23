@@ -49,7 +49,6 @@ class Snapshots extends WP_CLI_Command {
 		} else {
 			WP_CLI::error( 'Snapshot not saved!' );
 		}
-
 	}
 
 	/**
@@ -86,7 +85,6 @@ class Snapshots extends WP_CLI_Command {
 		} else {
 			WP_CLI::error( 'Snapshot not restored!' );
 		}
-
 	}
 
 	/**
@@ -123,7 +121,6 @@ class Snapshots extends WP_CLI_Command {
 		} else {
 			WP_CLI::error( 'Snapshot not deleted!' );
 		}
-
 	}
 
 	/**
@@ -213,13 +210,12 @@ class Snapshots extends WP_CLI_Command {
 
 		usort(
 			$backups,
-			function( $a, $b ) {
+			function ( $a, $b ) {
 				return filemtime( $a . 'manifest.json' ) < filemtime( $b . 'manifest.json' );
 			}
 		);
 
 		return $backups;
-
 	}
 
 
@@ -272,8 +268,9 @@ class Snapshots extends WP_CLI_Command {
 
 		$this->destroy_snapshots( $snapshot_name );
 
-		return true;
+		set_transient( 'snapshot_current', $name );
 
+		return true;
 	}
 
 
@@ -313,7 +310,7 @@ class Snapshots extends WP_CLI_Command {
 			}
 		}
 
-		$this->command( 'db import ' . $location );
+		$this->command( 'db import ' . $location . ' --skip-optimization' );
 
 		$sql_data = file_get_contents( $location );
 
@@ -337,15 +334,7 @@ class Snapshots extends WP_CLI_Command {
 			$home_url     = get_option( 'home' );
 
 			if ( $home_url != $sql_home_url ) {
-				// shell_exec( 'wp search-replace ' . $sql_home_url . ' ' . $home_url );
 				$this->command( 'search-replace ' . $sql_home_url . ' ' . $home_url );
-			}
-		}
-
-		if ( file_exists( $manifest ) ) {
-			$manifest = json_decode( file_get_contents( $manifest ) );
-			if ( isset( $manifest->location ) ) {
-				WP_CLI::line( 'Redirect to: ' . $manifest->location );
 			}
 		}
 
@@ -354,8 +343,20 @@ class Snapshots extends WP_CLI_Command {
 		}
 		wp_upgrade();
 
-		return true;
+		if ( file_exists( $manifest ) ) {
+			$manifest = json_decode( file_get_contents( $manifest ) );
+			if ( isset( $manifest->location ) ) {
+				WP_CLI::line( 'Redirect to: ' . $manifest->location );
+			}
+			if ( isset( $manifest->name ) ) {
+				// don't use 'set_transient' here to prevent race conditions
+				global $wpdb;
+				$query = $wpdb->prepare( "INSERT INTO {$wpdb->options} SET option_name = '_transient_snapshot_current', option_value = '%s', autoload = 'yes' ON DUPLICATE KEY UPDATE option_value = '%s'", $manifest->name, $manifest->name );
+				$this->command( sprintf( 'db query "%s"', $query ) );
+			}
+		}
 
+		return true;
 	}
 
 
@@ -380,7 +381,6 @@ class Snapshots extends WP_CLI_Command {
 		}
 
 		echo $result;
-
 	}
 
 
@@ -399,7 +399,6 @@ class Snapshots extends WP_CLI_Command {
 		}
 
 		return true;
-
 	}
 
 	private function zip( $folder, $destination = null ) {
@@ -409,7 +408,6 @@ class Snapshots extends WP_CLI_Command {
 		}
 
 		return $this->zip_pclzip( $folder, $destination );
-
 	}
 
 	private function zip_archive( $folder, $destination = null ) {
@@ -432,12 +430,11 @@ class Snapshots extends WP_CLI_Command {
 				continue;
 			}
 			$zip->addFile( $file, $relativePath );
-			$count++;
+			++$count;
 		}
 
 		$zip->close();
 		return true;
-
 	}
 
 	private function zip_pclzip( $folder, $destination = null ) {
@@ -453,7 +450,6 @@ class Snapshots extends WP_CLI_Command {
 		$count = 0;
 
 		return $zip->create( $files, '', $rootPath );
-
 	}
 
 	private function unzip( $zipfile, $destination ) {
@@ -478,7 +474,6 @@ class Snapshots extends WP_CLI_Command {
 
 		$backups = $this->get_snaps( $backup_name, true );
 		return isset( $backups[0] ) ? trailingslashit( $backups[0] ) . $extension : null;
-
 	}
 
 	public function get_snaps( $name = null, $order = false ) {
@@ -500,13 +495,12 @@ class Snapshots extends WP_CLI_Command {
 		if ( $order ) {
 			usort(
 				$files,
-				function( $a, $b ) {
-					return filemtime( $a . 'manifest.json' ) < filemtime( $b . 'manifest.json' );
+				function ( $a, $b ) {
+					return filemtime( $b . 'manifest.json' ) - filemtime( $a . 'manifest.json' );
 				}
 			);
 		}
 		return $files;
-
 	}
 
 	private function get_name( $args ) {
@@ -537,8 +531,7 @@ class Snapshots extends WP_CLI_Command {
 			if ( $skipped >= snapshots_option( 'max_shots' ) ) {
 				$this->delete_folder( $backup );
 			}
-			$skipped++;
+			++$skipped;
 		}
 	}
-
 }
