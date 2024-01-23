@@ -4,9 +4,9 @@ Plugin Name:     Snapshots
 Plugin URI:
 Description:     Quickly Create SnapShots of your development sites and restore them with a click.
 Author:          EverPress
-Author URI:      https://about.me/xaver
+Author URI:      https://xaver.dev
 Text Domain:     snapshots
-Version:         2.7.0
+Version:         2.8.0
  */
 
 if ( version_compare( PHP_VERSION, '7.0' ) < 0 ) {

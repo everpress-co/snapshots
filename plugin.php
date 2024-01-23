@@ -12,7 +12,6 @@ class Snapshots_Plugin {
 		add_action( 'init', array( $this, 'actions' ) );
 		add_action( 'init', array( $this, 'enqueue_scripts' ) );
 		add_action( 'admin_bar_menu', array( $this, 'toolbar_snapshots' ), 20 );
-
 	}
 
 	public static function get_instance() {
@@ -39,8 +38,13 @@ class Snapshots_Plugin {
 		if ( array_key_exists( 'snaphot_create', $_GET ) ) {
 			$files    = snapshots_option( 'save_files' );
 			$location = snapshots_option( 'save_location' );
+			if ( array_key_exists( 'snapshot_location', $_GET ) ) {
+				$redirect_to = htmlspecialchars_decode( $_GET['snapshot_location'] );
+			} else {
+				$redirect_to = remove_query_arg( 'snaphot_create' );
+			}
 			$this->backup( $_GET['snaphot_create'], $files, $location );
-			wp_redirect( remove_query_arg( 'snaphot_create' ) );
+			wp_redirect( $redirect_to );
 			exit;
 		}
 
@@ -82,13 +86,14 @@ class Snapshots_Plugin {
 
 		$snapshots = $this->get_snaps();
 		$count     = count( $snapshots );
+		$last      = get_transient( 'snapshot_current' );
 
 		$title = $count ? $count : esc_html__( 'Click here to create your first Snapshot!', 'snapshots' );
 
 		$wp_admin_bar->add_node(
 			array(
 				'id'    => 'snapshots',
-				'title' => '<span class="ab-icon dashicons dashicons-backup" style="margin-top:2px"></span> ' . $title,
+				'title' => '<span class="ab-icon dashicons dashicons-backup" style="margin-top:2px"></span>' . $title . '<span class="snapshot-extra-title" title="">' . $last . '</span>',
 				'href'  => add_query_arg( 'snaphot_create', '1' ),
 
 			)
@@ -145,14 +150,13 @@ class Snapshots_Plugin {
 		$files = preg_grep( '/([a-z0-9-]+)_(\d+)\/$/', $files );
 		usort(
 			$files,
-			function( $a, $b ) {
+			function ( $a, $b ) {
 				$a = (int) explode( '_', basename( $a ) )[1];
 				$b = (int) explode( '_', basename( $b ) )[1];
 				return $b <=> $a;
 			}
 		);
 		return $files;
-
 	}
 
 
@@ -162,7 +166,12 @@ class Snapshots_Plugin {
 			$command .= ' --files';
 		}
 		if ( $location ) {
-			$command .= ' --location="' . remove_query_arg( 'snaphot_create' ) . '"';
+			if ( array_key_exists( 'snapshot_location', $_GET ) ) {
+				$location = htmlspecialchars_decode( $_GET['snapshot_location'] );
+			} else {
+				$location = remove_query_arg( 'snaphot_create' );
+			}
+			$command .= ' --location="' . $location . '"';
 		}
 		$this->command( $command );
 	}
@@ -182,7 +191,6 @@ class Snapshots_Plugin {
 		}
 
 		return remove_query_arg( 'snapshot_restore' );
-
 	}
 
 	public function delete( $name ) {
@@ -191,7 +199,6 @@ class Snapshots_Plugin {
 		$result  = $this->command( $command );
 
 		return $result;
-
 	}
 
 	private function command( $cmd, $echo = false ) {
@@ -200,7 +207,10 @@ class Snapshots_Plugin {
 			$cmd .= ' --allow-root';
 		}
 		$cmd .= ' --path=\'' . ABSPATH . '\' 2>&1';
-		exec( $cmd, $output );
+		exec( $cmd, $output, $error );
+		if ( $error ) {
+			wp_die( '<pre>[' . $error . '] ' . implode( "\n", $output ) . '</pre>', '', array( 'back_link' => true ) );
+		}
 		if ( $echo ) {
 			echo $output;
 		}
@@ -239,11 +249,8 @@ class Snapshots_Plugin {
 			$body    = sprintf( esc_html__( 'Please make sure the command line interface %1$s is installed and working on your server. Read the official guide %2$s.', 'snapshosts' ), '<a href="https://wp-cli.org/#installing" rel="noopener noreferrer" target="_blank">WP-CLI</a>', '<a href="https://wp-cli.org/" rel="noopener noreferrer" target="_blank">' . esc_html__( 'here', 'snapshosts' ) . '</a>' );
 			die( '<div style="font-family:sans-serif;"><strong>' . $heading . '</strong><p>' . $body . '</p></div>' );
 		}
-
 	}
 
 	public function on_deactivate() {
-
 	}
-
 }

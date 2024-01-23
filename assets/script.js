@@ -24,15 +24,6 @@
 		.on('mouseleave', '#wp-admin-bar-snapshots', disableKeyboardSearch)
 		.on('keydown', toggleMenu);
 
-	if (last) {
-		$('#wp-admin-bar-snapshots > a').append(
-			'<span class="snapshot-extra-title" title="' +
-				sprintf(snapshots.currently, last) +
-				'">' +
-				last +
-				'</span>'
-		);
-	}
 
 	function createSnapshot() {
 		var name = getLastName() || snapshots.blogname;
@@ -43,8 +34,8 @@
 				'snaphot_create=1',
 				'snaphot_create=' + encodeURIComponent(snapshotsname)
 			);
+			this.href += '&snapshot_location=' + encodeURIComponent(document.location.pathname+document.location.search+document.location.hash);
 			$('#wp-admin-bar-snapshots').addClass('loading create');
-			localStorage.setItem('snapshot_current', snapshotsname);
 		}
 
 		return !!snapshotsname;
@@ -55,7 +46,6 @@
 			event.isTrigger ||
 			confirm(sprintf(snapshots.restore, $(this).data('date')))
 		) {
-			localStorage.setItem('snapshot_current', this.innerText);
 			$('#wp-admin-bar-snapshots').addClass('loading');
 			return true;
 		}
@@ -110,7 +100,7 @@
 	}
 
 	function getLastName() {
-		return localStorage.getItem('snapshot_current') || '';
+		return $('#wp-admin-bar-snapshots .snapshot-extra-title').text() || '';
 	}
 
 	function enabledKeyboardSearch() {
