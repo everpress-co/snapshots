@@ -49,9 +49,59 @@ You need [WP CLI](https://wp-cli.org/) installed (at least version 2.2) and PHP 
 
 No, WP CLI is essential here and SnapShots will not work without it. You will not be able to activate the plugin without the addon.
 
-### Does it work with "Local by Flywheel"
+### Does it work with "Local"
 
-Yes, the plugin has been tested with the amazing tool from Flywheel and works out of the box.
+Yes, the plugin has been tested with the [amazing tool](https://localwp.com/) from WPEngine and works out of the box.
+
+### Snapshots requires the php in your PATH environment!
+
+SnapShots tries to find the `php` binary on your system. If it can't find it, you will get this error. You can define the location of your `php` binary by open your terminal and running
+
+```
+dirname $(which php)
+```
+
+This returns the directory of your php binary. Use this location to define the constant `SNAPSHOTS_PHP_PATH` in your `wp-config.php` file. For example:
+
+```
+define( 'SNAPSHOTS_PHP_PATH', '/usr/local/bin' );
+```
+
+**Don't include the `php` binary in the path!**
+
+### Your Home URLs do not match
+
+Snapshots checks if the home URL of your site matches the one from `wp option get home`. If they are not equal it often that the `DB_HOST` variable is not defined correctly. This also happens if you use a socket for your MySql connection (Local WP).
+
+Update your DB_HOST variable in your `wp-config.php` file to something like this:
+
+```
+define( 'DB_HOST', 'localhost:/tmp/ysql/mysqld.sock' );
+```
+
+This should not affect the regular usage of your site. If you encounter any problems, You can wrap the statement like so:
+
+```
+if ( defined( 'WP_CLI' ) && WP_CLI ) {
+    define( 'DB_HOST', 'localhost:/tmp/ysql/mysqld.sock' );
+}else{
+    define( 'DB_HOST', 'localhost' );
+}
+```
+
+### Snapshots requires the "exec" method!
+
+SnapShots uses the PHP [`exec`](https://www.php.net/manual/en/function.exec.php) method to execute the WP CLI commands.
+
+```
+
+### Snapshots requires WP-CLI!
+
+SnapShots requires the [WP-CLI](https://wp-cli.org/) to be installed on your system. Please install it and make sure it is available in your `PATH` environment.
+
+
+
+
 
 ## Screenshots
 
@@ -140,3 +190,4 @@ You can use filters options like
 
     // SnapShot includes location (URL) during creation to redirect on restore.
     SNAPSHOTS_SAVE_LOCATION: true
+
