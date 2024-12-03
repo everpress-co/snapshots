@@ -2,10 +2,10 @@
 
 Contributors: everpress, xaverb  
 Tags: snapshots, dev, database, development  
-Requires at least: 4.5  
-Tested up to: 6.4  
+Requires at least: 6.6  
+Tested up to: 6.7  
 Requires PHP: 7.4  
-Stable tag: 2.8.0  
+Stable tag: 3.0.0  
 License: GPLv2 or later  
 License URI: <https://www.gnu.org/licenses/gpl-2.0.html>
 
@@ -53,7 +53,7 @@ No, WP CLI is essential here and SnapShots will not work without it. You will no
 
 Yes, the plugin has been tested with the [amazing tool](https://localwp.com/) from WPEngine and works out of the box.
 
-### Snapshots requires the php in your PATH environment!
+### Snapshots requires the php in your PATH environment
 
 SnapShots tries to find the `php` binary on your system. If it can't find it, you will get this error. You can define the location of your `php` binary by open your terminal and running
 
@@ -89,7 +89,7 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 }
 ```
 
-### Snapshots requires the "exec" method!
+### Snapshots requires the "exec" method
 
 SnapShots uses the PHP [`exec`](https://www.php.net/manual/en/function.exec.php) method to execute the WP CLI commands.
 
