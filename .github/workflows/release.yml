@@ -6,12 +6,16 @@ on:
   push:
     tags:
       - '*'
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions: write-all
 jobs:
   create-release:
     name: 'Create Release'
     runs-on: 'ubuntu-latest'
+
     outputs:
       version: ${{ steps.read_version.outputs.version }}
       zip_name: ${{ steps.zip_project.outputs.zip_name }}
@@ -67,3 +71,24 @@ jobs:
           prerelease: false
           files: |
             ${{ steps.read_version.outputs.project_name }}.zip
+
+  deploy-to-wordpress:
+    name: Deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@master
+      - name: Build # Remove or modify this step as needed
+        run: |
+          echo "HH"
+          ls -al
+          exit 1
+
+      - name: WordPress Plugin Deploy
+        if: ${{ !env.ACT }}
+        uses: everpress-co/action-wordpress-plugin-deploy@main
+        with:
+          generate-zip: true
+        env:
+          SVN_PASSWORD: ${{ secrets.SVN_PASSWORD }}
+          SVN_USERNAME: ${{ secrets.SVN_USERNAME }}
