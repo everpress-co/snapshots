@@ -15,6 +15,9 @@ jobs:
   create-release:
     name: 'Create Release'
     runs-on: 'ubuntu-latest'
+    concurrency:
+      group: example-group
+      cancel-in-progress: true
 
     outputs:
       version: ${{ steps.read_version.outputs.version }}
@@ -75,6 +78,9 @@ jobs:
   deploy-to-wordpress:
     name: Deploy
     runs-on: ubuntu-latest
+    concurrency:
+      group: example-group
+      cancel-in-progress: true
     steps:
       - name: Checkout code
         uses: actions/checkout@master
