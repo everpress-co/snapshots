@@ -101,13 +101,15 @@ SnapShots requires the [WP-CLI](https://wp-cli.org/) to be installed on your sys
 
 
 
-
-
 ## Screenshots
 
 1. SnapShots adds a small menu to the WP Admin bar
 
 ## Changelog
+
+### 2.8.1
+
+- updated file strucutre
 
 ### 2.8.0
 
