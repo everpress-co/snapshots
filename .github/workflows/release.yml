@@ -6,18 +6,12 @@ on:
   push:
     tags:
       - '*'
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
 
 permissions: write-all
 jobs:
   create-release:
     name: 'Create Release'
     runs-on: 'ubuntu-latest'
-    concurrency:
-      group: example-group
-      cancel-in-progress: true
 
     outputs:
       version: ${{ steps.read_version.outputs.version }}
@@ -78,9 +72,7 @@ jobs:
   deploy-to-wordpress:
     name: Deploy
     runs-on: ubuntu-latest
-    concurrency:
-      group: example-group
-      cancel-in-progress: true
+    needs: create-release
     steps:
       - name: Checkout code
         uses: actions/checkout@master
