@@ -36,8 +36,8 @@ jobs:
 
       - name: 🤞 Install dependencies
         run: |
-          [ -f "package.json" ] && npm install || echo "No package.json file found"
-          [ -f "composer.json" ] && composer install --no-dev || echo "No composer.json file found"
+          [ -f "package.json" ] && npm install --no-fund --silent || echo "No package.json file found"
+          [ -f "composer.json" ] && composer install --no-dev --quiet || echo "No composer.json file found"
 
       - name: 📚 Convert Readme.md to WordPress Readme
         uses: everpress-co/action-md2wp@main
@@ -45,6 +45,19 @@ jobs:
       - name: 🏗️ Build
         run: |
           npm run build --no-dev
+          ls -al
+
+      - name: 🏗️ Build assets
+        run: |
+          mkdir -p dist/assets
+          if [ -f .wordpress-org/banner.png ]; then
+            convert -resize 1544x500 .wordpress-org/banner.png dist/assets/banner-1544x500.png
+            convert -resize 772x250 .wordpress-org/banner.png dist/assets/banner-772x250.png
+          else
+            convert -resize 256x256 .wordpress-org/icon.png dist/assets/icon-256x256.png
+            convert -resize 128x128 .wordpress-org/icon.png dist/assets/icon-128x128.png
+          fi
+          cd dist/assets
           ls -al
 
       - name: 🧹 Cleanup
@@ -84,5 +97,5 @@ jobs:
         env:
           SVN_PASSWORD: ${{ secrets.SVN_PASSWORD }}
           SVN_USERNAME: ${{ secrets.SVN_USERNAME }}
-          ASSETS_DIR: .wordpress-org
+          ASSETS_DIR: dist/assets
           BUILD_DIR: dist/snapshots
