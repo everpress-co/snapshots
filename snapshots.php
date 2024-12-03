@@ -40,18 +40,20 @@ if ( ! defined( 'SNAPSHOTS_SAVE_LOCATION' ) ) {
 	define( 'SNAPSHOTS_SAVE_LOCATION', true );
 }
 
-require_once dirname( __FILE__ ) . '/common.php';
+require_once __DIR__ . '/common.php';
 
 if ( defined( 'WP_CLI' ) && WP_CLI ) :
 
-	require_once dirname( __FILE__ ) . '/cli.php';
+	error_reporting( 0 );
+
+	require_once __DIR__ . '/cli.php';
 
 	WP_CLI::add_command( 'snapshot', 'Snapshots' );
 
 else :
 
-	require_once dirname( __FILE__ ) . '/plugin.php';
-	require_once dirname( __FILE__ ) . '/upgrade.php';
+	require_once __DIR__ . '/plugin.php';
+	require_once __DIR__ . '/upgrade.php';
 
 	Snapshots_Plugin::get_instance();
 	Snapshots_Upgrade::get_instance();

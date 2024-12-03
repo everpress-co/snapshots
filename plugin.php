@@ -180,6 +180,9 @@ class Snapshots_Plugin {
 	public function restore( $name ) {
 		$name = is_null( $name ) ? '' : basename( $name );
 
+		// disable cron
+		define( 'DISABLE_WP_CRON', true );
+
 		$this->check_environment();
 
 		$command = trim( 'snapshot restore ' . $name );
@@ -221,9 +224,11 @@ class Snapshots_Plugin {
 		if ( snapshots_option( 'allow_root' ) ) {
 			$cmd .= ' --allow-root';
 		}
+		$cmd .= ' --debug=false'; // prevent error outputs
 		$cmd .= ' --path=\'' . ABSPATH . '\' 2>&1';
 
 		$result = $this->exec( $cmd );
+
 		if ( is_wp_error( $result ) ) {
 			$data    = $result->get_error_data();
 			$code    = $result->get_error_code();
@@ -246,6 +251,7 @@ class Snapshots_Plugin {
 
 
 	private function login_user( $user ) {
+
 		if ( ! isset( $user->ID ) ) {
 			return false;
 		}
@@ -253,7 +259,6 @@ class Snapshots_Plugin {
 		wp_clear_auth_cookie();
 		wp_set_current_user( $user->ID );
 		wp_set_auth_cookie( $user->ID, true );
-		do_action( 'wp_login', $user->user_login, $user );
 
 		return $user;
 	}
@@ -336,10 +341,22 @@ class Snapshots_Plugin {
 
 		$result = $this->command( $command, false, false );
 
-		if ( $result !== home_url() ) {
+		$result = wp_parse_url( $result, PHP_URL_HOST );
+
+		$home = wp_parse_url( home_url(), PHP_URL_HOST );
+
+		if ( $result !== $home ) {
+
+			// this is in place if the cron URL triggers this process
+			if ( ! isset( $_GET['snapshot_redirect'] ) ) {
+				$redirect = add_query_arg( 'snapshot_redirect', 1 );
+				error_log( 'redirect ' . print_r( $redirect, true ) );
+				wp_redirect( $redirect );
+				exit;
+			}
 
 			$heading = esc_html__( 'Your Home URLs do not match!', 'snapshosts' );
-			$body    = sprintf( esc_html__( 'The `home_url()` (%1$s) returns a different result than the WP CLI command `wp option get home` (%2$s).', 'snapshosts' ), home_url(), $result );
+			$body    = sprintf( esc_html__( 'The `home_url()` (%1$s) returns a different result than the WP CLI command `wp option get home` (%2$s).', 'snapshosts' ), $home, $result );
 
 			$this->error( $body, $heading, array( 'command' => $command ) );
 
