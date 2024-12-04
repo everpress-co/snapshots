@@ -13,7 +13,7 @@ jobs:
     runs-on: 'ubuntu-latest'
     outputs:
       version: ${{ steps.read_version.outputs.version }}
-      zip_name: ${{ steps.zip_project.outputs.zip_name }}
+      project_name: ${{ steps.zip_project.outputs.project_name }}
 
     steps:
       - name: ⬇️ Checkout code
@@ -29,6 +29,7 @@ jobs:
           echo "Version is $VERSION"
           echo "Project name is $PROJECT_NAME"
           echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "project_name=$PROJECT_NAME" >> $GITHUB_OUTPUT
 
       - name: ✏️ Update Readme
         run: |
@@ -54,11 +55,11 @@ jobs:
             git config user.name github-actions
             git config user.email github-actions@github.com 
             git fetch
-            git status
-            git add ${{ steps.read_version.outputs.project_name }}.php
-            git add README.md       
+            # git status
+            #git add ${{ steps.read_version.outputs.project_name }}.php
+            #git add README.md       
             git commit -m "Updated version to ${{ steps.read_version.outputs.version }}"
-            git status         
+            # git status         
             git push
           else
             echo "Nothing to commit"
