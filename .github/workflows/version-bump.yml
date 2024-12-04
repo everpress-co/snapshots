@@ -34,11 +34,11 @@ jobs:
       - name: ✏️ Update Readme
         run: |
           FILE="README.md"
-          #sed -i -E "s/^Stable tag:([[:space:]]*)[0-9]+\.[0-9]+(\.[0-9]+)?/Stable tag:\1${{ steps.read_version.outputs.version }}/" "$FILE"
+          sed -i -E "s/^Stable tag:([[:space:]]*)[0-9]+\.[0-9]+(\.[0-9]+)?/Stable tag:\1${{ steps.read_version.outputs.version }}/" "$FILE"
           if ! grep -q "## ${{ steps.read_version.outputs.version }}" "$FILE"; then
           sed -i -E "/## Changelog/a\\
           \\
-          ## ${{ steps.read_version.outputs.version }}" "$FILE"
+          ### ${{ steps.read_version.outputs.version }}" "$FILE"
           fi
           git add $FILE
 
