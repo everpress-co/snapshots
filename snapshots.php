@@ -9,7 +9,7 @@ Description:     Quickly Create SnapShots of your development sites and restore 
 Author:          EverPress
 Author URI:      https://xaver.dev
 Text Domain:     snapshots
-Version:         3.0.1
+Version:         2.8.2
  */
 
 if ( version_compare( PHP_VERSION, '7.0' ) < 0 ) {
