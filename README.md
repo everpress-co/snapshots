@@ -107,7 +107,13 @@ SnapShots requires the [WP-CLI](https://wp-cli.org/) to be installed on your sys
 
 ## Changelog
 
-## 3.0.1
+### 3.0.1
+
+ - instructions for namespaces
+
+### 3.0.0
+
+ - update github workflow, no actual changes to the plugin
 
 ### 2.8.1
 

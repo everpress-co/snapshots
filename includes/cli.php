@@ -1,8 +1,7 @@
 <?php
 
-if ( ! class_exists( 'WP_CLI' ) ) {
-	return;
-}
+namespace EverPress\Snapshots;
+
 /**
  * Syncs a local
  *
@@ -10,7 +9,7 @@ if ( ! class_exists( 'WP_CLI' ) ) {
  *
  * @author xaver
  */
-class Snapshots extends WP_CLI_Command {
+class CLI_Command extends \WP_CLI_Command {
 
 	private $name;
 
@@ -45,9 +44,9 @@ class Snapshots extends WP_CLI_Command {
 
 		if ( $this->snapshots_create( $args, $assoc_args ) ) {
 			do_action( 'snapshots_before_backup', $args, $assoc_args );
-			WP_CLI::success( 'Snapshot saved!' );
+			\WP_CLI::success( 'Snapshot saved!' );
 		} else {
-			WP_CLI::error( 'Snapshot not saved!' );
+			\WP_CLI::error( 'Snapshot not saved!' );
 		}
 	}
 
@@ -80,10 +79,10 @@ class Snapshots extends WP_CLI_Command {
 		if ( $this->snapshots_restore( $args, $assoc_args ) ) {
 			do_action( 'snapshots_before_restore', $args, $assoc_args );
 
-			WP_CLI::success( 'Snapshot restored!' );
+			\WP_CLI::success( 'Snapshot restored!' );
 
 		} else {
-			WP_CLI::error( 'Snapshot not restored!' );
+			\WP_CLI::error( 'Snapshot not restored!' );
 		}
 	}
 
@@ -116,10 +115,10 @@ class Snapshots extends WP_CLI_Command {
 		if ( $this->snapshots_delete( $args, $assoc_args ) ) {
 			do_action( 'snapshots_before_delete', $args, $assoc_args );
 
-			WP_CLI::success( 'Snapshot deleted!' );
+			\WP_CLI::success( 'Snapshot deleted!' );
 
 		} else {
-			WP_CLI::error( 'Snapshot not deleted!' );
+			\WP_CLI::error( 'Snapshot not deleted!' );
 		}
 	}
 
@@ -156,14 +155,14 @@ class Snapshots extends WP_CLI_Command {
 		}
 
 		if ( empty( $files ) ) {
-			WP_CLI::log( 'No files found!' );
+			\WP_CLI::log( 'No files found!' );
 			return;
 		}
 
 		$data = array();
 
-		$format = WP_CLI\Utils\get_flag_value( $assoc_args, 'format', 'table' );
-		$limit  = WP_CLI\Utils\get_flag_value( $assoc_args, 'limit', count( $files ) );
+		$format = \WP_CLI\Utils\get_flag_value( $assoc_args, 'format', 'table' );
+		$limit  = \WP_CLI\Utils\get_flag_value( $assoc_args, 'limit', count( $files ) );
 
 		foreach ( $files as $i => $file ) {
 			if ( $i >= $limit ) {
@@ -182,7 +181,7 @@ class Snapshots extends WP_CLI_Command {
 			);
 		}
 
-		WP_CLI\Utils\format_items( $format, $data, array_keys( $data[0] ) );
+		\WP_CLI\Utils\format_items( $format, $data, array_keys( $data[0] ) );
 	}
 
 
@@ -244,26 +243,26 @@ class Snapshots extends WP_CLI_Command {
 		$this->command( 'db export ' . $location );
 
 		if ( ! file_exists( $location ) ) {
-			WP_CLI::error( sprintf( 'No snapshots found for %s', $snapshot_name ) );
+			\WP_CLI::error( sprintf( 'No snapshots found for %s', $snapshot_name ) );
 		}
 
-		if ( $files = WP_CLI\Utils\get_flag_value( $assoc_args, 'files', false ) ) {
+		if ( $files = \WP_CLI\Utils\get_flag_value( $assoc_args, 'files', false ) ) {
 			$upload_dir = wp_upload_dir();
 			$basedir    = $upload_dir['basedir'];
 			$zipfile    = $folder . '/data.zip';
 			$this->zip( $basedir, $zipfile );
 			if ( ! file_exists( $zipfile ) ) {
-				WP_CLI::error( sprintf( 'No able to save zip file %s', $zipfile ) );
+				\WP_CLI::error( sprintf( 'No able to save zip file %s', $zipfile ) );
 			}
 		}
-		if ( $location = WP_CLI\Utils\get_flag_value( $assoc_args, 'location', false ) ) {
+		if ( $location = \WP_CLI\Utils\get_flag_value( $assoc_args, 'location', false ) ) {
 			$manifest['location'] = $location;
 		}
 		$manifestfile = $folder . '/manifest.json';
 
 		file_put_contents( $manifestfile, json_encode( $manifest ) );
 		if ( ! file_exists( $manifestfile ) ) {
-			WP_CLI::error( sprintf( 'No able to save manifest file %s', $manifestfile ) );
+			\WP_CLI::error( sprintf( 'No able to save manifest file %s', $manifestfile ) );
 		}
 
 		$this->destroy_snapshots( $snapshot_name );
@@ -279,13 +278,14 @@ class Snapshots extends WP_CLI_Command {
 		if ( ! $this->check() ) {
 			exit;
 		}
+
 		$snapshot_name = $this->get_name( $args );
 		$backup_dir    = false;
 
 		if ( $restore_file = $this->get_most_recent_file( $snapshot_name, 'dump.sql' ) ) {
 			$location = $restore_file;
 		} else {
-			WP_CLI::error( sprintf( 'No snapshots found for %s', $snapshot_name ) );
+			\WP_CLI::error( sprintf( 'No snapshots found for %s', $snapshot_name ) );
 		}
 
 		$manifest = $this->get_most_recent_file( $snapshot_name, 'manifest.json' );
@@ -299,14 +299,14 @@ class Snapshots extends WP_CLI_Command {
 
 			if ( $unzip = $this->unzip( $zip, $backup_dir ) ) {
 			} else {
-				WP_CLI::error( sprintf( 'Not able to extract uploads directory for %s', $snapshot_name ) );
+				\WP_CLI::error( sprintf( 'Not able to extract uploads directory for %s', $snapshot_name ) );
 			}
 
 			$this->delete_folder( $upload_dir['basedir'] );
 
 			// rename old directory (back it up)
 			if ( ! rename( $backup_dir, $upload_dir['basedir'] ) ) {
-				WP_CLI::error( sprintf( 'Could not backup upload folder for %s', $snapshot_name ) );
+				\WP_CLI::error( sprintf( 'Could not backup upload folder for %s', $snapshot_name ) );
 			}
 		}
 
@@ -346,7 +346,7 @@ class Snapshots extends WP_CLI_Command {
 		if ( file_exists( $manifest ) ) {
 			$manifest = json_decode( file_get_contents( $manifest ) );
 			if ( isset( $manifest->location ) ) {
-				WP_CLI::line( 'Redirect to: ' . $manifest->location );
+				\WP_CLI::line( 'Redirect to: ' . $manifest->location );
 			}
 			if ( isset( $manifest->name ) ) {
 				// don't use 'set_transient' here to prevent race conditions
@@ -368,7 +368,7 @@ class Snapshots extends WP_CLI_Command {
 			'exit_error' => $exit_error,
 		);
 
-		$result = WP_CLI::runcommand( $command, $options );
+		$result = \WP_CLI::runcommand( $command, $options );
 
 		$result = trim( $result );
 
@@ -391,11 +391,11 @@ class Snapshots extends WP_CLI_Command {
 		if ( $restore_file = $this->get_most_recent_file( $snapshot_name, 'dump.sql' ) ) {
 			$location = dirname( $restore_file );
 		} else {
-			WP_CLI::error( sprintf( 'No snapshots found for %s', $snapshot_name ) );
+			\WP_CLI::error( sprintf( 'No snapshots found for %s', $snapshot_name ) );
 		}
 
 		if ( ! $this->delete_folder( $location ) ) {
-			WP_CLI::error( sprintf( 'No able to save manifest file %s', $manifestfile ) );
+			\WP_CLI::error( sprintf( 'No able delete folder %s', $location ) );
 		}
 
 		return true;
@@ -416,8 +416,8 @@ class Snapshots extends WP_CLI_Command {
 
 		$zipfile = ! is_null( $destination ) ? $destination : trailingslashit( $rootPath ) . basename( $folder ) . '.zip';
 
-		$zip = new ZipArchive();
-		$zip->open( $zipfile, ZipArchive::CREATE | ZipArchive::OVERWRITE );
+		$zip = new \ZipArchive();
+		$zip->open( $zipfile, \ZipArchive::CREATE | \ZipArchive::OVERWRITE );
 
 		$files = list_files( $rootPath, 999 );
 		$count = 0;
@@ -444,7 +444,7 @@ class Snapshots extends WP_CLI_Command {
 		$zipfile = ! is_null( $destination ) ? $destination : trailingslashit( $rootPath ) . basename( $folder ) . '.zip';
 
 		require_once ABSPATH . 'wp-admin/includes/class-pclzip.php';
-		$zip = new PclZip( $zipfile );
+		$zip = new \PclZip( $zipfile );
 
 		$files = list_files( $rootPath, 999 );
 		$count = 0;
@@ -483,7 +483,7 @@ class Snapshots extends WP_CLI_Command {
 		}
 
 		if ( ! function_exists( 'list_files' ) ) {
-			require_once ABSPATH . 'wp-admin/includes/file.php';
+			require_once \ABSPATH . 'wp-admin/includes/file.php';
 		}
 
 		$files = list_files( snapshots_option( 'folder' ), 1 );

@@ -1,4 +1,7 @@
 <?php
+
+namespace EverPress\Snapshots;
+
 /**
 Plugin Name:     Snapshots
 Plugin URI:
@@ -48,14 +51,14 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) :
 
 	require_once __DIR__ . '/includes/cli.php';
 
-	WP_CLI::add_command( 'snapshot', 'Snapshots' );
+	\WP_CLI::add_command( 'snapshot', 'EverPress\Snapshots\CLI_Command' );
 
 else :
 
 	require_once __DIR__ . '/includes/plugin.php';
 	require_once __DIR__ . '/includes/upgrade.php';
 
-	Snapshots_Plugin::get_instance();
-	Snapshots_Upgrade::get_instance();
+	Plugin::get_instance();
+	Upgrade::get_instance();
 
 endif;

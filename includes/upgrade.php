@@ -1,7 +1,8 @@
 <?php
 
+namespace EverPress\Snapshots;
 
-class Snapshots_Upgrade {
+class Upgrade {
 
 	private static $instance = null;
 
@@ -15,7 +16,7 @@ class Snapshots_Upgrade {
 
 	public static function get_instance() {
 		if ( self::$instance === null ) {
-			self::$instance = new Snapshots_Upgrade();
+			self::$instance = new Upgrade();
 		}
 
 		return self::$instance;
@@ -69,7 +70,6 @@ class Snapshots_Upgrade {
 				call_user_func( array( $this, $update_method ) );
 			}
 		}
-
 	}
 
 
@@ -79,5 +79,4 @@ class Snapshots_Upgrade {
 	private function update_0_1() {
 		error_log( print_r( __FUNCTION__, true ) );
 	}
-
 }
