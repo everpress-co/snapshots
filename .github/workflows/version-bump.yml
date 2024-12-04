@@ -34,7 +34,7 @@ jobs:
       - name: ✏️ Update Readme
         run: |
           FILE="README.md"
-          #sed -i -E "s/^Stable tag: [0-9]+\.[0-9]+(\.[0-9]+)?/Stable tag: ${{ steps.read_version.outputs.version }}/" "$FILE"
+          #sed -i -E "s/^Stable tag:([[:space:]]*)[0-9]+\.[0-9]+(\.[0-9]+)?/Stable tag:\1${{ steps.read_version.outputs.version }}/" "$FILE"
           if ! grep -q "### ${{ steps.read_version.outputs.version }}" "$FILE"; then
           sed -i -E "/### Changelog/a\\
           \\
@@ -45,7 +45,7 @@ jobs:
       - name: ✏️ Update plugin file
         run: |
           FILE="${{ steps.read_version.outputs.project_name }}.php"
-          sed -i -E "s/^Version: [0-9]+\.[0-9]+(\.[0-9]+)?/Version: ${{ steps.read_version.outputs.version }}/" "$FILE"
+          sed -i -E "s/^Version:([[:space:]]*)[0-9]+\.[0-9]+(\.[0-9]+)?/Version:\1${{ steps.read_version.outputs.version }}/" "$FILE"
           git add $FILE
 
       - name: 🫸 Push to repo
@@ -54,7 +54,7 @@ jobs:
             echo "Pushing to repo"
             git config user.name github-actions
             git config user.email github-actions@github.com 
-            git fetch
+            #git fetch
             # git status
             #git add ${{ steps.read_version.outputs.project_name }}.php
             #git add README.md       
