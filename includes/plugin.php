@@ -1,6 +1,8 @@
 <?php
 
-class Snapshots_Plugin {
+namespace EverPress\Snapshots;
+
+class Plugin {
 
 	private static $instance = null;
 
@@ -16,7 +18,7 @@ class Snapshots_Plugin {
 
 	public static function get_instance() {
 		if ( self::$instance === null ) {
-			self::$instance = new Snapshots_Plugin();
+			self::$instance = new Plugin();
 		}
 
 		return self::$instance;
@@ -213,7 +215,7 @@ class Snapshots_Plugin {
 		exec( $rawcmd, $output, $error );
 
 		if ( $error ) {
-			return new WP_Error( $error, implode( "\n", $output ), array( 'command' => $rawcmd ) );
+			return new \WP_Error( $error, implode( "\n", $output ), array( 'command' => $rawcmd ) );
 		}
 
 		return $output;
