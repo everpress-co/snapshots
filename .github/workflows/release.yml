@@ -91,4 +91,4 @@ jobs:
           SVN_PASSWORD: ${{ secrets.SVN_PASSWORD }}
           SVN_USERNAME: ${{ secrets.SVN_USERNAME }}
           ASSETS_DIR: dist/assets
-          BUILD_DIR: dist/snapshots
+          BUILD_DIR: dist/${{ steps.read_version.outputs.project_name }}
