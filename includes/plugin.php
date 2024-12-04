@@ -14,6 +14,8 @@ class Plugin {
 		add_action( 'init', array( $this, 'actions' ) );
 		add_action( 'init', array( $this, 'enqueue_scripts' ) );
 		add_action( 'admin_bar_menu', array( $this, 'toolbar_snapshots' ), 20 );
+
+		add_action( 'admin_menu', array( $this, 'admin_menu' ) );
 	}
 
 	public static function get_instance() {
@@ -22,6 +24,34 @@ class Plugin {
 		}
 
 		return self::$instance;
+	}
+
+	public function admin_menu() {
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+		add_menu_page(
+			'Snapshots',
+			'Snapshots',
+			'manage_options',
+			'snapshots',
+			array( $this, 'render_table' ),
+			'dashicons-backup',
+			99
+		);
+	}
+
+	public function render_table() {
+		echo '<div class="wrap"><h1>' . esc_html__( 'Snapshots', 'snapshots' ) . '</h1>';
+
+		require_once __DIR__ . '/table.php';
+
+		$table = new Table();
+		$table->prepare_items();
+		$table->display();
+
+		echo '</div>';
 	}
 
 	public function actions() {
@@ -86,7 +116,7 @@ class Plugin {
 			return;
 		}
 
-		$snapshots = $this->get_snaps();
+		$snapshots = $this->get_snapshots();
 		$count     = count( $snapshots );
 		$last      = get_transient( 'snapshot_current' );
 
@@ -110,31 +140,49 @@ class Plugin {
 				)
 			);
 
-			foreach ( $snapshots as $i => $snapshot ) {
-				$file = trailingslashit( $snapshot ) . 'manifest.json';
-				if ( ! file_exists( $file ) ) {
-					$data = array(
-						'name'    => esc_html__( 'SNAPSHOT IS BROKEN!', 'snapshots' ),
-						'created' => (int) explode( '_', basename( $snapshot ) )[1],
-					);
-				} else {
-					$data = json_decode( file_get_contents( $file ), true );
-				}
+			foreach ( $snapshots as $id => $data ) {
+
 				$wp_admin_bar->add_node(
 					array(
-						'id'     => 'snapshot-' . $i,
-						'title'  => '<span class="restore-snapshot" title="' . sprintf( esc_attr__( 'created %s ago', 'snapshots' ), human_time_diff( $data['created'] ) ) . ' - ' . wp_date( 'Y-m-d H:i', $data['created'] ) . '" data-date="' . wp_date( 'Y-m-d H:i', $data['created'] ) . '">' . esc_html( $data['name'] ) . '</span>',
-						'href'   => add_query_arg( array( 'snapshot_restore' => basename( $snapshot ) ) ),
+						'id'     => 'snapshot-' . $id,
+						'title'  => '<span class="restore-snapshot" title="' . sprintf( esc_attr__( 'created %s ago', 'snapshots' ), human_time_diff( $data->created ) ) . ' - ' . wp_date( 'Y-m-d H:i', $data->created ) . '" data-date="' . wp_date( 'Y-m-d H:i', $data->created ) . '">' . esc_html( $data->name ) . '</span>',
+						'href'   => esc_url( $data->restore ),
 						'parent' => 'snapshots',
 						'meta'   => array(
-							'rel'  => $data['name'] . ' ' . strtolower( $data['name'] ),
-							'html' => '<div><a class="delete-snapshot" title="' . esc_attr( sprintf( 'delete %s', $data['name'] ) ) . '" data-name="' . esc_attr( $data['name'] ) . '" data-date="' . wp_date( 'Y-m-d H:i', $data['created'] ) . '" href="' . add_query_arg( array( 'snapshot_delete' => basename( $snapshot ) ) ) . '">&times;</a></div>',
+							'rel'  => $data->name . ' ' . strtolower( $data->name ),
+							'html' => '<div><a class="delete-snapshot" title="' . esc_attr( sprintf( 'delete %s', $data->name ) ) . '" data-name="' . esc_attr( $data->name ) . '" data-date="' . wp_date( 'Y-m-d H:i', $data->created ) . '" href="' . esc_url( $data->delete ) . '">&times;</a></div>',
 
 						),
 					)
 				);
 			}
 		}
+	}
+
+
+	public function get_snapshots() {
+		$snapshots = $this->get_snaps();
+
+		$return = array();
+
+		foreach ( $snapshots as $i => $snapshot ) {
+			$file = trailingslashit( $snapshot ) . 'manifest.json';
+			$id   = basename( $snapshot );
+			if ( ! file_exists( $file ) ) {
+				$return[ $id ] = (object) array(
+					'name'    => esc_html__( 'SNAPSHOT IS BROKEN!', 'snapshots' ),
+					'created' => (int) explode( '_', $id )[1],
+				);
+			} else {
+				$data                   = json_decode( file_get_contents( $file ) );
+				$return[ $id ]          = $data;
+				$return[ $id ]->restore = add_query_arg( array( 'snapshot_restore' => $id ) );
+				$return[ $id ]->delete  = add_query_arg( array( 'snapshot_delete' => $id ) );
+
+			}
+		}
+
+		return $return;
 	}
 
 
