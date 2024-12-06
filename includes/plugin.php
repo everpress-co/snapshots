@@ -54,6 +54,8 @@ class Plugin {
 		echo '</div>';
 	}
 
+
+
 	public function actions() {
 
 		if ( ! current_user_can( 'manage_options' ) ) {
@@ -119,38 +121,51 @@ class Plugin {
 		$snapshots = $this->get_snapshots();
 		$count     = count( $snapshots );
 		$last      = get_transient( 'snapshot_current' );
+		if ( isset( $snapshots[ $last ] ) ) {
+			$last = $snapshots[ $last ]->name;
+		} else {
+			$last = 'unknown';
+		}
 
 		$title = $count ? $count : esc_html__( 'Click here to create your first Snapshot!', 'snapshots' );
 
 		$wp_admin_bar->add_node(
 			array(
 				'id'    => 'snapshots',
-				'title' => '<span class="ab-icon dashicons dashicons-backup" style="margin-top:2px"></span>' . $title . '<span class="snapshot-extra-title" title="">' . $last . '</span>',
+				'title' => '<span class="ab-icon dashicons dashicons-backup" style="margin-top:2px"></span>' . esc_html( $title ) . '<span class="snapshot-extra-title" title="">' . $last . '</span>',
 				'href'  => add_query_arg( 'snaphot_create', '1' ),
 
 			)
 		);
 
 		if ( $count ) {
+
 			$wp_admin_bar->add_node(
 				array(
 					'id'     => 'snapshot-search',
 					'title'  => '<span class="search-snapshot"><label for="snapshost_search">' . esc_attr__( 'Search SnapShots...', 'snapshots' ) . '</label><input id="snapshost_search" type="search" placeholder="' . esc_attr__( 'Search SnapShots...', 'snapshots' ) . '"></span>',
 					'parent' => 'snapshots',
+					'meta'   => array(
+						'html' => '<div><a title="' . esc_attr__( 'Settings', 'snapshots' ) . '" href="' . esc_url( admin_url( 'admin.php?page=snapshots' ) ) . '"><span class="dashicons dashicons-admin-settings"></span></a></div>',
+
+					),
 				)
 			);
+
+			$current_string = __( 'current', 'snapshots' );
 
 			foreach ( $snapshots as $id => $data ) {
 
 				$wp_admin_bar->add_node(
 					array(
 						'id'     => 'snapshot-' . $id,
-						'title'  => '<span class="restore-snapshot" title="' . sprintf( esc_attr__( 'created %s ago', 'snapshots' ), human_time_diff( $data->created ) ) . ' - ' . wp_date( 'Y-m-d H:i', $data->created ) . '" data-date="' . wp_date( 'Y-m-d H:i', $data->created ) . '">' . esc_html( $data->name ) . '</span>',
+						'title'  => '<span class="restore-snapshot" data-status="' . esc_attr( $current_string ) . '" title="' . sprintf( esc_attr__( 'created %s ago', 'snapshots' ), human_time_diff( $data->created ) ) . ' - ' . wp_date( 'Y-m-d H:i', $data->created ) . '" data-date="' . wp_date( 'Y-m-d H:i', $data->created ) . '">' . esc_html( $data->name ) . '</span>',
 						'href'   => esc_url( $data->restore ),
 						'parent' => 'snapshots',
 						'meta'   => array(
-							'rel'  => $data->name . ' ' . strtolower( $data->name ),
-							'html' => '<div><a class="delete-snapshot" title="' . esc_attr( sprintf( 'delete %s', $data->name ) ) . '" data-name="' . esc_attr( $data->name ) . '" data-date="' . wp_date( 'Y-m-d H:i', $data->created ) . '" href="' . esc_url( $data->delete ) . '">&times;</a></div>',
+							'rel'   => $data->name . ' ' . strtolower( $data->name ),
+							'class' => $data->current ? 'current' : '',
+							'html'  => '<div><a class="delete-snapshot" title="' . esc_attr( sprintf( 'delete %s', $data->name ) ) . '" data-name="' . esc_attr( $data->name ) . '" data-date="' . wp_date( 'Y-m-d H:i', $data->created ) . '" href="' . esc_url( $data->delete ) . '">&times;</a></div>',
 
 						),
 					)
@@ -163,11 +178,17 @@ class Plugin {
 	public function get_snapshots() {
 		$snapshots = $this->get_snaps();
 
+		$last = get_transient( 'snapshot_current' );
+
 		$return = array();
 
 		foreach ( $snapshots as $i => $snapshot ) {
 			$file = trailingslashit( $snapshot ) . 'manifest.json';
 			$id   = basename( $snapshot );
+			if ( $last == $id ) {
+				// add last one to the begingin of the array
+				$return = array( $id => array() ) + $return;
+			}
 			if ( ! file_exists( $file ) ) {
 				$return[ $id ] = (object) array(
 					'name'    => esc_html__( 'SNAPSHOT IS BROKEN!', 'snapshots' ),
@@ -176,6 +197,7 @@ class Plugin {
 			} else {
 				$data                   = json_decode( file_get_contents( $file ) );
 				$return[ $id ]          = $data;
+				$return[ $id ]->current = $last == $id;
 				$return[ $id ]->restore = add_query_arg( array( 'snapshot_restore' => $id ) );
 				$return[ $id ]->delete  = add_query_arg( array( 'snapshot_delete' => $id ) );
 
@@ -223,6 +245,12 @@ class Plugin {
 			}
 			$command .= ' --location="' . $location . '"';
 		}
+
+		$exclude_tables = snapshots_option( 'exclude_tables' );
+		if ( ! empty( $exclude_tables ) ) {
+			$command .= ' --exclude_tables="' . implode( ',', (array) $exclude_tables ) . '"';
+		}
+
 		$this->command( $command );
 	}
 
@@ -271,11 +299,14 @@ class Plugin {
 
 	private function command( $cmd, $echo = false, $output = ARRAY_A ) {
 		$cmd = trailingslashit( snapshots_option( 'cli_path' ) ) . 'wp ' . $cmd;
-		if ( snapshots_option( 'allow_root' ) ) {
+		if ( snapshots_option( 'cli_allow_root' ) ) {
 			$cmd .= ' --allow-root';
 		}
-		$cmd .= ' --debug=false'; // prevent error outputs
-		$cmd .= ' --path=\'' . ABSPATH . '\' 2>&1';
+
+		// $cmd .= ' --debug=false'; // prevent error outputs
+		// $cmd .= ' --exec="echo phpversion();"'; // prevent color outputs
+		$cmd .= ' --path=\'' . ABSPATH . '\'';
+		$cmd .= ' 2> /dev/null';
 
 		$result = $this->exec( $cmd );
 
@@ -327,18 +358,13 @@ class Plugin {
 			return;
 		}
 
-		if ( ! $php_path ) {
-			return;
-		}
-
-		$added = true;
-
 		if ( function_exists( 'putenv' ) ) {
 			putenv( 'PATH=$PATH:' . $php_path );
 		} else {
 			$cmd = 'export PATH=$PATH:' . $php_path;
 			$this->exec( $cmd );
 		}
+		$added = true;
 
 		return true;
 	}

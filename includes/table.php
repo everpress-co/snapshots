@@ -38,15 +38,25 @@ class Table extends \WP_List_Table {
 
 	public function column_created( $item ) {
 
-		$timestamp = strtotime( $item['created'] );
+		$timestamp = ( $item['created'] );
 
-		if ( $timestamp > time() - DAY_IN_SECONDS * 2 ) {
+		if ( $timestamp > time() - DAY_IN_SECONDS ) {
 			$human_time = sprintf( __( '%s ago', 'snapshots' ), human_time_diff( $timestamp ) );
 		} else {
-			$human_time = wp_date( 'Y-m-d H:i:s', $timestamp );
+			$human_time = wp_date( 'Y-m-d H:i', $timestamp );
 		}
 
 		return $human_time;
+	}
+
+	public function column_name( $item ) {
+
+		$actions = array(
+			'restore' => sprintf( '<a href="%s">%s</a>', esc_url( $item['restore'] ), __( 'Restore', 'snapshots' ) ),
+			'delete'  => sprintf( '<a href="%s">%s</a>', esc_url( $item['delete'] ), __( 'Delete', 'snapshots' ) ),
+		);
+
+		return sprintf( '<strong>%s</strong>', $item['name'] ) . $this->row_actions( $actions );
 	}
 
 	public function column_default( $item, $column_name ) {
@@ -67,8 +77,10 @@ class Table extends \WP_List_Table {
 			$data[] = array(
 				'id'       => $id,
 				'name'     => $snap->name,
-				'created'  => wp_date( 'Y-m-d H:i:s', $snap->created ),
+				'created'  => $snap->created,
 				'location' => $snap->location,
+				'restore'  => $snap->restore,
+				'delete'   => $snap->delete,
 			);
 		}
 
@@ -77,6 +89,9 @@ class Table extends \WP_List_Table {
 
 
 	public function prepare_items() {
+
+		$current = get_transient( 'snapshot_current' );
+
 		$columns     = $this->get_columns();
 		$hidden      = array();
 		$sortable    = $this->get_sortable_columns();

@@ -36,14 +36,14 @@ class CLI_Command extends \WP_CLI_Command {
 	 * ## USAGE
 	 *
 	 * @subcommand backup
-	 * @synopsis [<name>] [--files] [--location=<location>]
+	 * @synopsis [<name>] [--files] [--location=<location>] [--exclude_tables=<tables>]
 	 */
 	public function backup( $args, $assoc_args ) {
 
 		do_action( 'snapshots_before_backup', $args, $assoc_args );
 
 		if ( $this->snapshots_create( $args, $assoc_args ) ) {
-			do_action( 'snapshots_before_backup', $args, $assoc_args );
+			do_action( 'snapshots_after_backup', $args, $assoc_args );
 			\WP_CLI::success( 'Snapshot saved!' );
 		} else {
 			\WP_CLI::error( 'Snapshot not saved!' );
@@ -77,7 +77,7 @@ class CLI_Command extends \WP_CLI_Command {
 		do_action( 'snapshots_before_restore', $args, $assoc_args );
 
 		if ( $this->snapshots_restore( $args, $assoc_args ) ) {
-			do_action( 'snapshots_before_restore', $args, $assoc_args );
+			do_action( 'snapshots_after_restore', $args, $assoc_args );
 
 			\WP_CLI::success( 'Snapshot restored!' );
 
@@ -229,6 +229,13 @@ class CLI_Command extends \WP_CLI_Command {
 		$snapshot_name = sanitize_title( $name ) . '_' . $timestamp;
 		$folder        = trailingslashit( snapshots_option( 'folder' ) ) . $snapshot_name;
 
+		$command_args   = array();
+		$exclude_tables = '';
+		if ( $tables = \WP_CLI\Utils\get_flag_value( $assoc_args, 'exclude_tables', false ) ) {
+			$tables         = explode( ',', $tables );
+			$command_args[] = '--exclude_tables="' . implode( ',', $tables ) . '"';
+		}
+
 		if ( ! is_dir( $folder ) ) {
 			wp_mkdir_p( $folder );
 		}
@@ -240,7 +247,7 @@ class CLI_Command extends \WP_CLI_Command {
 			'created' => $timestamp,
 		);
 
-		$this->command( 'db export ' . $location );
+		$this->command( 'db export ' . $location, $command_args );
 
 		if ( ! file_exists( $location ) ) {
 			\WP_CLI::error( sprintf( 'No snapshots found for %s', $snapshot_name ) );
@@ -267,7 +274,7 @@ class CLI_Command extends \WP_CLI_Command {
 
 		$this->destroy_snapshots( $snapshot_name );
 
-		set_transient( 'snapshot_current', $name );
+		set_transient( 'snapshot_current', $snapshot_name );
 
 		return true;
 	}
@@ -351,7 +358,7 @@ class CLI_Command extends \WP_CLI_Command {
 			if ( isset( $manifest->name ) ) {
 				// don't use 'set_transient' here to prevent race conditions
 				global $wpdb;
-				$query = $wpdb->prepare( "INSERT INTO {$wpdb->options} SET option_name = '_transient_snapshot_current', option_value = '%s', autoload = 'yes' ON DUPLICATE KEY UPDATE option_value = '%s'", $manifest->name, $manifest->name );
+				$query = $wpdb->prepare( "INSERT INTO {$wpdb->options} SET option_name = '_transient_snapshot_current', option_value = '%s', autoload = 'yes' ON DUPLICATE KEY UPDATE option_value = '%s'", $snapshot_name, $snapshot_name );
 				$this->command( sprintf( 'db query "%s"', $query ) );
 			}
 		}
@@ -360,13 +367,18 @@ class CLI_Command extends \WP_CLI_Command {
 	}
 
 
-	private function command( $command, $return = true, $exit_error = false ) {
+	private function command( $command, $command_args = array(), $return = true, $exit_error = false ) {
 		$options = array(
-			'return'     => true,
+			'return'       => true,
 			// 'parse'      => 'json',
-			'launch'     => false,
-			'exit_error' => $exit_error,
+			'launch'       => false,
+			'exit_error'   => $exit_error,
+			'command_args' => (array) $command_args,
 		);
+
+		if ( ! empty( $command_args ) ) {
+			$command .= ' ' . implode( ' ', $command_args );
+		}
 
 		$result = \WP_CLI::runcommand( $command, $options );
 

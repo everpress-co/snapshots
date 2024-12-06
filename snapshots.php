@@ -44,10 +44,11 @@ if ( ! defined( 'SNAPSHOTS_SAVE_LOCATION' ) ) {
 }
 
 require_once __DIR__ . '/includes/common.php';
+require_once __DIR__ . '/includes/settings.php';
+
+Settings::get_instance();
 
 if ( defined( 'WP_CLI' ) && WP_CLI ) :
-
-	error_reporting( 0 );
 
 	require_once __DIR__ . '/includes/cli.php';
 

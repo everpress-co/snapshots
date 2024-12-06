@@ -5,6 +5,35 @@
 #wp-admin-bar-snapshots .ab-sub-wrapper li {
 	border-top: 1px solid #666;
 }
+#wp-admin-bar-snapshots .ab-sub-wrapper li:hover {
+	_background-color: #333;
+}
+#wp-admin-bar-snapshots .ab-sub-wrapper li.current a .restore-snapshot {
+	color: #f0f6fc;
+}
+#wp-admin-bar-snapshots .ab-sub-wrapper li.current a .restore-snapshot::after {
+	content: attr(data-status);
+	display: inline-block;
+	font-size: 9px;
+	background-color: #f0f6fc;
+	padding: 0.3em 0.5em;
+	border-radius: 0.5em;
+	color: #000;
+	margin: 0 1em;
+	line-height: 1em;
+	vertical-align: text-bottom;
+	text-transform: uppercase;
+}
+#wp-admin-bar-snapshots .ab-sub-wrapper {
+	_display: block !important; /* dev only */
+}
+
+#wp-admin-bar-snapshots .ab-sub-wrapper li span.dashicons {
+	font-family: dashicons;
+	line-height: 1em;
+	font-size: 1.2em;
+	vertical-align: baseline;
+}
 #wp-admin-bar-snapshots .ab-sub-wrapper li:last-child {
 	_border-top: 1px solid red;
 }
@@ -34,10 +63,12 @@
 	display: none;
 }
 #wp-admin-bar-snapshots .search-snapshot input {
-	all:revert;
+	appearance: none;
+	-webkit-appearance: none;
+	all: revert;
 	border: 0;
-	font-size: 16px;
-	width: 100%;
+	font-size: 1em;
+	width: 80%;
 	background: none;
 	color: #f0f6fc;
 }

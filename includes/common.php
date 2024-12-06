@@ -5,10 +5,21 @@ function snapshots_option( $option ) {
 	$constant = 'SNAPSHOTS_' . strtoupper( $option );
 	$return   = null;
 
+	// constant is always first
 	if ( defined( $constant ) ) {
 		$return = constant( $constant );
+		// fallback to option
+	} else {
+
+		$settings = require __DIR__ . '/set.php';
+		$return   = get_option( 'snapshots_' . $option, $settings[ $option ]['default'] );
 	}
 
+	/**
+	 * Filter the value of a Snapshots option.
+	 *
+	 * @param mixed $return The value of the Snapshots option.
+	 */
 	return apply_filters( 'snapshots_' . $option, $return );
 }
 
