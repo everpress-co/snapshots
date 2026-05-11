@@ -351,7 +351,6 @@ class Plugin {
 			}
 
 			set_transient( 'snapshot_list_' . $last, $snapshots, HOUR_IN_SECONDS );
-			set_transient( 'snapshot_list_' . $last, $snapshots, 2 );
 		}
 
 		return (array) $snapshots;
@@ -373,16 +372,44 @@ class Plugin {
 		usort(
 			$files,
 			function ( $a, $b ) {
-				// get last from explode
-				$a = explode( '_', basename( $a ) );
-				$a = (int) end( $a );
-				$b = explode( '_', basename( $b ) );
-				$b = (int) end( $b );
-
-				return $b <=> $a;
+				$ma = $this->get_snapshot_sort_meta( $a );
+				$mb = $this->get_snapshot_sort_meta( $b );
+				if ( $ma['primary'] !== $mb['primary'] ) {
+					return $mb['primary'] <=> $ma['primary'];
+				}
+				return $mb['created'] <=> $ma['created'];
 			}
 		);
 		return $files;
+	}
+
+	/**
+	 * Sort keys: newest activity first — last_used from manifest when set, else created (folder id).
+	 *
+	 * @param string $snapshot_dir Absolute path to snapshot directory (with trailing slash).
+	 * @return array{primary: int, created: int}
+	 */
+	private function get_snapshot_sort_meta( $snapshot_dir ) {
+
+		$id         = basename( trailingslashit( $snapshot_dir ) );
+		$parts      = explode( '_', $id );
+		$created_ts = (int) end( $parts );
+
+		$manifest_file = trailingslashit( $snapshot_dir ) . 'manifest.json';
+		$last_used     = 0;
+		if ( is_file( $manifest_file ) ) {
+			$decoded = json_decode( (string) file_get_contents( $manifest_file ), true );
+			if ( is_array( $decoded ) && isset( $decoded['last_used'] ) ) {
+				$last_used = (int) $decoded['last_used'];
+			}
+		}
+
+		$primary = $last_used > 0 ? $last_used : $created_ts;
+
+		return array(
+			'primary' => $primary,
+			'created' => $created_ts,
+		);
 	}
 
 
@@ -411,8 +438,6 @@ class Plugin {
 		if ( ! empty( $exclude_tables ) ) {
 			$command .= ' --exclude_tables="' . implode( ',', (array) $exclude_tables ) . '"';
 		}
-
-		error_log( print_r( $command, true ) );
 
 		$this->command( $command );
 		$this->clear_cache();
