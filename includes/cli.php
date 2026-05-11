@@ -249,8 +249,9 @@ class CLI_Command extends WP_CLI_Command {
 		$location = $folder . '/dump.sql';
 
 		$manifest = array(
-			'name'    => $name,
-			'created' => $timestamp,
+			'name'       => $name,
+			'created'    => $timestamp,
+			'last_used'  => $timestamp,
 		);
 
 		$this->command( 'db export ' . $location, $command_args );
@@ -275,7 +276,7 @@ class CLI_Command extends WP_CLI_Command {
 		}
 		$manifestfile = $folder . '/manifest.json';
 
-		file_put_contents( $manifestfile, json_encode( $manifest ) );
+		file_put_contents( $manifestfile, wp_json_encode( $manifest ) );
 		if ( ! file_exists( $manifestfile ) ) {
 			WP_CLI::error( sprintf( 'No able to save manifest file %s', $manifestfile ) );
 		}
@@ -312,7 +313,7 @@ class CLI_Command extends WP_CLI_Command {
 			WP_CLI::error( sprintf( 'No snapshots found for %s', $snapshot_name ) );
 		}
 
-		$manifest = $this->get_most_recent_file( $snapshot_name, 'manifest.json' );
+		$manifest_path = $this->get_most_recent_file( $snapshot_name, 'manifest.json' );
 
 		$zip = $this->get_most_recent_file( $snapshot_name, 'data.zip' );
 
@@ -374,11 +375,18 @@ class CLI_Command extends WP_CLI_Command {
 		}
 		wp_upgrade();
 
-		if ( file_exists( $manifest ) ) {
-			$manifest = json_decode( file_get_contents( $manifest ) );
-			if ( isset( $manifest->location ) ) {
-				WP_CLI::line( 'Redirect to: ' . $manifest->location );
+		if ( $manifest_path && file_exists( $manifest_path ) ) {
+			$raw           = file_get_contents( $manifest_path );
+			$manifest_data = json_decode( $raw, true );
+			if ( ! is_array( $manifest_data ) ) {
+				$obj = json_decode( $raw );
+				$manifest_data = ( $obj && is_object( $obj ) ) ? get_object_vars( $obj ) : array();
 			}
+			if ( ! empty( $manifest_data['location'] ) ) {
+				WP_CLI::line( 'Redirect to: ' . $manifest_data['location'] );
+			}
+			$manifest_data['last_used'] = time();
+			file_put_contents( $manifest_path, wp_json_encode( $manifest_data ) );
 		}
 
 		// Set the current snapshot.

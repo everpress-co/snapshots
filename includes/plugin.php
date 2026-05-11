@@ -331,13 +331,15 @@ class Plugin {
 				// add last one to the begingin of the array
 				// $return = array( $id => array() ) + $return;
 				// }
+				$created_ts       = (int) explode( '_', $id )[1];
 				$snapshots[ $id ] = (object) array(
-					'name'    => $id,
-					'created' => (int) explode( '_', $id )[1],
-					'current' => $last == $id,
-					'broken'  => false,
-					'restore' => add_query_arg( array( 'snapshot_restore' => $id ) ),
-					'delete'  => add_query_arg( array( 'snapshot_delete' => $id ) ),
+					'name'      => $id,
+					'created'   => $created_ts,
+					'last_used' => 0,
+					'current'   => $last == $id,
+					'broken'    => false,
+					'restore'   => add_query_arg( array( 'snapshot_restore' => $id ) ),
+					'delete'    => add_query_arg( array( 'snapshot_delete' => $id ) ),
 
 				);
 				if ( ! file_exists( $file ) ) {
@@ -345,12 +347,11 @@ class Plugin {
 				} else {
 					$data             = json_decode( file_get_contents( $file ) );
 					$snapshots[ $id ] = (object) wp_parse_args( $data, (array) $snapshots[ $id ] );
-
 				}
 			}
 
-			set_transient( 'snapshot_list_' . $last, $snapshots, MINUTE_IN_SECONDS );
-			set_transient( 'snapshot_list_' . $last, $snapshots, 3 );
+			set_transient( 'snapshot_list_' . $last, $snapshots, HOUR_IN_SECONDS );
+			set_transient( 'snapshot_list_' . $last, $snapshots, 2 );
 		}
 
 		return (array) $snapshots;
@@ -435,11 +436,12 @@ class Plugin {
 
 		do_action( 'snapshot_restored', $name, $result );
 
+		$this->clear_cache();
+
 		if ( $redirect = array_values( preg_grep( '/^Redirect to: (.*?)/', $result ) ) ) {
 			$redirect = trim( str_replace( 'Redirect to:', '', $redirect[0] ) );
 			return home_url( $redirect );
 		}
-		$this->clear_cache();
 
 		return remove_query_arg( 'snapshot_restore' );
 	}

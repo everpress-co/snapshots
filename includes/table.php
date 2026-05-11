@@ -116,10 +116,11 @@ class Table extends \WP_List_Table {
 
 	public function get_columns() {
 		$columns = array(
-			'cb'       => '<input type="checkbox" />',
-			'name'     => __( 'Name', 'snapshots' ),
-			'created'  => __( 'Created', 'snapshots' ),
-			'location' => __( 'Location', 'snapshots' ),
+			'cb'        => '<input type="checkbox" />',
+			'name'      => __( 'Name', 'snapshots' ),
+			'created'   => __( 'Created', 'snapshots' ),
+			'last_used' => __( 'Last used', 'snapshots' ),
+			'location'  => __( 'Location', 'snapshots' ),
 		);
 
 		return $columns;
@@ -146,6 +147,21 @@ class Table extends \WP_List_Table {
 		}
 
 		return $human_time;
+	}
+
+	public function column_last_used( $item ) {
+
+		$timestamp = isset( $item['last_used'] ) ? (int) $item['last_used'] : 0;
+
+		if ( $timestamp < 1 ) {
+			return '—';
+		}
+
+		if ( $timestamp > time() - DAY_IN_SECONDS ) {
+			return sprintf( __( '%s ago', 'snapshots' ), human_time_diff( $timestamp ) );
+		}
+
+		return wp_date( 'Y-m-d H:i', $timestamp );
 	}
 
 	public function column_name( $item ) {
@@ -175,12 +191,13 @@ class Table extends \WP_List_Table {
 		foreach ( $snaps as $id => $snap ) {
 
 			$data[] = array(
-				'id'       => $id,
-				'name'     => $snap->name,
-				'created'  => $snap->created,
-				'location' => $snap->location,
-				'restore'  => $snap->restore,
-				'delete'   => $snap->delete,
+				'id'        => $id,
+				'name'      => $snap->name,
+				'created'   => $snap->created,
+				'last_used' => $snap->last_used,
+				'location'  => $snap->location,
+				'restore'   => $snap->restore,
+				'delete'    => $snap->delete,
 			);
 		}
 
@@ -190,9 +207,9 @@ class Table extends \WP_List_Table {
 
 	public function prepare_items() {
 
-		$columns     = $this->get_columns();
-		$hidden      = array();
-		$sortable    = $this->get_sortable_columns();
+		$columns    = $this->get_columns();
+		$hidden     = array();
+		$sortable   = $this->get_sortable_columns();
 		$data       = $this->table_data();
 		$perPage    = 50;
 		$totalItems = count( $data );
@@ -206,8 +223,8 @@ class Table extends \WP_List_Table {
 		 * set_pagination_args() must run before get_pagenum() so totals exist for clamping
 		 * and invalid ?paged stays out of array_slice().
 		 */
-		$currentPage = $this->get_pagenum();
-		$data        = array_slice( $data, ( ( $currentPage - 1 ) * $perPage ), $perPage );
+		$currentPage           = $this->get_pagenum();
+		$data                  = array_slice( $data, ( ( $currentPage - 1 ) * $perPage ), $perPage );
 		$this->_column_headers = array( $columns, $hidden, $sortable );
 		$this->items           = $data;
 	}
