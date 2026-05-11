@@ -115,8 +115,8 @@ class Plugin {
 			return;
 		}
 
-		wp_enqueue_script( 'snapshots-script', plugin_dir_url( SNAPSHOTS_FILE ) . 'assets/script.js', array(), false, true );
-		wp_enqueue_style( 'snapshots-style', plugin_dir_url( SNAPSHOTS_FILE ) . 'assets/style.css', array() );
+		wp_enqueue_script( 'snapshots-script', plugin_dir_url( SNAPSHOTS_FILE ) . 'build/script.js', array(), false, true );
+		wp_enqueue_style( 'snapshots-style', plugin_dir_url( SNAPSHOTS_FILE ) . 'build/style.css', array() );
 
 		wp_localize_script(
 			'snapshots-script',

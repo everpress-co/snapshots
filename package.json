@@ -4,24 +4,36 @@
 	"author": "everpress",
 	"license": "GPL-2.0-or-later",
 	"scripts": {
-		"build": "wp-scripts build",
+		"build": "webpack --mode production",
+		"develop": "webpack --mode development",
+		"watch": "webpack --mode development --watch --progress",
+		"prewatch": "npm run develop",
+		"start": "npm run watch",
 		"format": "wp-scripts format",
 		"lint:css": "wp-scripts lint-style",
 		"lint:js": "wp-scripts lint-js",
 		"packages-update": "wp-scripts packages-update",
 		"plugin-zip": "wp-scripts plugin-zip",
-		"start": "wp-scripts start"
+		"start:poll": "npm run watch:poll",
+		"watch:poll": "WEBPACK_WATCH_POLL=1000 webpack --mode development --watch --progress",
+		"prewatch:poll": "npm run develop"
 	},
 	"files": [
-		"build",
 		"src",
 		"vendor",
 		"includes",
-		"assets",
-		"snapshots.php"
+		"build",
+		"snapshots.php",
+		"webpack.config.js"
 	],
 	"devDependencies": {
 		"@wordpress/env": "^11.5.0",
-		"@wordpress/scripts": "^32.1.0"
+		"@wordpress/scripts": "^32.1.0",
+		"sass-loader": "^16.0.6",
+		"sass": "^1.97.2",
+		"css-loader": "^7.1.2",
+		"mini-css-extract-plugin": "^2.9.5",
+		"webpack": "^5.103.1",
+		"webpack-cli": "^6.0.1"
 	}
 }

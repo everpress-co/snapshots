@@ -17,8 +17,7 @@ composer.lock
 ehthumbs.db
 Thumbs.db
 
-# Build files
-/build/
+# Distribution
 /dist/
 
 # Node modules
@@ -39,3 +38,5 @@ yarn-error.log*
 # Cache
 .cache/
 .wp-cache/ 
+
+build/
