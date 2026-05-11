@@ -1,0 +1,102 @@
+<?php
+
+namespace EverPress\Snapshots;
+
+class Table extends \WP_List_Table {
+
+
+	public function get_columns() {
+		$columns = array(
+			'cb'       => '<input type="checkbox" />',
+			'name'     => __( 'Name', 'snapshots' ),
+			'created'  => __( 'Created', 'snapshots' ),
+			'location' => __( 'Location', 'snapshots' ),
+		);
+
+		return $columns;
+	}
+
+	public function column_cb( $item ) {
+
+		return sprintf(
+			'<input id="cb-select-%s" type="checkbox" name="snapshot[]" value="%s" />',
+			$item['id'],
+			$item['id']
+		);
+	}
+
+
+	public function column_created( $item ) {
+
+		$timestamp = ( $item['created'] );
+
+		if ( $timestamp > time() - DAY_IN_SECONDS ) {
+			$human_time = sprintf( __( '%s ago', 'snapshots' ), human_time_diff( $timestamp ) );
+		} else {
+			$human_time = wp_date( 'Y-m-d H:i', $timestamp );
+		}
+
+		return $human_time;
+	}
+
+	public function column_name( $item ) {
+
+		$actions = array(
+			'restore' => sprintf( '<a href="%s">%s</a>', esc_url( $item['restore'] ), __( 'Restore', 'snapshots' ) ),
+			'delete'  => sprintf( '<a href="%s">%s</a>', esc_url( $item['delete'] ), __( 'Delete', 'snapshots' ) ),
+		);
+
+		return sprintf( '<strong>%s</strong>', $item['name'] ) . $this->row_actions( $actions );
+	}
+
+	public function column_default( $item, $column_name ) {
+
+		if ( isset( $item[ $column_name ] ) ) {
+			return $item[ $column_name ];
+		}
+
+		return 'xx';
+	}
+
+	public function table_data() {
+
+		$snaps = Plugin::get_instance()->get_snapshots();
+
+		foreach ( $snaps as $id => $snap ) {
+
+			$data[] = array(
+				'id'       => $id,
+				'name'     => $snap->name,
+				'created'  => $snap->created,
+				'location' => $snap->location,
+				'restore'  => $snap->restore,
+				'delete'   => $snap->delete,
+			);
+		}
+
+		return $data;
+	}
+
+
+	public function prepare_items() {
+
+		$current = get_transient( 'snapshot_current' );
+
+		$columns     = $this->get_columns();
+		$hidden      = array();
+		$sortable    = $this->get_sortable_columns();
+		$data        = $this->table_data();
+		$perPage     = 50;
+		$currentPage = $this->get_pagenum();
+		$totalItems  = count( $data );
+		$this->set_pagination_args(
+			array(
+				'total_items' => $totalItems,
+				'per_page'    => $perPage,
+			)
+		);
+		$data                  = array_slice( $data, ( ( $currentPage - 1 ) * $perPage ), $perPage );
+		$this->_column_headers = array( $columns, $hidden, $sortable );
+		$this->items           = $data;
+	}
+}

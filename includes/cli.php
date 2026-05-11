@@ -2,6 +2,11 @@
 
 namespace EverPress\Snapshots;
 
+use WP;
+use WP_CLI;
+use WP_CLI\Utils;
+use WP_CLI_Command;
+
 /**
  * Syncs a local
  *
@@ -9,7 +14,7 @@ namespace EverPress\Snapshots;
  *
  * @author xaver
  */
-class CLI_Command extends \WP_CLI_Command {
+class CLI_Command extends WP_CLI_Command {
 
 	private $name;
 
@@ -36,17 +41,17 @@ class CLI_Command extends \WP_CLI_Command {
 	 * ## USAGE
 	 *
 	 * @subcommand backup
-	 * @synopsis [<name>] [--files] [--location=<location>]
+	 * @synopsis [<name>] [--files] [--location=<location>] [--exclude_tables=<tables>]
 	 */
 	public function backup( $args, $assoc_args ) {
 
 		do_action( 'snapshots_before_backup', $args, $assoc_args );
 
 		if ( $this->snapshots_create( $args, $assoc_args ) ) {
-			do_action( 'snapshots_before_backup', $args, $assoc_args );
-			\WP_CLI::success( 'Snapshot saved!' );
+			do_action( 'snapshots_after_backup', $args, $assoc_args );
+			WP_CLI::success( 'Snapshot saved!' );
 		} else {
-			\WP_CLI::error( 'Snapshot not saved!' );
+			WP_CLI::error( 'Snapshot not saved!' );
 		}
 	}
 
@@ -77,12 +82,12 @@ class CLI_Command extends \WP_CLI_Command {
 		do_action( 'snapshots_before_restore', $args, $assoc_args );
 
 		if ( $this->snapshots_restore( $args, $assoc_args ) ) {
-			do_action( 'snapshots_before_restore', $args, $assoc_args );
+			do_action( 'snapshots_after_restore', $args, $assoc_args );
 
-			\WP_CLI::success( 'Snapshot restored!' );
+			WP_CLI::success( 'Snapshot restored!' );
 
 		} else {
-			\WP_CLI::error( 'Snapshot not restored!' );
+			WP_CLI::error( 'Snapshot not restored!' );
 		}
 	}
 
@@ -115,10 +120,10 @@ class CLI_Command extends \WP_CLI_Command {
 		if ( $this->snapshots_delete( $args, $assoc_args ) ) {
 			do_action( 'snapshots_before_delete', $args, $assoc_args );
 
-			\WP_CLI::success( 'Snapshot deleted!' );
+			WP_CLI::success( 'Snapshot deleted!' );
 
 		} else {
-			\WP_CLI::error( 'Snapshot not deleted!' );
+			WP_CLI::error( 'Snapshot not deleted!' );
 		}
 	}
 
@@ -136,7 +141,7 @@ class CLI_Command extends \WP_CLI_Command {
 	 * : Name of your SnapShot.
 	 *
 	 * [--format]
-	 * : Format of output. Allow values ‘table’, ‘json’, ‘csv’, ‘yaml’, ‘ids’, ‘count’
+	 * : Format of output. Allow values 'table', 'json', 'csv', 'yaml', 'ids', 'count'
 	 *
 	 * [--limit]
 	 * : maximum of entries returned
@@ -155,14 +160,14 @@ class CLI_Command extends \WP_CLI_Command {
 		}
 
 		if ( empty( $files ) ) {
-			\WP_CLI::log( 'No files found!' );
+			WP_CLI::log( 'No files found!' );
 			return;
 		}
 
 		$data = array();
 
-		$format = \WP_CLI\Utils\get_flag_value( $assoc_args, 'format', 'table' );
-		$limit  = \WP_CLI\Utils\get_flag_value( $assoc_args, 'limit', count( $files ) );
+		$format = get_flag_value( $assoc_args, 'format', 'table' );
+		$limit  = get_flag_value( $assoc_args, 'limit', count( $files ) );
 
 		foreach ( $files as $i => $file ) {
 			if ( $i >= $limit ) {
@@ -181,7 +186,7 @@ class CLI_Command extends \WP_CLI_Command {
 			);
 		}
 
-		\WP_CLI\Utils\format_items( $format, $data, array_keys( $data[0] ) );
+		Utils\format_items( $format, $data, array_keys( $data[0] ) );
 	}
 
 
@@ -229,6 +234,14 @@ class CLI_Command extends \WP_CLI_Command {
 		$snapshot_name = sanitize_title( $name ) . '_' . $timestamp;
 		$folder        = trailingslashit( snapshots_option( 'folder' ) ) . $snapshot_name;
 
+		$command_args   = array();
+		$exclude_tables = '';
+		$tables         = Utils\get_flag_value( $assoc_args, 'exclude_tables', false );
+		if ( $tables ) {
+			$tables         = explode( ',', $tables );
+			$command_args[] = '--exclude_tables="' . implode( ',', $tables ) . '"';
+		}
+
 		if ( ! is_dir( $folder ) ) {
 			wp_mkdir_p( $folder );
 		}
@@ -240,34 +253,36 @@ class CLI_Command extends \WP_CLI_Command {
 			'created' => $timestamp,
 		);
 
-		$this->command( 'db export ' . $location );
+		$this->command( 'db export ' . $location, $command_args );
 
 		if ( ! file_exists( $location ) ) {
-			\WP_CLI::error( sprintf( 'No snapshots found for %s', $snapshot_name ) );
+			WP_CLI::error( sprintf( 'No snapshots found for %s', $snapshot_name ) );
 		}
 
-		if ( $files = \WP_CLI\Utils\get_flag_value( $assoc_args, 'files', false ) ) {
+		$files = Utils\get_flag_value( $assoc_args, 'files', false );
+		if ( $files ) {
 			$upload_dir = wp_upload_dir();
 			$basedir    = $upload_dir['basedir'];
 			$zipfile    = $folder . '/data.zip';
 			$this->zip( $basedir, $zipfile );
 			if ( ! file_exists( $zipfile ) ) {
-				\WP_CLI::error( sprintf( 'No able to save zip file %s', $zipfile ) );
+				WP_CLI::error( sprintf( 'No able to save zip file %s', $zipfile ) );
 			}
 		}
-		if ( $location = \WP_CLI\Utils\get_flag_value( $assoc_args, 'location', false ) ) {
+		$location = Utils\get_flag_value( $assoc_args, 'location', false );
+		if ( $location ) {
 			$manifest['location'] = $location;
 		}
 		$manifestfile = $folder . '/manifest.json';
 
 		file_put_contents( $manifestfile, json_encode( $manifest ) );
 		if ( ! file_exists( $manifestfile ) ) {
-			\WP_CLI::error( sprintf( 'No able to save manifest file %s', $manifestfile ) );
+			WP_CLI::error( sprintf( 'No able to save manifest file %s', $manifestfile ) );
 		}
 
 		$this->destroy_snapshots( $snapshot_name );
 
-		set_transient( 'snapshot_current', $name );
+		set_transient( 'snapshot_current', $snapshot_name );
 
 		return true;
 	}
@@ -282,10 +297,19 @@ class CLI_Command extends \WP_CLI_Command {
 		$snapshot_name = $this->get_name( $args );
 		$backup_dir    = false;
 
-		if ( $restore_file = $this->get_most_recent_file( $snapshot_name, 'dump.sql' ) ) {
+		// Get snapshot options to reinject them later.
+		$settings = require __DIR__ . '/set.php';
+		$options  = array();
+
+		foreach ( $settings as $key => $setting ) {
+			$options[ $key ] = get_option( 'snapshots_' . $key );
+		}
+
+		$restore_file = $this->get_most_recent_file( $snapshot_name, 'dump.sql' );
+		if ( $restore_file ) {
 			$location = $restore_file;
 		} else {
-			\WP_CLI::error( sprintf( 'No snapshots found for %s', $snapshot_name ) );
+			WP_CLI::error( sprintf( 'No snapshots found for %s', $snapshot_name ) );
 		}
 
 		$manifest = $this->get_most_recent_file( $snapshot_name, 'manifest.json' );
@@ -296,17 +320,16 @@ class CLI_Command extends \WP_CLI_Command {
 
 			$upload_dir = wp_upload_dir();
 			$backup_dir = $upload_dir['basedir'] . '.' . time();
-
-			if ( $unzip = $this->unzip( $zip, $backup_dir ) ) {
-			} else {
-				\WP_CLI::error( sprintf( 'Not able to extract uploads directory for %s', $snapshot_name ) );
+			$unzip      = $this->unzip( $zip, $backup_dir );
+			if ( ! $unzip ) {
+				WP_CLI::error( sprintf( 'Not able to extract uploads directory for %s', $snapshot_name ) );
 			}
 
 			$this->delete_folder( $upload_dir['basedir'] );
 
-			// rename old directory (back it up)
+			// Rename old directory (back it up).
 			if ( ! rename( $backup_dir, $upload_dir['basedir'] ) ) {
-				\WP_CLI::error( sprintf( 'Could not backup upload folder for %s', $snapshot_name ) );
+				WP_CLI::error( sprintf( 'Could not backup upload folder for %s', $snapshot_name ) );
 			}
 		}
 
@@ -314,7 +337,7 @@ class CLI_Command extends \WP_CLI_Command {
 
 		$sql_data = file_get_contents( $location );
 
-		// drop all tables who do not belong to this import
+		// Drop all tables who do not belong to this import.
 		if ( preg_match_all( '/-- Table structure for table `(.*?)`/', $sql_data, $matches ) ) {
 			$tables = $matches[1];
 
@@ -328,7 +351,7 @@ class CLI_Command extends \WP_CLI_Command {
 			}
 		}
 
-		// maybe replace the URL if the current one doesn't match the one from the SQL file
+		// Maybe replace the URL if the current one doesn't match the one from the SQL file.
 		if ( preg_match( "/'home','(https?:\/\/([^']+)?)'/", $sql_data, $match ) ) {
 			$sql_home_url = $match[1];
 			$home_url     = get_option( 'home' );
@@ -336,6 +359,14 @@ class CLI_Command extends \WP_CLI_Command {
 			if ( $home_url != $sql_home_url ) {
 				$this->command( 'search-replace ' . $sql_home_url . ' ' . $home_url );
 			}
+		}
+
+		// Good time to clear thing up.
+		wp_cache_delete( 'alloptions', 'options' );
+
+		// Insert old Snapshot settings.
+		foreach ( $options as $key => $setting ) {
+			// update_option( 'snapshots_' . $key, $setting );
 		}
 
 		if ( ! function_exists( 'wp_upgrade' ) ) {
@@ -346,29 +377,45 @@ class CLI_Command extends \WP_CLI_Command {
 		if ( file_exists( $manifest ) ) {
 			$manifest = json_decode( file_get_contents( $manifest ) );
 			if ( isset( $manifest->location ) ) {
-				\WP_CLI::line( 'Redirect to: ' . $manifest->location );
-			}
-			if ( isset( $manifest->name ) ) {
-				// don't use 'set_transient' here to prevent race conditions
-				global $wpdb;
-				$query = $wpdb->prepare( "INSERT INTO {$wpdb->options} SET option_name = '_transient_snapshot_current', option_value = '%s', autoload = 'yes' ON DUPLICATE KEY UPDATE option_value = '%s'", $manifest->name, $manifest->name );
-				$this->command( sprintf( 'db query "%s"', $query ) );
+				WP_CLI::line( 'Redirect to: ' . $manifest->location );
 			}
 		}
+
+		// Set the current snapshot.
+		set_transient( 'snapshot_current', $snapshot_name );
 
 		return true;
 	}
 
 
-	private function command( $command, $return = true, $exit_error = false ) {
-		$options = array(
-			'return'     => true,
-			// 'parse'      => 'json',
-			'launch'     => false,
-			'exit_error' => $exit_error,
+	private function x_command( $command, $command_args = array(), $return = true, $exit_error = false ) {
+
+		error_log(
+			print_r(
+				'Command: ' . $command . ' ' . implode( ' ', $command_args ),
+				true
+			)
 		);
 
-		$result = \WP_CLI::runcommand( $command, $options );
+		$result = $this->command( $command, $command_args, $return, $exit_error );
+		return $result;
+	}
+
+
+	private function command( $command, $command_args = array(), $return = true, $exit_error = false ) {
+		$options = array(
+			'return'       => true,
+			// 'parse'      => 'json',
+			'launch'       => false,
+			'exit_error'   => $exit_error,
+			'command_args' => (array) $command_args,
+		);
+
+		if ( ! empty( $command_args ) ) {
+			$command .= ' ' . implode( ' ', $command_args );
+		}
+
+		$result = WP_CLI::runcommand( $command, $options );
 
 		$result = trim( $result );
 
@@ -391,11 +438,11 @@ class CLI_Command extends \WP_CLI_Command {
 		if ( $restore_file = $this->get_most_recent_file( $snapshot_name, 'dump.sql' ) ) {
 			$location = dirname( $restore_file );
 		} else {
-			\WP_CLI::error( sprintf( 'No snapshots found for %s', $snapshot_name ) );
+			WP_CLI::error( sprintf( 'No snapshots found for %s', $snapshot_name ) );
 		}
 
 		if ( ! $this->delete_folder( $location ) ) {
-			\WP_CLI::error( sprintf( 'No able delete folder %s', $location ) );
+			WP_CLI::error( sprintf( 'No able delete folder %s', $location ) );
 		}
 
 		return true;
