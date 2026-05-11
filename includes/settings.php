@@ -6,7 +6,6 @@ class Settings {
 
 	private static $instance = null;
 
-
 	private function __construct() {
 
 		add_action( 'admin_menu', array( $this, 'admin_menu' ) );
@@ -25,9 +24,26 @@ class Settings {
 
 		add_settings_section(
 			'snapshots_section',
-			__( 'Settings Section', 'snapshots-page-plugin' ),
+			'',
 			function () {
-				echo '<p>' . esc_html__( 'Options are stored with the snapshots by default. So if you restore an old snapshot with different settings the current one will be lost.', 'snapshots' ) . '</p>';
+
+				$result = Plugin::get_instance()->exec( 'which php' );
+				if ( is_wp_error( $result ) ) {
+					wp_admin_notice(
+						'Not able to use PHP: ' . $result->get_error_message(),
+						array(
+							'type'               => 'error',
+							'additional_classes' => array( 'inline' ),
+						)
+					);
+				}
+				wp_admin_notice(
+					esc_html__( 'Options are global! They will not change if you reload a SnapShot.', 'snapshots' ),
+					array(
+						'type'               => 'info',
+						'additional_classes' => array( 'inline' ),
+					)
+				);
 			},
 			'snapshots-page'
 		);
@@ -35,12 +51,14 @@ class Settings {
 		$settings = require_once __DIR__ . '/set.php';
 
 		foreach ( $settings as $key => $setting ) {
+
 			$id = 'snapshots_' . $key;
+
 			register_setting(
 				'snapshots',
 				$id,
 				array(
-					'type'              => $setting['type'] ?? 'string',
+					'type'              => $setting['type'],
 					'sanitize_callback' => function ( $value ) use ( $setting, $id ) {
 
 						if ( $setting['type'] === 'number' ) {
@@ -56,11 +74,13 @@ class Settings {
 					'description'       => $setting['description'],
 				)
 			);
+
 			add_settings_field(
 				$id,
 				$setting['name'],
 				function () use ( $id, $key, $setting ) {
 					$value        = snapshots_option( $key, $setting['default'] );
+					$type         = $setting['type'];
 					$is_undefined = $value === null;
 					$is_default   = $value === $setting['default'];
 					$const        = strtoupper( $id );
@@ -68,6 +88,12 @@ class Settings {
 					$is_const     = defined( $const );
 					if ( $is_const ) {
 						$placeholder = constant( $const );
+					}
+					if ( $is_const ) {
+						echo ' <div class="description">' . sprintf( esc_html__( 'Defined in %s constant', 'snapshots' ), '<code>' . $const . '</code>' ) . '</div>';
+					} else {
+						$output_value = $type === 'boolean' ? ( $value ? 'true' : 'false' ) : ( $type === 'number' ? $value : '"' . $value . '"' );
+						echo ' <div class="description">' . sprintf( esc_html__( 'Define as: %s', 'snapshots' ), '<code>define("' . $const . '", ' . esc_attr( $output_value ) . ');</code>' ) . '</div>';
 					}
 					switch ( $setting['type'] ) {
 						case 'boolean':
@@ -81,10 +107,7 @@ class Settings {
 							echo '<input type="text" name="' . esc_attr( $id ) . '" value="' . esc_attr( $value ) . '" class="regular-text" placeholder="' . esc_attr( $placeholder ) . '" ' . ( $is_const ? 'readonly' : '' ) . '>';
 							break;
 					}
-					if ( $is_const ) {
-						echo ' <span class="description">' . sprintf( esc_html__( 'Defined in %s constant', 'snapshots' ), '<code>' . $const . '</code>' ) . '</span>';
-					}
-					if ( $setting['description'] ) {
+					if ( $setting['description'] && $setting['type'] !== 'boolean' ) {
 						echo '<p class="description">' . esc_html( $setting['description'] ) . '</p>';
 					}
 				},
@@ -100,46 +123,42 @@ class Settings {
 			return;
 		}
 
-		add_menu_page(
-			'Snapshots2',
-			'Snapshots2',
+		add_options_page(
+			'Snapshots',
+			'Snapshots',
 			'manage_options',
-			'snapshots2',
-			array( $this, 'render_setting' ),
-			'dashicons-backup',
+			'snapshots-settings',
+			array( $this, 'render' ),
 			99
 		);
 	}
 
 
-	public function render_setting() {
+
+	public function render() {
 		echo '<div class="wrap"><h1>' . esc_html__( 'Snapshots Settings', 'snapshots' ) . '</h1>';
+		snapshots_get_nav( 'settings' );
+
+		Plugin::get_instance()->check_environment();
 
 		?>
+
 		<form method="post" action="options.php">
 			<?php
 			settings_fields( 'snapshots' );
 			do_settings_sections( 'snapshots-page' );
 			submit_button();
 			?>
-		</form>
-		<?
 
+		</form>
+		<?php
+
+		add_action( 'admin_footer_text', array( $this, 'admin_footer_text' ) );
 		echo '</div>';
 	}
 
-	public function render_snapshots_page() {
-		?>
-	<div class="wrap">
-		<h1><?php esc_html_e( 'Simple Settings Page', 'snapshots-page-plugin' ); ?></h1>
-		<form method="post" action="options.php">
-			<?php
-			settings_fields( 'snapshots' );
-			do_settings_sections( 'snapshots-page' );
-			submit_button();
-			?>
-		</form>
-	</div>
-		<?php
+	public function admin_footer_text( $default ) {
+		/* Translators: %1$s: Plugin Name, %2$s: Rating URL */
+		return sprintf( esc_html__( 'If you like %1$s please leave a %2$s rating. Thanks in advance!', 'snapshots' ), '<strong>SnapShots</strong>', '<a href="https://wordpress.org/support/view/plugin-reviews/snapshots?filter=5#new-post" target="_blank" rel="noopener noreferrer">&#9733;&#9733;&#9733;&#9733;&#9733;</a>' );
 	}
 }

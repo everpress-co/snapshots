@@ -1,4 +1,9 @@
 <?php
+/**
+ * Plugin settings configuration.
+ *
+ * @package EverPress\Snapshots
+ */
 
 return array(
 	'folder'         => array(
@@ -6,12 +11,6 @@ return array(
 		'type'        => 'text',
 		'description' => 'Absolute path to the folder where the snapshots are stored.',
 		'default'     => WP_CONTENT_DIR . '/.snapshots',
-	),
-	'cli_path'       => array(
-		'name'        => 'CLI Path',
-		'type'        => 'text',
-		'description' => 'The path to the WP-CLI binaries.',
-		'default'     => '/usr/local/bin',
 	),
 	'cli_allow_root' => array(
 		'name'        => 'CLI Allow Root',
@@ -29,7 +28,7 @@ return array(
 		'name'        => 'PHP Path',
 		'type'        => 'text',
 		'description' => 'The path to the PHP binaries.',
-		'default'     => '/usr/local/bin/php',
+		'default'     => '',
 	),
 	'save_files'     => array(
 		'name'        => 'Save Files',
@@ -43,5 +42,10 @@ return array(
 		'description' => 'Include location (URL) during creation to redirect on restore.',
 		'default'     => true,
 	),
-
+	'exclude_tables' => array(
+		'name'        => 'Exclude Tables',
+		'type'        => 'text',
+		'description' => 'Comma separated list of tables to exclude from the snapshot.',
+		'default'     => '',
+	),
 );

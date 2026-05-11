@@ -1,4 +1,5 @@
 <?php
+namespace EverPress\Snapshots;
 
 function snapshots_option( $option ) {
 
@@ -21,6 +22,20 @@ function snapshots_option( $option ) {
 	 * @param mixed $return The value of the Snapshots option.
 	 */
 	return apply_filters( 'snapshots_' . $option, $return );
+}
+
+function snapshots_get_settings() {
+	return require __DIR__ . '/set.php';
+}
+function snapshots_get_nav( $current_tab = 'snapshots' ) {
+
+	?>
+	<nav class="nav-tab-wrapper">
+		<a href="<?php echo admin_url( 'tools.php?page=snapshots' ); ?>" class="nav-tab<?php echo $current_tab === 'snapshots' ? ' nav-tab-active' : ''; ?>"><?php esc_html_e( 'Snapshots', 'snapshots' ); ?></a>
+		<a href="<?php echo admin_url( 'options-general.php?page=snapshots-settings' ); ?>" class="nav-tab<?php echo $current_tab === 'settings' ? ' nav-tab-active' : ''; ?>"><?php esc_html_e( 'Settings', 'snapshots' ); ?></a>
+	</nav>
+
+	<?php
 }
 
 if ( ! function_exists( 'wp_date' ) ) {

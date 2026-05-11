@@ -11,7 +11,6 @@ class Table extends \WP_List_Table {
 			'name'     => __( 'Name', 'snapshots' ),
 			'created'  => __( 'Created', 'snapshots' ),
 			'location' => __( 'Location', 'snapshots' ),
-			'actions'  => __( 'Actions', 'snapshots' ),
 		);
 
 		return $columns;
@@ -26,15 +25,6 @@ class Table extends \WP_List_Table {
 		);
 	}
 
-	public function column_actions( $item ) {
-
-		$actions = array(
-			'restore' => sprintf( '<a href="?page=%s&action=%s&snapshot=%s">%s</a>', $_REQUEST['page'], 'restore', $item['id'], __( 'Restore', 'snapshots' ) ),
-			'delete'  => sprintf( '<a href="?page=%s&action=%s&snapshot=%s">%s</a>', $_REQUEST['page'], 'delete', $item['id'], __( 'Delete', 'snapshots' ) ),
-		);
-
-		return $this->row_actions( $actions );
-	}
 
 	public function column_created( $item ) {
 

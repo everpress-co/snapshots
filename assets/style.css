@@ -6,7 +6,6 @@
 	border-top: 1px solid #666;
 }
 #wp-admin-bar-snapshots .ab-sub-wrapper li:hover {
-	_background-color: #333;
 }
 #wp-admin-bar-snapshots .ab-sub-wrapper li.current a .restore-snapshot {
 	color: #f0f6fc;
@@ -68,10 +67,18 @@
 	all: revert;
 	border: 0;
 	font-size: 1em;
-	width: 80%;
+	line-height: 1.5em;
+	width: calc(100% - 3em);
 	background: none;
 	color: #f0f6fc;
 }
+
+#wp-admin-bar-snapshots .search-snapshot input::placeholder {
+	all: revert;
+	font-size: 1em;
+	line-height: 1.5em;
+}
+
 #wp-admin-bar-snapshots .restore-snapshot {
 	display: inline-block;
 	overflow: hidden;
