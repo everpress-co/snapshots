@@ -17,6 +17,7 @@ class Plugin {
 
 		add_action( 'admin_menu', array( $this, 'admin_menu' ) );
 		add_filter( 'plugin_action_links_' . plugin_basename( SNAPSHOTS_FILE ), array( $this, 'apd_settings_link' ) );
+		add_action( 'admin_notices', array( $this, 'snapshots_tools_admin_notices' ) );
 	}
 
 	public static function get_instance() {
@@ -42,7 +43,8 @@ class Plugin {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return;
 		}
-		add_management_page(
+
+		$hook = add_management_page(
 			'Snapshots',
 			'Snapshots',
 			'manage_options',
@@ -50,20 +52,131 @@ class Plugin {
 			array( $this, 'render' ),
 			9999
 		);
+
+		add_action(
+			sprintf( 'load-%s', $hook ),
+			array( $this, 'snapshots_tools_handle_bulk_request' )
+		);
 	}
 
+	/**
+	 * Process list-table bulk actions before admin-header sends output (fixes wp_safe_redirect notices).
+	 */
+	public function snapshots_tools_handle_bulk_request() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
+		require_once __DIR__ . '/table.php';
+
+		$table = new Table();
+		$table->process_bulk_action();
+	}
+
+
+	/**
+	 * Admin notices for the Tools → Snapshots screen (bulk delete feedback).
+	 */
+	public function snapshots_tools_admin_notices() {
+		if ( ! is_admin() ) {
+			return;
+		}
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Display-only query arguments.
+		if ( ! isset( $_GET['page'] ) || 'snapshots' !== $_GET['page'] ) {
+			return;
+		}
+
+		global $pagenow;
+
+		if ( 'tools.php' !== $pagenow ) {
+			return;
+		}
+
+		$screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
+		if ( $screen && 'tools_page_snapshots' !== $screen->id ) {
+			return;
+		}
+
+		if ( isset( $_GET['snapshots_bulk_deleted'] ) ) {
+			$deleted_count = absint( $_GET['snapshots_bulk_deleted'] );
+			if ( $deleted_count > 0 ) {
+				$message = sprintf(
+					/* translators: %d: number of snapshots deleted */
+					_n(
+						'%d snapshot permanently deleted.',
+						'%d snapshots permanently deleted.',
+						$deleted_count,
+						'snapshots'
+					),
+					$deleted_count
+				);
+				if ( function_exists( 'wp_admin_notice' ) ) {
+					wp_admin_notice(
+						$message,
+						array(
+							'id'          => 'snapshots-bulk-deleted',
+							'type'        => 'success',
+							'dismissible' => true,
+						)
+					);
+				} else {
+					printf(
+						'<div class="notice notice-success is-dismissible"><p>%s</p></div>',
+						esc_html( $message )
+					);
+				}
+			}
+		}
+
+		if ( isset( $_GET['snapshots_bulk_failed'] ) ) {
+			$failed_count = absint( $_GET['snapshots_bulk_failed'] );
+			if ( $failed_count > 0 ) {
+				$message = sprintf(
+					/* translators: %d: number of snapshots that could not be deleted */
+					_n(
+						'Could not delete %d snapshot. Check SnapShots logs or CLI output.',
+						'Could not delete %d snapshots. Check SnapShots logs or CLI output.',
+						$failed_count,
+						'snapshots'
+					),
+					$failed_count
+				);
+				if ( function_exists( 'wp_admin_notice' ) ) {
+					wp_admin_notice(
+						$message,
+						array(
+							'id'          => 'snapshots-bulk-failed',
+							'type'        => 'warning',
+							'dismissible' => true,
+						)
+					);
+				} else {
+					printf(
+						'<div class="notice notice-warning is-dismissible"><p>%s</p></div>',
+						esc_html( $message )
+					);
+				}
+			}
+		}
+	}
 
 
 	public function render() {
 
 		echo '<div class="wrap"><h1>' . esc_html__( 'Snapshots', 'snapshots' ) . '</h1>';
+
 		snapshots_get_nav( 'snapshots' );
 
 		require_once __DIR__ . '/table.php';
 
+		echo '<form class="snapshots-list-table-form" method="post" action="' . esc_url( admin_url( 'tools.php?page=snapshots' ) ) . '">';
+
 		$table = new Table();
 		$table->prepare_items();
 		$table->display();
+
+		echo '</form>';
 
 		add_action( 'admin_footer_text', array( $this, 'admin_footer_text' ) );
 
