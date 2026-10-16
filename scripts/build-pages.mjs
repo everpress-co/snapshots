@@ -16,13 +16,13 @@ const CHANGELOG_MARKER = '<!-- changelog -->';
 const CHANGELOG_HEADING = '## Changelog';
 
 /**
- * @param {string} markdown
- * @returns {string}
+ * @param {string} markdown Full README contents.
+ * @return {string} Changelog body without the section heading.
  */
 function extractChangelogMarkdown( markdown ) {
 	const start = markdown.indexOf( CHANGELOG_HEADING );
 	if ( start === -1 ) {
-		throw new Error( `Missing ${CHANGELOG_HEADING} in README.md` );
+		throw new Error( `Missing ${ CHANGELOG_HEADING } in README.md` );
 	}
 
 	let body = markdown.slice( start + CHANGELOG_HEADING.length );
@@ -37,8 +37,8 @@ function extractChangelogMarkdown( markdown ) {
 /**
  * Minimal markdown → HTML for changelog blocks only.
  *
- * @param {string} md
- * @returns {string}
+ * @param {string} md Changelog markdown.
+ * @return {string} Changelog HTML fragment.
  */
 function changelogMarkdownToHtml( md ) {
 	const lines = md.split( '\n' );
@@ -67,7 +67,7 @@ function changelogMarkdownToHtml( md ) {
 
 		if ( trimmed.startsWith( '### ' ) ) {
 			closeList();
-			out.push( `<h3>${inline( trimmed.slice( 4 ) )}</h3>` );
+			out.push( `<h3>${ inline( trimmed.slice( 4 ) ) }</h3>` );
 			continue;
 		}
 
@@ -76,12 +76,12 @@ function changelogMarkdownToHtml( md ) {
 				out.push( '<ul>' );
 				inList = true;
 			}
-			out.push( `<li>${inline( trimmed.slice( 2 ) )}</li>` );
+			out.push( `<li>${ inline( trimmed.slice( 2 ) ) }</li>` );
 			continue;
 		}
 
 		closeList();
-		out.push( `<p>${inline( trimmed )}</p>` );
+		out.push( `<p>${ inline( trimmed ) }</p>` );
 	}
 
 	closeList();
@@ -101,17 +101,25 @@ fs.rmSync( siteDir, { recursive: true, force: true } );
 fs.mkdirSync( siteDir, { recursive: true } );
 
 const readme = fs.readFileSync( readmePath, 'utf8' );
-const changelogHtml = changelogMarkdownToHtml( extractChangelogMarkdown( readme ) );
+const changelogHtml = changelogMarkdownToHtml(
+	extractChangelogMarkdown( readme )
+);
 
 let indexHtml = fs.readFileSync( path.join( docsDir, 'index.html' ), 'utf8' );
 if ( ! indexHtml.includes( CHANGELOG_MARKER ) ) {
-	throw new Error( `Missing ${CHANGELOG_MARKER} in docs/index.html` );
+	throw new Error( `Missing ${ CHANGELOG_MARKER } in docs/index.html` );
 }
 indexHtml = indexHtml.replace( CHANGELOG_MARKER, changelogHtml );
 
 fs.writeFileSync( path.join( siteDir, 'index.html' ), indexHtml );
-copyFile( path.join( docsDir, 'style.css' ), path.join( siteDir, 'style.css' ) );
-copyFile( path.join( docsDir, 'agents.md' ), path.join( siteDir, 'agents.md' ) );
+copyFile(
+	path.join( docsDir, 'style.css' ),
+	path.join( siteDir, 'style.css' )
+);
+copyFile(
+	path.join( docsDir, 'agents.md' ),
+	path.join( siteDir, 'agents.md' )
+);
 copyFile( path.join( docsDir, 'llms.txt' ), path.join( siteDir, 'llms.txt' ) );
 
 const assetsDir = path.join( siteDir, 'assets' );
@@ -128,5 +136,3 @@ copyFile(
 	path.join( wpOrgDir, 'screenshot-1.png' ),
 	path.join( assetsDir, 'screenshot-1.png' )
 );
-
-console.log( `Built ${siteDir}` );

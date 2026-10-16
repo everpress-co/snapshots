@@ -2,7 +2,7 @@
 	--ink: #1e2a32;
 	--muted: #4a5c66;
 	--paper: #f6f3ef;
-	--card: #ffffff;
+	--card: #fff;
 	--teal: #2a7a8c;
 	--teal-dark: #1f5f6d;
 	--terracotta: #c4694a;
@@ -282,6 +282,7 @@ section li {
 }
 
 @media (max-width: 32rem) {
+
 	.btn--ghost {
 		display: block;
 		margin: 0.75rem 0 0;
