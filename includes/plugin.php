@@ -375,7 +375,7 @@ class Plugin {
 			);
 		}
 
-		$redirect = $this->restore( $snapshot_id );
+		$redirect = $this->restore( $snapshot_id, $this->get_restore_fallback_from_ajax_request() );
 		if ( is_wp_error( $redirect ) ) {
 			wp_send_json_error(
 				array(
@@ -512,6 +512,30 @@ class Plugin {
 	}
 
 	/**
+	 * Returns a non-AJAX URL to use when a restored snapshot has no saved location.
+	 *
+	 * Prefers the page that started the request. Falls back to the admin dashboard
+	 * when that value is missing or is not a local redirect.
+	 *
+	 * @since [Unreleased]
+	 *
+	 * @return string Redirect URL or path.
+	 */
+	private function get_restore_fallback_from_ajax_request() {
+		$default = admin_url();
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Verified in the AJAX handler.
+		if ( ! isset( $_POST['location'] ) ) {
+			return $default;
+		}
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Verified in the AJAX handler.
+		$location = htmlspecialchars_decode( sanitize_text_field( wp_unslash( $_POST['location'] ) ) );
+
+		return wp_validate_redirect( $location, $default );
+	}
+
+	/**
 	 * Returns snapshot directory basenames currently on disk.
 	 *
 	 * @since [Unreleased]
@@ -571,8 +595,8 @@ class Plugin {
 				esc_attr__( 'created %s ago', 'snapshots' ),
 				human_time_diff( $data->created )
 			) . ' - ' . wp_date( 'Y-m-d H:i', $data->created ),
-			'restoreUrl'   => esc_url( $data->restore ),
-			'deleteUrl'    => esc_url( $data->delete ),
+			'restoreUrl'   => esc_url_raw( $data->restore ),
+			'deleteUrl'    => esc_url_raw( $data->delete ),
 			'isCurrent'    => (bool) $data->current,
 			'currentLabel' => $current_string,
 			'searchRel'    => $data->name . ' ' . strtolower( $data->name ),
@@ -934,10 +958,12 @@ class Plugin {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param string|null $name Snapshot ID or folder name.
+	 * @param string|null $name     Snapshot ID or folder name.
+	 * @param string      $fallback Optional. Redirect when the snapshot has no saved location.
+	 *                              Default empty string, which strips `snapshot_restore` from the current request.
 	 * @return string|\WP_Error Redirect URL, query-stripped URL, or error.
 	 */
-	public function restore( $name ) {
+	public function restore( $name, $fallback = '' ) {
 		$name = is_null( $name ) ? '' : basename( $name );
 
 		// Disable cron.
@@ -962,6 +988,10 @@ class Plugin {
 		if ( ! empty( $redirect_matches ) ) {
 			$redirect = trim( str_replace( 'Redirect to:', '', $redirect_matches[0] ) );
 			return home_url( $redirect );
+		}
+
+		if ( is_string( $fallback ) && '' !== $fallback ) {
+			return $fallback;
 		}
 
 		return remove_query_arg( 'snapshot_restore' );

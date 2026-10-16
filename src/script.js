@@ -185,7 +185,13 @@ import './style.scss';
 		}
 
 		ajaxInFlight = true;
-		postAdminBarAjax( 'snapshots_restore', { snapshot: snapshotId } )
+		postAdminBarAjax( 'snapshots_restore', {
+			snapshot: snapshotId,
+			location:
+				document.location.pathname +
+				document.location.search +
+				document.location.hash,
+		} )
 			.then( function ( payload ) {
 				if ( payload.success && payload.data && payload.data.redirect ) {
 					window.location.assign( payload.data.redirect );
@@ -389,14 +395,91 @@ import './style.scss';
 		}
 	}
 
+	function ensureSnapshotsSubmenu() {
+		var submenu = document.getElementById(
+			'wp-admin-bar-snapshots-default'
+		);
+		if ( submenu ) {
+			return submenu;
+		}
+
+		var root = getSnapshotsRoot();
+		if ( ! root ) {
+			return null;
+		}
+
+		root.classList.add( 'menupop' );
+		var rootLink = document.querySelector( '#wp-admin-bar-snapshots > a' );
+		if ( rootLink && ! rootLink.hasAttribute( 'aria-expanded' ) ) {
+			rootLink.setAttribute( 'aria-expanded', 'false' );
+		}
+
+		var wrapper = document.createElement( 'div' );
+		wrapper.className = 'ab-sub-wrapper';
+
+		submenu = document.createElement( 'ul' );
+		submenu.id = 'wp-admin-bar-snapshots-default';
+		submenu.className = 'ab-submenu';
+		submenu.setAttribute( 'role', 'menu' );
+		wrapper.appendChild( submenu );
+		root.appendChild( wrapper );
+
+		bindSnapshotsMenuHover( root );
+		if ( root.matches && root.matches( ':hover' ) ) {
+			root.classList.add( 'hover' );
+			if ( rootLink ) {
+				rootLink.setAttribute( 'aria-expanded', 'true' );
+			}
+		}
+
+		return submenu;
+	}
+
+	function bindSnapshotsMenuHover( root ) {
+		function setHover( on ) {
+			if ( on ) {
+				root.classList.add( 'hover' );
+			} else {
+				root.classList.remove( 'hover' );
+			}
+			var link = document.querySelector( '#wp-admin-bar-snapshots > a' );
+			if ( link && link.hasAttribute( 'aria-expanded' ) ) {
+				link.setAttribute( 'aria-expanded', on ? 'true' : 'false' );
+			}
+		}
+
+		if ( typeof window.hoverintent === 'function' ) {
+			window
+				.hoverintent(
+					root,
+					function () {
+						setHover( true );
+					},
+					function () {
+						setHover( false );
+					}
+				)
+				.options( { timeout: 180 } );
+		} else {
+			root.addEventListener( 'mouseenter', function () {
+				setHover( true );
+			} );
+			root.addEventListener( 'mouseleave', function () {
+				setHover( false );
+			} );
+		}
+
+		root.addEventListener( 'click', function () {
+			setHover( true );
+		} );
+	}
+
 	function ensureSearchSubmenu() {
 		if ( document.getElementById( 'wp-admin-bar-snapshot-search' ) ) {
 			return;
 		}
 
-		var submenu = document.getElementById(
-			'wp-admin-bar-snapshots-default'
-		);
+		var submenu = ensureSnapshotsSubmenu();
 		if ( ! submenu ) {
 			return;
 		}
