@@ -188,32 +188,10 @@ a:hover {
 }
 
 .wordmark__mark {
-	position: relative;
-	width: 20px;
-	height: 14px;
+	display: block;
+	width: 52px;
+	height: 52px;
 	flex-shrink: 0;
-}
-
-.wordmark__mark::before,
-.wordmark__mark::after {
-	content: "";
-	position: absolute;
-	left: 0;
-	right: 0;
-	height: 2px;
-	background: var(--color-ink);
-}
-
-.wordmark__mark::before {
-	top: 2px;
-}
-
-.wordmark__mark::after {
-	bottom: 2px;
-}
-
-.wordmark__mark {
-	background: radial-gradient(circle at 50% 50%, var(--color-orange) 4px, transparent 4px);
 }
 
 .wordmark__text {
@@ -846,6 +824,15 @@ code {
 
 /* Mobile nav simplification */
 @media (max-width: 767px) {
+
+	.wordmark__by {
+		display: none;
+	}
+
+	.wordmark__mark {
+		width: 40px;
+		height: 40px;
+	}
 
 	.site-nav a:not(.site-nav__cta) {
 		display: none;

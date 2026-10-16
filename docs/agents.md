@@ -83,5 +83,5 @@ If backup or restore fails, read the error output. Do not retry restore in a loo
 
 ## More documentation
 
-- Product overview: <https://everpress-co.github.io/snapshots/>
+- Product overview: <https://snapshots.everpress.co/>
 - Plugin readme: <https://github.com/everpress-co/snapshots/blob/develop/README.md>

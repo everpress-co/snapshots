@@ -121,8 +121,10 @@ copyFile(
 	path.join( siteDir, 'agents.md' )
 );
 copyFile( path.join( docsDir, 'llms.txt' ), path.join( siteDir, 'llms.txt' ) );
+copyFile( path.join( docsDir, 'CNAME' ), path.join( siteDir, 'CNAME' ) );
 
 const iconSrc = path.join( wpOrgDir, 'icon-256x256.png' );
+const iconSvgSrc = path.join( wpOrgDir, 'icon.svg' );
 
 for ( const assetsDir of [
 	path.join( siteDir, 'assets' ),
@@ -130,4 +132,5 @@ for ( const assetsDir of [
 ] ) {
 	fs.mkdirSync( assetsDir, { recursive: true } );
 	copyFile( iconSrc, path.join( assetsDir, 'icon.png' ) );
+	copyFile( iconSvgSrc, path.join( assetsDir, 'icon.svg' ) );
 }
