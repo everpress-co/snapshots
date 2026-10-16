@@ -480,6 +480,7 @@ class Plugin {
 		}
 
 		$item['isCurrent'] = true;
+		$item              = $this->with_page_action_urls( $item, $snapshot_id );
 
 		$removed = array_values( array_diff( $before, $this->get_snapshot_basenames() ) );
 
@@ -539,6 +540,30 @@ class Plugin {
 		}
 
 		return wp_validate_redirect( $location, $default );
+	}
+
+	/**
+	 * Points a new admin-bar item at the page that created it.
+	 *
+	 * URLs built during the AJAX request would otherwise target admin-ajax.php.
+	 *
+	 * @since [Unreleased]
+	 *
+	 * @param array<string, mixed> $item        Client snapshot payload.
+	 * @param string               $snapshot_id Snapshot directory name.
+	 * @return array<string, mixed> Payload with page-relative action URLs.
+	 */
+	private function with_page_action_urls( array $item, $snapshot_id ) {
+		$page = $this->get_restore_fallback_from_ajax_request();
+		$hash = strpos( $page, '#' );
+		if ( false !== $hash ) {
+			$page = substr( $page, 0, $hash );
+		}
+
+		$item['restoreUrl'] = esc_url_raw( add_query_arg( 'snapshot_restore', $snapshot_id, $page ) );
+		$item['deleteUrl']  = esc_url_raw( add_query_arg( 'snapshot_delete', $snapshot_id, $page ) );
+
+		return $item;
 	}
 
 	/**

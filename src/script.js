@@ -140,6 +140,10 @@ import './style.scss';
 					return;
 				}
 
+				if ( reloadIfSnapshotsList() ) {
+					return;
+				}
+
 				removePrunedSnapshotMenuItems( payload.data.removed );
 				addSnapshotMenuItem(
 					payload.data.snapshot,
@@ -274,6 +278,10 @@ import './style.scss';
 					return;
 				}
 
+				if ( reloadIfSnapshotsList() ) {
+					return;
+				}
+
 				if ( listItem && listItem.parentNode ) {
 					listItem.parentNode.removeChild( listItem );
 				}
@@ -313,6 +321,14 @@ import './style.scss';
 		} catch {
 			return '';
 		}
+	}
+
+	function reloadIfSnapshotsList() {
+		if ( ! document.querySelector( '.snapshots-list-table-form' ) ) {
+			return false;
+		}
+		window.location.reload();
+		return true;
 	}
 
 	function adminBarAjaxAvailable() {
