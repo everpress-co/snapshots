@@ -1,5 +1,4 @@
 # SnapShots
-
 Contributors: everpress, xaverb  
 Tags: snapshots, database, development, restore, wp-cli  
 Requires at least: 6.6  
@@ -7,7 +6,7 @@ Tested up to: 6.7
 Requires PHP: 7.4  
 Stable tag: 2.8.2  
 License: GPLv2 or later  
-License URI: <https://www.gnu.org/licenses/gpl-2.0.html>
+License URI: <https://www.gnu.org/licenses/gpl-2.0.html>  
 
 Save and restore named WordPress development snapshots of the database and uploads from the admin bar or WP-CLI.
 
