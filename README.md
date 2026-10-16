@@ -110,6 +110,7 @@ SnapShots requires the [WP-CLI](https://wp-cli.org/) to be installed on your sys
 ### Unreleased
 
 - fixed: installation instructions use the correct plugin folder name
+- improved: admin bar create and delete run in place without reloading the page; restore opens its destination only after it finishes
 - improved: setup problems show as a notice on the page
 - added: a Snapshots page under Tools to view, restore, and delete snapshots, including several at once
 - added: a Settings page for where snapshots are saved, how many copies to keep, what is included, and how the list is sorted, with shortcuts from the Plugins screen and the admin bar
