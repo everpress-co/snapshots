@@ -2,6 +2,7 @@
 // Output is emitted as ../assets/style.css via webpack.
 
 #wp-admin-bar-snapshots {
+
 	.ab-sub-wrapper {
 		max-height: 90vh;
 		overflow: auto;
@@ -22,19 +23,19 @@
 					border-radius: 0.5em;
 					color: #000;
 					margin: 0 1em;
-					line-height: 1em;
+					line-height: 1;
 					vertical-align: text-bottom;
 					text-transform: uppercase;
 				}
 			}
 
 			&:last-child {
-				_border-top: 1px solid red;
+				_border-top: 1px solid #cc1818;
 			}
 
 			span.dashicons {
-				font-family: dashicons;
-				line-height: 1em;
+				font-family: dashicons, sans-serif;
+				line-height: 1;
 				font-size: 1.2em;
 				vertical-align: baseline;
 			}
@@ -54,6 +55,7 @@
 	}
 
 	.search-snapshot {
+
 		label {
 			display: none;
 		}
@@ -64,7 +66,7 @@
 			all: revert;
 			border: 0;
 			font-size: 1em;
-			line-height: 1.5em;
+			line-height: 1.5;
 			width: calc(100% - 3em);
 			background: none;
 			color: #f0f6fc;
@@ -72,7 +74,7 @@
 			&::placeholder {
 				all: revert;
 				font-size: 1em;
-				line-height: 1.5em;
+				line-height: 1.5;
 			}
 		}
 	}
@@ -85,8 +87,7 @@
 	}
 
 	&.is-snapshot-search
-		#wp-admin-bar-snapshots-default
-		> li:not(.snapshot-found):not(#wp-admin-bar-snapshot-search) {
+	#wp-admin-bar-snapshots-default > li:not(.snapshot-found):not(#wp-admin-bar-snapshot-search) {
 		display: none;
 	}
 
@@ -100,6 +101,7 @@
 }
 
 #wpadminbar {
+
 	.snapshot-extra-title {
 		font-size: 9px;
 		opacity: 0.4;
@@ -117,9 +119,11 @@
 }
 
 @keyframes snapshot-icon-loading {
+
 	from {
 		transform: rotate(0deg);
 	}
+
 	to {
 		transform: rotate(360deg);
 	}

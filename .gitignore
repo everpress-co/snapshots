@@ -1,6 +1,29 @@
-# Composer
-/vendor/
-composer.lock
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+coverage
+build
+
+node_modules/
+.npm
+.eslintcache
+
+*.tgz
+*.zip
+
+.env
+bin/
+vendor/
+
+.DS_Store
+Thumbs.db
+
+.cursor/
+readme.txt
 
 # IDE
 .idea/
@@ -9,34 +32,19 @@ composer.lock
 *.sublime-workspace
 
 # OS generated files
-.DS_Store
 .DS_Store?
 ._*
 .Spotlight-V100
 .Trashes
 ehthumbs.db
-Thumbs.db
 
 # Distribution
 /dist/
 
-# Node modules
-/node_modules/
-package-lock.json
-
 # Environment files
-.env
 .env.*
 !.env.example
 
-# Logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
 # Cache
 .cache/
-.wp-cache/ 
-
-build/
+.wp-cache/

@@ -1,8 +1,9 @@
 <?php
 /**
- * Plugin settings configuration.
+ * Plugin settings configuration schema returned to Settings API registrars.
  *
- * @package EverPress\Snapshots
+ * @package Snapshots
+ * @since   [Unreleased]
  */
 
 return array(

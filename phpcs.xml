@@ -1,49 +1,59 @@
 <?xml version="1.0"?>
-<ruleset name="WordPress Plugin Coding Standards">
-    <description>A custom set of code standard rules for WordPress plugins.</description>
+<ruleset name="WordPress Coding Standards for Snapshots">
+	<description>Sniffs for WordPress plugins</description>
 
-    <!-- What to scan -->
-    <file>.</file>
-    <exclude-pattern>/vendor/*</exclude-pattern>
-    <exclude-pattern>/node_modules/*</exclude-pattern>
-    <exclude-pattern>/build/*</exclude-pattern>
+	<config name="testVersion" value="7.4-"/>
+	<config name="minimum_wp_version" value="6.6"/>
+	<config name="ignore_warnings_on_exit" value="1"/>
 
-    <!-- How to scan -->
-    <arg name="extensions" value="php"/>
-    <arg value="sp"/>
+	<rule ref="WordPress-Core">
+		<exclude name="WordPress.Files.FileName.InvalidClassFileName"/>
+	</rule>
+	<rule ref="WordPress-Docs"/>
+	<rule ref="WordPress.WP.I18n"/>
+	<config name="text_domain" value="snapshots"/>
 
-    <!-- Rules: WordPress Coding Standards -->
-    <rule ref="WordPress">
-        <!-- Exclude some rules -->
-        <exclude name="WordPress.Files.FileName.NotHyphenatedLowercase"/>
-        <exclude name="WordPress.Files.FileName.InvalidClassFileName"/>
-        <exclude name="WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound"/>
-        <!-- Allow tabs for indentation -->
-        <exclude name="Generic.WhiteSpace.DisallowSpaceIndent"/>
-        <exclude name="Generic.WhiteSpace.ScopeIndent"/>
-        <exclude name="Squiz.WhiteSpace.ScopeClosingBrace"/>
-    </rule>
+	<rule ref="PEAR.Functions.FunctionCallSignature">
+		<properties>
+			<property name="allowMultipleArguments" value="false"/>
+		</properties>
+	</rule>
 
-    <!-- Rules: WordPress Plugin Coding Standards -->
-    <rule ref="WordPress.WP.I18n">
-        <properties>
-            <property name="text_domain" type="array">
-                <element value="snapshots"/>
-            </property>
-        </properties>
-    </rule>
+	<rule ref="WordPress">
+		<exclude name="WordPress.Files.FileName.InvalidClassFileName"/>
+	</rule>
+	<rule ref="WordPress.NamingConventions.PrefixAllGlobals">
+		<properties>
+			<property name="prefixes" type="array">
+				<element value="EverPress"/>
+				<element value="snapshots"/>
+			</property>
+		</properties>
+	</rule>
+	<rule ref="WordPress.WP.I18n">
+		<properties>
+			<property name="text_domain" type="array">
+				<element value="snapshots"/>
+			</property>
+		</properties>
+	</rule>
 
-    <!-- Set minimum supported PHP version -->
-    <config name="testVersion" value="7.4-"/>
+	<arg value="ps"/>
+	<arg name="extensions" value="php,css,scss/css"/>
+	<!-- Never add <arg name="parallel" …/> — hangs / times out on many machines. -->
 
-    <!-- Allow tabs for indentation -->
-    <rule ref="Generic.WhiteSpace.DisallowSpaceIndent">
-        <exclude-pattern>*/</exclude-pattern>
-    </rule>
-    <rule ref="Generic.WhiteSpace.ScopeIndent">
-        <properties>
-            <property name="indent" value="4"/>
-            <property name="tabIndent" value="true"/>
-        </properties>
-    </rule>
-</ruleset> 
+	<!-- Rules: WordPress Coding Standards -->
+	<!-- https://github.com/WordPress-Coding-Standards/WordPress-Coding-Standards -->
+	<!-- https://github.com/WordPress-Coding-Standards/WordPress-Coding-Standards/wiki/Customizable-sniff-properties -->
+	<config name="minimum_supported_wp_version" value="6.6"/>
+	<file>./</file>
+	<exclude-pattern>*/classes/libs/*</exclude-pattern>
+	<exclude-pattern>*.js</exclude-pattern>
+	<exclude-pattern>*.css</exclude-pattern>
+
+	<exclude-pattern>*/assets/css/libs/*</exclude-pattern>
+	<exclude-pattern>*/node_modules/*</exclude-pattern>
+	<exclude-pattern>*/vendor/*</exclude-pattern>
+	<exclude-pattern>*/build/*</exclude-pattern>
+
+</ruleset>

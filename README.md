@@ -27,7 +27,7 @@ You are developing things on a WordPress site and would like to have a _snapshot
 
 ## Installation
 
-1. Upload `snapshosts` to the `/wp-content/plugins/` directory.
+1. Upload `snapshots` to the `/wp-content/plugins/` directory.
 2. Activate the plugin through the 'Plugins' menu in WordPress.
 3. Click on "Click here to create your first Snapshot!" in the admin bar to create your first Snapshot.
 4. Restore the saved snapshot by clicking on the menu entry and confirm.
@@ -106,6 +106,10 @@ SnapShots requires the [WP-CLI](https://wp-cli.org/) to be installed on your sys
 1. SnapShots adds a small menu to the WP Admin bar
 
 ## Changelog
+
+### Unreleased
+
+- fixed: installation instructions now use the correct plugin folder name `snapshots`
 
 ### 2.8.2
 

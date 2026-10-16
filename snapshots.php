@@ -1,9 +1,4 @@
 <?php
-
-namespace EverPress\Snapshots;
-
-use WP_CLI;
-
 /**
  * Plugin Name:     Snapshots
  * Plugin URI:
@@ -12,39 +7,19 @@ use WP_CLI;
  * Author URI:      https://xaver.dev
  * Text Domain:     snapshots
  * Version:         2.8.2
+ *
+ * @package Snapshots
  */
 
+namespace EverPress\Snapshots;
+
+use WP_CLI;
 
 if ( version_compare( PHP_VERSION, '7.0' ) < 0 ) {
 	return;
 }
 
 define( 'SNAPSHOTS_FILE', __FILE__ );
-
-
-// if ( ! defined( 'SNAPSHOTS_FOLDER' ) ) {
-// define( 'SNAPSHOTS_FOLDER', WP_CONTENT_DIR . '/.snapshots' );
-// }
-
-// if ( ! defined( 'SNAPSHOTS_CLI_ALLOW_ROOT' ) ) {
-// define( 'SNAPSHOTS_CLI_ALLOW_ROOT', false );
-// }
-
-// if ( ! defined( 'SNAPSHOTS_CLI_PATH' ) ) {
-// define( 'SNAPSHOTS_CLI_PATH', '/usr/local/bin' );
-// }
-
-// if ( ! defined( 'SNAPSHOTS_MAX_SHOTS' ) ) {
-// define( 'SNAPSHOTS_MAX_SHOTS', 2 );
-// }
-
-// if ( ! defined( 'SNAPSHOTS_SAVE_FILES' ) ) {
-// define( 'SNAPSHOTS_SAVE_FILES', true );
-// }
-
-// if ( ! defined( 'SNAPSHOTS_SAVE_LOCATION' ) ) {
-// define( 'SNAPSHOTS_SAVE_LOCATION', true );
-// }
 
 require_once __DIR__ . '/includes/common.php';
 require_once __DIR__ . '/includes/settings.php';

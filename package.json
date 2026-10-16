@@ -1,8 +1,39 @@
 {
 	"name": "snapshots",
 	"version": "2.8.2",
+	"description": "Quickly create snapshots of your development sites and restore them with a click.",
 	"author": "everpress",
 	"license": "GPL-2.0-or-later",
+	"keywords": [
+		"snapshots",
+		"wordpress",
+		"development",
+		"backup",
+		"wp-cli"
+	],
+	"homepage": "https://wordpress.org/plugins/snapshots/",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/everpress-co/snapshots.git"
+	},
+	"bugs": {
+		"url": "https://wordpress.org/support/plugin/snapshots/"
+	},
+	"files": [
+		"snapshots.php",
+		"includes",
+		"build",
+		"readme.txt"
+	],
+	"devDependencies": {
+		"@wordpress/scripts": "^36.1.0",
+		"css-loader": "^7.1.2",
+		"mini-css-extract-plugin": "^2.9.5",
+		"sass": "^1.97.2",
+		"sass-loader": "^16.0.6",
+		"webpack": "^5.103.1",
+		"webpack-cli": "^6.0.1"
+	},
 	"scripts": {
 		"build": "webpack --mode production",
 		"develop": "webpack --mode development",
@@ -10,30 +41,14 @@
 		"prewatch": "npm run develop",
 		"start": "npm run watch",
 		"format": "wp-scripts format",
+		"lint": "npm run lint:js && npm run lint:css && npm run lint:pkg-json",
 		"lint:css": "wp-scripts lint-style",
 		"lint:js": "wp-scripts lint-js",
+		"lint:pkg-json": "wp-scripts lint-pkg-json",
 		"packages-update": "wp-scripts packages-update",
 		"plugin-zip": "wp-scripts plugin-zip",
 		"start:poll": "npm run watch:poll",
 		"watch:poll": "WEBPACK_WATCH_POLL=1000 webpack --mode development --watch --progress",
 		"prewatch:poll": "npm run develop"
-	},
-	"files": [
-		"src",
-		"vendor",
-		"includes",
-		"build",
-		"snapshots.php",
-		"webpack.config.js"
-	],
-	"devDependencies": {
-		"@wordpress/env": "^11.5.0",
-		"@wordpress/scripts": "^32.1.0",
-		"sass-loader": "^16.0.6",
-		"sass": "^1.97.2",
-		"css-loader": "^7.1.2",
-		"mini-css-extract-plugin": "^2.9.5",
-		"webpack": "^5.103.1",
-		"webpack-cli": "^6.0.1"
 	}
 }

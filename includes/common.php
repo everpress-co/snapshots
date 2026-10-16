@@ -1,15 +1,28 @@
 <?php
+/**
+ * Shared helpers for Snapshots.
+ *
+ * @package Snapshots
+ */
+
 namespace EverPress\Snapshots;
 
+/**
+ * Returns a Snapshots setting from a constant, option, or default.
+ *
+ * @since 1.0.0
+ *
+ * @param string $option Setting key without the snapshots_ prefix.
+ * @return mixed Setting value.
+ */
 function snapshots_option( $option ) {
 
 	$constant = 'SNAPSHOTS_' . strtoupper( $option );
 	$return   = null;
 
-	// constant is always first
+	// Constants take precedence over stored options.
 	if ( defined( $constant ) ) {
 		$return = constant( $constant );
-		// fallback to option
 	} else {
 
 		$settings = require __DIR__ . '/set.php';
@@ -24,15 +37,31 @@ function snapshots_option( $option ) {
 	return apply_filters( 'snapshots_' . $option, $return );
 }
 
+/**
+ * Loads the settings schema.
+ *
+ * @since 1.0.0
+ *
+ * @return array<string, array<string, mixed>> Settings definitions.
+ */
 function snapshots_get_settings() {
 	return require __DIR__ . '/set.php';
 }
+
+/**
+ * Renders admin navigation tabs for Snapshots screens.
+ *
+ * @since 1.0.0
+ *
+ * @param string $current_tab Active tab slug.
+ * @return void
+ */
 function snapshots_get_nav( $current_tab = 'snapshots' ) {
 
 	?>
 	<nav class="nav-tab-wrapper">
-		<a href="<?php echo admin_url( 'tools.php?page=snapshots' ); ?>" class="nav-tab<?php echo $current_tab === 'snapshots' ? ' nav-tab-active' : ''; ?>"><?php esc_html_e( 'Snapshots', 'snapshots' ); ?></a>
-		<a href="<?php echo admin_url( 'options-general.php?page=snapshots-settings' ); ?>" class="nav-tab<?php echo $current_tab === 'settings' ? ' nav-tab-active' : ''; ?>"><?php esc_html_e( 'Settings', 'snapshots' ); ?></a>
+		<a href="<?php echo esc_url( admin_url( 'tools.php?page=snapshots' ) ); ?>" class="nav-tab<?php echo 'snapshots' === $current_tab ? ' nav-tab-active' : ''; ?>"><?php esc_html_e( 'Snapshots', 'snapshots' ); ?></a>
+		<a href="<?php echo esc_url( admin_url( 'options-general.php?page=snapshots-settings' ) ); ?>" class="nav-tab<?php echo 'settings' === $current_tab ? ' nav-tab-active' : ''; ?>"><?php esc_html_e( 'Settings', 'snapshots' ); ?></a>
 	</nav>
 
 	<?php
@@ -40,6 +69,18 @@ function snapshots_get_nav( $current_tab = 'snapshots' ) {
 
 if ( ! function_exists( 'wp_date' ) ) {
 
+	// phpcs:disable Squiz.Commenting.FunctionComment.Missing -- WordPress core polyfill for older sites.
+
+	/**
+	 * Polyfill for wp_date() on WordPress versions below 5.3.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string            $format    PHP date format.
+	 * @param int|null          $timestamp Optional. Unix timestamp.
+	 * @param DateTimeZone|null $timezone  Optional. Timezone.
+	 * @return string|false Formatted date string, or false on failure.
+	 */
 	function wp_date( $format, $timestamp = null, $timezone = null ) {
 		global $wp_locale;
 
@@ -108,10 +149,24 @@ if ( ! function_exists( 'wp_date' ) ) {
 		return $date;
 	}
 
+	/**
+	 * Polyfill for wp_timezone() on WordPress versions below 5.3.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return DateTimeZone Site timezone.
+	 */
 	function wp_timezone() {
 		return new DateTimeZone( wp_timezone_string() );
 	}
 
+	/**
+	 * Polyfill for wp_timezone_string() on WordPress versions below 5.3.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return string PHP timezone identifier or offset.
+	 */
 	function wp_timezone_string() {
 		$timezone_string = get_option( 'timezone_string' );
 
@@ -130,4 +185,6 @@ if ( ! function_exists( 'wp_date' ) ) {
 
 		return $tz_offset;
 	}
+
+	// phpcs:enable
 }

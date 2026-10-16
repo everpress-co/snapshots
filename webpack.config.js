@@ -18,10 +18,8 @@ module.exports = ( env, argv ) => {
 			aggregateTimeout: 300,
 			...( process.env.WEBPACK_WATCH_POLL
 				? {
-						poll:
-							Number( process.env.WEBPACK_WATCH_POLL ) ||
-							1000,
-				  }
+						poll: Number( process.env.WEBPACK_WATCH_POLL ) || 1000,
+					}
 				: {} ),
 		},
 		module: {
