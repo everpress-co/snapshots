@@ -1,4 +1,5 @@
 # SnapShots
+
 Contributors: everpress, xaverb
 Tags: snapshots, database, development, restore, wp-cli
 Requires at least: 6.6
@@ -6,7 +7,7 @@ Tested up to: 6.7
 Requires PHP: 7.4
 Stable tag: 2.8.2
 License: GPLv2 or later
-License URI: https://www.gnu.org/licenses/gpl-2.0.html
+License URI: <https://www.gnu.org/licenses/gpl-2.0.html>
 
 Save and restore named WordPress development snapshots of the database and uploads from the admin bar or WP-CLI.
 
@@ -179,16 +180,17 @@ On **Settings → Snapshots**, enter a comma-separated list in **Exclude Tables*
 
 ### Unreleased
 
-- fixed: installation instructions use the correct plugin folder name
-- improved: setup problems show as a notice on the page
-- added: a Snapshots page under Tools to view, restore, and delete snapshots, including several at once
-- added: a Settings page for where snapshots are saved, how many copies to keep, what is included, and how the list is sorted, with shortcuts from the Plugins screen and the admin bar
-- changed: snapshots are listed by when they were last used, and each one shows that time
+- fixed: install steps use the folder name `snapshots`
+- fixed: missing PHP, WP-CLI, or exec shows a notice instead of a full-screen error
+- added: Tools → Snapshots to restore and delete snapshots, including more than one at a time
+- added: Settings → Snapshots for the folder, copy limit, uploads, return URL, excluded tables, and sort order
+- added: settings links on the Plugins screen and in the admin bar
+- changed: snapshots are sorted by last use, and the Tools list shows that time
 
 ### 2.8.2
 
- - instructions for namespaces
- - update github workflow, no actual changes to the plugin
+- instructions for namespaces
+- update github workflow, no actual changes to the plugin
 
 ### 2.8.1
 
