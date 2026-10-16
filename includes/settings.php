@@ -1,25 +1,61 @@
 <?php
+/**
+ * WordPress Settings API registration for Snapshots options.
+ *
+ * @package Snapshots
+ */
 
 namespace EverPress\Snapshots;
 
+/**
+ * Admin settings screen and option registration.
+ *
+ * @since [Unreleased]
+ */
 class Settings {
 
+	/**
+	 * Singleton instance.
+	 *
+	 * @since [Unreleased]
+	 *
+	 * @var Settings|null
+	 */
 	private static $instance = null;
 
+	/**
+	 * Registers settings hooks.
+	 *
+	 * @since [Unreleased]
+	 */
 	private function __construct() {
 
 		add_action( 'admin_menu', array( $this, 'admin_menu' ) );
 		add_action( 'admin_init', array( $this, 'admin_init' ) );
 	}
 
+	/**
+	 * Returns the singleton instance.
+	 *
+	 * @since [Unreleased]
+	 *
+	 * @return Settings
+	 */
 	public static function get_instance() {
-		if ( self::$instance === null ) {
+		if ( null === self::$instance ) {
 			self::$instance = new Settings();
 		}
 
 		return self::$instance;
 	}
 
+	/**
+	 * Registers settings sections, fields, and sanitization callbacks.
+	 *
+	 * @since [Unreleased]
+	 *
+	 * @return void
+	 */
 	public function admin_init() {
 
 		add_settings_section(
@@ -61,7 +97,7 @@ class Settings {
 					'type'              => $setting['type'],
 					'sanitize_callback' => function ( $value ) use ( $setting, $id ) {
 
-						if ( $setting['type'] === 'number' ) {
+						if ( 'number' === $setting['type'] ) {
 							return (int) $value;
 						}
 
@@ -70,7 +106,7 @@ class Settings {
 							return array_key_exists( $value, $setting['choices'] ) ? $value : $setting['default'];
 						}
 
-						if ( $setting['type'] === 'string' && $value === '' ) {
+						if ( 'string' === $setting['type'] && '' === $value ) {
 							return;
 						}
 
@@ -88,7 +124,7 @@ class Settings {
 				function () use ( $id, $key, $setting ) {
 					$value        = snapshots_option( $key, $setting['default'] );
 					$type         = $setting['type'];
-					$is_undefined = $value === null;
+					$is_undefined = null === $value;
 					$is_default   = $value === $setting['default'];
 					$const        = strtoupper( $id );
 					$placeholder  = $setting['default'];
@@ -97,10 +133,12 @@ class Settings {
 						$placeholder = constant( $const );
 					}
 					if ( $is_const ) {
-						echo ' <div class="description">' . sprintf( esc_html__( 'Defined in %s constant', 'snapshots' ), '<code>' . $const . '</code>' ) . '</div>';
+						/* translators: %s: PHP constant name. */
+						echo ' <div class="description">' . sprintf( esc_html__( 'Defined in %s constant', 'snapshots' ), '<code>' . esc_html( $const ) . '</code>' ) . '</div>';
 					} else {
-						$output_value = $type === 'boolean' ? ( $value ? 'true' : 'false' ) : ( $type === 'number' ? $value : '"' . $value . '"' );
-						echo ' <div class="description">' . sprintf( esc_html__( 'Define as: %s', 'snapshots' ), '<code>define("' . $const . '", ' . esc_attr( $output_value ) . ');</code>' ) . '</div>';
+						$output_value = 'boolean' === $type ? ( $value ? 'true' : 'false' ) : ( 'number' === $type ? $value : '"' . $value . '"' );
+						/* translators: %s: Example define() statement. */
+						echo ' <div class="description">' . sprintf( esc_html__( 'Define as: %s', 'snapshots' ), '<code>define("' . esc_attr( $const ) . '", ' . esc_attr( (string) $output_value ) . ');</code>' ) . '</div>';
 					}
 					if ( ! empty( $setting['choices'] ) && is_array( $setting['choices'] ) ) {
 						echo '<select name="' . esc_attr( $id ) . '" id="' . esc_attr( $id ) . '" ' . ( $is_const ? 'disabled' : '' ) . '>';
@@ -122,7 +160,7 @@ class Settings {
 								break;
 						}
 					}
-					if ( $setting['description'] && $setting['type'] !== 'boolean' ) {
+					if ( $setting['description'] && 'boolean' !== $setting['type'] ) {
 						echo '<p class="description">' . esc_html( $setting['description'] ) . '</p>';
 					}
 				},
@@ -132,6 +170,13 @@ class Settings {
 		}
 	}
 
+	/**
+	 * Adds the Snapshots entry under Settings.
+	 *
+	 * @since [Unreleased]
+	 *
+	 * @return void
+	 */
 	public function admin_menu() {
 
 		if ( ! current_user_can( 'manage_options' ) ) {
@@ -148,8 +193,13 @@ class Settings {
 		);
 	}
 
-
-
+	/**
+	 * Renders the settings page markup.
+	 *
+	 * @since [Unreleased]
+	 *
+	 * @return void
+	 */
 	public function render() {
 		echo '<div class="wrap"><h1>' . esc_html__( 'Snapshots Settings', 'snapshots' ) . '</h1>';
 		snapshots_get_nav( 'settings' );
@@ -172,6 +222,14 @@ class Settings {
 		echo '</div>';
 	}
 
+	/**
+	 * Replaces the admin footer text on the settings screen.
+	 *
+	 * @since [Unreleased]
+	 *
+	 * @param string $default Default footer text.
+	 * @return string Filtered footer HTML.
+	 */
 	public function admin_footer_text( $default ) {
 		/* Translators: %1$s: Plugin Name, %2$s: Rating URL */
 		return sprintf( esc_html__( 'If you like %1$s please leave a %2$s rating. Thanks in advance!', 'snapshots' ), '<strong>SnapShots</strong>', '<a href="https://wordpress.org/support/view/plugin-reviews/snapshots?filter=5#new-post" target="_blank" rel="noopener noreferrer">&#9733;&#9733;&#9733;&#9733;&#9733;</a>' );
