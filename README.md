@@ -1,12 +1,12 @@
 # SnapShots
 
-Contributors: everpress, xaverb
-Tags: snapshots, database, development, restore, wp-cli
-Requires at least: 6.6
-Tested up to: 6.7
-Requires PHP: 7.4
-Stable tag: 2.8.2
-License: GPLv2 or later
+Contributors: everpress, xaverb  
+Tags: snapshots, database, development, restore, wp-cli  
+Requires at least: 6.6  
+Tested up to: 6.7  
+Requires PHP: 7.4  
+Stable tag: 2.8.2  
+License: GPLv2 or later  
 License URI: <https://www.gnu.org/licenses/gpl-2.0.html>
 
 Save and restore named WordPress development snapshots of the database and uploads from the admin bar or WP-CLI.
@@ -189,57 +189,56 @@ On **Settings → Snapshots**, enter a comma-separated list in **Exclude Tables*
 
 ### 2.8.2
 
-- instructions for namespaces
-- update github workflow, no actual changes to the plugin
+- changed: no change to creating, restoring, or deleting snapshots
 
 ### 2.8.1
 
-- updated file strucutre
+- fixed: a failed command shows which command failed
+- added: `SNAPSHOTS_PHP_PATH` when the `php` binary is not on PATH
 
 ### 2.8.0
 
-- Tested up to PHP 8.3
-- fixed: redirects now work with fragments in URLs
-- change: current snapshot names is now stored in the database (not in the localstorage anymore)
+- fixed: the page you return to after restore keeps its #fragment
+- changed: the current snapshot name is stored in the database, not in the browser
+- changed: tested with PHP 8.3
 
 ### 2.7.0
 
-- better error handling
-- keyboard search
-- tested up to 6.1
-- implemented upgrade mechanism for future update routines
+- fixed: errors from the `wp` command are included in the output
+- added: Ctrl+S opens the snapshot menu, and typing focuses the search field
+- changed: tested with WordPress 6.1
 
 ### 2.6.0
 
-- fixed: Snapshots with numbers are now recognized.
-- moved to external script and styles
+- fixed: snapshots whose names include numbers show in the list
+- added: a search box in the admin bar menu
 
 ### 2.5.0
 
-- store last use snapshots in localstorage
+- changed: the name prompt suggests the snapshot you last restored
 
 ### 2.4
 
-- Now requires at least PHP 7.0
+- changed: requires PHP 7.0 or newer
 
 ### 2.3
 
-- updated usage of CLI commands for better support
+- changed: database export, import, and URL replacement run through WP-CLI
 
 ### 2.2
 
-- checks for ZIPAchive and falls back to PCLZIP if not available
-- automatically checks the `home_url` and do a `search-replace` if necessary
+- added: uploads are zipped with PclZip when ZipArchive is missing
+- added: restore updates the home URL when it does not match the snapshot
 
 ### 2.1
 
-- Updated look in the dropdown menu.
+- changed: a long list scrolls in the admin bar, and the date is in the tooltip
 
 ### 2.0
 
-- Breaking changes: Snapshosts are now stored in a subdirectory.
-- added option to remove snapshots from the UI
+- changed: each snapshot is stored in its own folder, so older flat files are not listed
+- added: delete a snapshot from the admin bar or with `wp snapshot delete`
 
 ### 1.0
 
-- Initial release
+- added: save and restore the database and uploads from the admin bar
