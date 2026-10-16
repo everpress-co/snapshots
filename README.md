@@ -109,7 +109,11 @@ SnapShots requires the [WP-CLI](https://wp-cli.org/) to be installed on your sys
 
 ### Unreleased
 
-- fixed: installation instructions now use the correct plugin folder name `snapshots`
+- fixed: installation instructions use the correct plugin folder name
+- improved: setup problems show as a notice on the page
+- added: a Snapshots page under Tools to view, restore, and delete snapshots, including several at once
+- added: a Settings page for where snapshots are saved, how many copies to keep, what is included, and how the list is sorted, with shortcuts from the Plugins screen and the admin bar
+- changed: snapshots are listed by when they were last used, and each one shows that time
 
 ### 2.8.2
 
