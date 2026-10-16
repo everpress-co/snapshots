@@ -122,17 +122,12 @@ copyFile(
 );
 copyFile( path.join( docsDir, 'llms.txt' ), path.join( siteDir, 'llms.txt' ) );
 
-const assetsDir = path.join( siteDir, 'assets' );
-fs.mkdirSync( assetsDir, { recursive: true } );
-copyFile(
-	path.join( wpOrgDir, 'banner-772x250.png' ),
-	path.join( assetsDir, 'banner.png' )
-);
-copyFile(
-	path.join( wpOrgDir, 'icon-256x256.png' ),
-	path.join( assetsDir, 'icon.png' )
-);
-copyFile(
-	path.join( wpOrgDir, 'screenshot-1.png' ),
-	path.join( assetsDir, 'screenshot-1.png' )
-);
+const iconSrc = path.join( wpOrgDir, 'icon-256x256.png' );
+
+for ( const assetsDir of [
+	path.join( siteDir, 'assets' ),
+	path.join( docsDir, 'assets' ),
+] ) {
+	fs.mkdirSync( assetsDir, { recursive: true } );
+	copyFile( iconSrc, path.join( assetsDir, 'icon.png' ) );
+}

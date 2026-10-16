@@ -3,260 +3,256 @@
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<title>SnapShots — WordPress development snapshots</title>
-	<meta name="description" content="Save and restore named WordPress development snapshots of the database and uploads from the admin bar or WP-CLI.">
+	<title>SnapShots — WordPress development checkpoints</title>
+	<meta name="description" content="Save a named snapshot of your WordPress development site before you experiment. Restore a saved state when you need to go back.">
 	<link rel="icon" href="assets/icon.png" type="image/png">
 	<link rel="preconnect" href="https://fonts.googleapis.com">
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-	<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
+	<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 	<link rel="stylesheet" href="style.css">
 </head>
 <body>
-	<div class="page-bg" aria-hidden="true"></div>
-
-	<header class="site-header">
-		<div class="site-header__inner">
-			<a class="site-header__brand" href="./">
-				<img class="site-header__icon" src="assets/icon.png" width="40" height="40" alt="">
-				<span>SnapShots</span>
+	<header class="site-header" id="top">
+		<div class="container site-header__inner">
+			<a class="wordmark" href="./">
+				<span class="wordmark__mark" aria-hidden="true"></span>
+				<span class="wordmark__text">SnapShots</span>
+				<span class="wordmark__by">by EverPress</span>
 			</a>
-			<nav class="site-header__nav" aria-label="Site">
-				<a href="#workflow">Workflow</a>
-				<a href="#wp-cli">CLI</a>
-				<a href="#changelog">Changelog</a>
-			</nav>
-			<nav class="site-header__nav site-header__nav--external" aria-label="External links">
-				<a href="https://wordpress.org/plugins/snapshots/">WP.org</a>
-				<a href="https://github.com/everpress-co/snapshots">GitHub</a>
-				<a href="agents.md" class="pill-link">Agents</a>
+			<nav class="site-nav" aria-label="Primary">
+				<a href="#idea">Why it works</a>
+				<a href="#how-it-works">How it works</a>
+				<a href="#requirements">Requirements</a>
+				<a href="#faq">FAQ</a>
+				<a class="site-nav__cta" href="https://wordpress.org/plugins/snapshots/">Get SnapShots <span aria-hidden="true">↗</span></a>
 			</nav>
 		</div>
 	</header>
 
 	<section class="hero" aria-labelledby="hero-title">
-		<div class="hero__grid">
+		<div class="container hero__grid">
 			<div class="hero__copy">
-				<p class="eyebrow">WordPress · development only</p>
-				<h1 id="hero-title" class="hero__title">Freeze your site.<br><span class="hero__title-accent">Rewind when you need to.</span></h1>
-				<p class="hero__lead">Named snapshots of your database and uploads—saved from the admin bar or <code>wp snapshot</code>. One click (or one command) back to a known-good state.</p>
-				<div class="hero__cta">
-					<a class="btn btn--primary" href="https://wordpress.org/plugins/snapshots/">Get SnapShots free</a>
-					<a class="btn btn--secondary" href="https://www.youtube.com/watch?v=-ybCpL5Ri44">Watch demo</a>
+				<p class="meta-label">A small tool for WordPress developers</p>
+				<h1 id="hero-title" class="display-h1">Keep the good version.</h1>
+				<p class="lead">Save a named snapshot of your WordPress development site before you experiment. Restore a saved state when you need to go back.</p>
+				<div class="hero__actions">
+					<a class="btn btn--primary" href="https://wordpress.org/plugins/snapshots/">Get SnapShots</a>
+					<a class="text-link" href="#how-it-works">See how it works <span aria-hidden="true">→</span></a>
 				</div>
-				<ul class="hero__pills" aria-label="Highlights">
-					<li>Ctrl+S to search</li>
-					<li>Stay logged in</li>
-					<li>Return to exact admin URL</li>
-				</ul>
+				<p class="meta-note">For WordPress development / Requires WP-CLI</p>
 			</div>
-			<div class="hero__visual">
-				<div class="device-frame">
-					<div class="device-frame__chrome">
-						<span></span><span></span><span></span>
+			<figure class="checkpoint-diagram" aria-hidden="true">
+				<figcaption class="checkpoint-diagram__caption">Illustrative workflow, not plugin interface.</figcaption>
+				<div class="checkpoint-diagram__panel">
+					<div class="checkpoint-rail">
+						<span class="checkpoint-rail__line"></span>
+						<span class="checkpoint-rail__dot checkpoint-rail__dot--outline" style="--stop: 12%"></span>
+						<span class="checkpoint-rail__dot checkpoint-rail__dot--outline" style="--stop: 46%"></span>
+						<span class="checkpoint-rail__dot checkpoint-rail__dot--filled" style="--stop: 80%"></span>
 					</div>
-					<img class="device-frame__shot" src="assets/screenshot-1.png" width="772" height="250" alt="SnapShots dropdown in the WordPress admin bar">
-				</div>
-				<div class="hero__float hero__float--one" aria-hidden="true">
-					<img src="assets/icon.png" width="64" height="64" alt="">
-				</div>
-				<div class="hero__float hero__float--two" aria-hidden="true">
-					<svg viewBox="0 0 120 80" width="120" height="80" role="img" aria-label="">
-						<title>Placeholder timeline</title>
-						<rect width="120" height="80" rx="8" fill="#1a2830"/>
-						<circle cx="24" cy="40" r="6" fill="#3db8d4"/>
-						<rect x="40" y="36" width="60" height="8" rx="4" fill="#c4694a" opacity="0.9"/>
-						<rect x="40" y="52" width="40" height="6" rx="3" fill="#5a7a8a" opacity="0.6"/>
+					<ul class="checkpoint-records">
+						<li>
+							<span class="checkpoint-records__index">03</span>
+							<span class="checkpoint-records__label">SAVED STATE</span>
+							<span class="checkpoint-records__title">Before the update</span>
+						</li>
+						<li>
+							<span class="checkpoint-records__index">02</span>
+							<span class="checkpoint-records__label">SAVED STATE</span>
+							<span class="checkpoint-records__title">Working layout</span>
+						</li>
+						<li class="checkpoint-records__current">
+							<span class="checkpoint-records__index">01</span>
+							<span class="checkpoint-records__label">CURRENT WORK</span>
+							<span class="checkpoint-records__title">Clean install</span>
+						</li>
+					</ul>
+					<svg class="checkpoint-restore" viewBox="0 0 120 48" width="120" height="48" aria-hidden="true">
+						<path d="M8 24 H72" stroke="currentColor" stroke-width="1.5" fill="none"/>
+						<path d="M64 16 L72 24 L64 32" stroke="currentColor" stroke-width="1.5" fill="none"/>
+						<text x="78" y="28" class="checkpoint-restore__label">RESTORE</text>
 					</svg>
 				</div>
-			</div>
+			</figure>
 		</div>
-		<div class="hero__banner-wrap">
-			<img class="hero__banner" src="assets/banner.png" width="1544" height="500" alt="">
-		</div>
-	</section>
-
-	<section class="strip" aria-label="Quick facts">
-		<div class="strip__inner">
-			<div class="strip__item">
-				<strong>Admin bar</strong>
-				<span>Create, search, restore</span>
-			</div>
-			<div class="strip__item">
-				<strong>Tools screen</strong>
-				<span>Bulk delete &amp; overview</span>
-			</div>
-			<div class="strip__item">
-				<strong>WP-CLI</strong>
-				<span>Scriptable backups</span>
-			</div>
-			<div class="strip__item">
-				<strong>Local-ready</strong>
-				<span>Tested with Local WP</span>
-			</div>
+		<div class="container hero__rule">
+			<hr>
+			<p class="meta-label">State / saved</p>
 		</div>
 	</section>
 
 	<main>
-		<section id="workflow" class="section section--split">
-			<div class="section__intro">
-				<h2 class="section__title">Built for messy experiments</h2>
-				<p class="section__lede">Use SnapShots while you build and test on a local or development site. A restore replaces the current database and, when files were saved, the uploads directory. Plugins, themes, and WordPress core stay as they are.</p>
-			</div>
-			<div class="steps">
-				<article class="step-card">
-					<div class="step-card__num">1</div>
-					<h3>Name it</h3>
-					<p>Save from the admin bar. The prompt suggests your current snapshot or the site title.</p>
-				</article>
-				<article class="step-card">
-					<div class="step-card__num">2</div>
-					<h3>Break things</h3>
-					<p>Try plugins, migrations, and bulk edits—knowing you can roll back.</p>
-				</article>
-				<article class="step-card">
-					<div class="step-card__num">3</div>
-					<h3>Restore</h3>
-					<p>Confirm once. Land on the same admin URL—including <code>#fragments</code>.</p>
-				</article>
-			</div>
-		</section>
-
-		<section id="create-restore" class="section">
-			<div class="bento">
-				<div class="bento__main">
-					<h2 class="section__title">Create &amp; restore</h2>
-					<ul class="checklist">
-						<li>Search the admin bar list by name. <kbd>Ctrl</kbd>+<kbd>S</kbd> opens the menu and focuses search. <kbd>Enter</kbd> restores the first match.</li>
-						<li>Stay logged in as the same user after a restore from the admin screen.</li>
-						<li>Keep two copies of the same name by default; older ones are removed automatically.</li>
-						<li>Confirm before every restore or delete.</li>
-					</ul>
-				</div>
-				<figure class="bento__visual placeholder-visual">
-					<div class="placeholder-visual__inner">
-						<img src="assets/screenshot-1.png" width="400" height="130" alt="Admin bar snapshot menu">
-						<div class="placeholder-visual__tag">Live UI</div>
-					</div>
-					<figcaption>Minimal dropdown—no dashboard clutter.</figcaption>
-				</figure>
-			</div>
-		</section>
-
-		<section id="tools-settings" class="section section--dark">
-			<div class="section__grid">
+		<section id="idea" class="section section--idea">
+			<div class="container section__split">
 				<div>
-					<h2 class="section__title section__title--light">Tools &amp; settings</h2>
-					<p class="section__lede section__lede--light"><strong>Tools → Snapshots</strong> lists every snapshot with name, created time, last used, and saved location. Select several rows and delete together.</p>
-					<p class="section__lede section__lede--light"><strong>Settings → Snapshots</strong> controls folder path, copy limit, uploads, return URL, excluded tables, and sort order. Linked from Plugins and the admin bar.</p>
+					<p class="section-index">01 / The idea</p>
+					<h2 class="display-h2">Make changes without losing your place.</h2>
 				</div>
-				<div class="settings-cards">
-					<div class="settings-card">
-						<span class="settings-card__icon" aria-hidden="true">📁</span>
-						<h3>Storage</h3>
-						<p><code>wp-content/.snapshots</code> by default. Override via UI or <code>SNAPSHOTS_FOLDER</code>.</p>
-					</div>
-					<div class="settings-card">
-						<span class="settings-card__icon" aria-hidden="true">⚙️</span>
-						<h3>Overrides</h3>
-						<p>Constants in <code>wp-config.php</code> win. Filters like <code>snapshots_max_shots</code> work too.</p>
-					</div>
+				<div class="section__prose">
+					<p>Development means trying things. Updates, experiments, quick fixes, and the occasional wrong turn.</p>
+					<p>SnapShots gives you a way to save a state before the next change, then return to a saved one from the WordPress admin interface or WP-CLI.</p>
 				</div>
 			</div>
 		</section>
 
-		<section id="includes" class="section">
-			<h2 class="section__title">Inside every snapshot</h2>
-			<div class="includes-grid">
-				<article class="include-tile">
-					<h3><code>dump.sql</code></h3>
-					<p>Database export for site tables, minus any you exclude.</p>
-				</article>
-				<article class="include-tile include-tile--accent">
-					<h3><code>data.zip</code></h3>
-					<p>Uploads folder when <strong>Save Files</strong> is on (default).</p>
-				</article>
-				<article class="include-tile">
-					<h3><code>manifest.json</code></h3>
-					<p>Name, timestamps, and optional return URL.</p>
-				</article>
+		<section id="how-it-works" class="section">
+			<div class="container">
+				<p class="section-index">02 / The workflow</p>
+				<h2 class="display-h2">Save. Try. Go back.</h2>
+				<ol class="workflow-steps">
+					<li>
+						<span class="workflow-steps__num">01</span>
+						<h3>Save a state</h3>
+						<p>Create a snapshot of the development site before making a change.</p>
+					</li>
+					<li>
+						<span class="workflow-steps__num">02</span>
+						<h3>Name the moment</h3>
+						<p>Give it a useful name so you know which state you saved.</p>
+					</li>
+					<li>
+						<span class="workflow-steps__num">03</span>
+						<h3>Restore when needed</h3>
+						<p>Choose a saved snapshot and confirm restoration from WordPress.</p>
+					</li>
+				</ol>
+				<p class="workflow-note">Restoration changes stored site data. Review the confirmation and keep appropriate backups.</p>
 			</div>
-			<p class="section__note">On restore, prefix tables not in the snapshot are dropped. Mismatched home URLs get a WP-CLI search-replace. Zip via ZipArchive or PclZip fallback.</p>
-			<aside class="warning-card">
-				<p><strong>Not an off-site backup.</strong> Snapshots live on this server only. Keep separate backups for anything you cannot lose.</p>
-			</aside>
 		</section>
 
-		<section id="wp-cli" class="section section--terminal">
-			<div class="terminal-wrap">
-				<div class="terminal">
-					<div class="terminal__bar">
-						<span></span><span></span><span></span>
-						<span class="terminal__title">wp snapshot</span>
+		<section id="details" class="section">
+			<div class="container">
+				<p class="section-index">03 / The details</p>
+				<h2 class="display-h2">Small footprint. Useful details.</h2>
+				<dl class="feature-list">
+					<div class="feature-list__row">
+						<dt><span class="feature-list__index">01</span> Named snapshots</dt>
+						<dd>Keep saved states easy to recognize.</dd>
 					</div>
-					<pre class="terminal__body"><code><span class="t-dim">$</span> wp snapshot backup "Before the experiment" <span class="t-flag">--files</span>
-<span class="t-dim">$</span> wp snapshot restore before-the-experiment
-<span class="t-dim">$</span> wp snapshot list
-<span class="t-dim">$</span> wp snapshot delete before-the-experiment</code></pre>
-				</div>
-				<div class="terminal__copy">
-					<h2 class="section__title">Automate with WP-CLI</h2>
-					<p><code>backup</code> accepts <code>--files</code>, <code>--location=&lt;path&gt;</code>, and <code>--exclude_tables=&lt;tables&gt;</code>.</p>
-					<p><code>restore</code> and <code>delete</code> take a name, slug, or folder id like <code>before-the-experiment_1587039434</code>. Names use the latest copy.</p>
-				</div>
+					<div class="feature-list__row">
+						<dt><span class="feature-list__index">02</span> Database + files</dt>
+						<dd>Restore WordPress database tables and supported files, depending on configuration.</dd>
+					</div>
+					<div class="feature-list__row">
+						<dt><span class="feature-list__index">03</span> Return to your place</dt>
+						<dd>The plugin can remember the page you were on and redirect after restoration.</dd>
+					</div>
+					<div class="feature-list__row">
+						<dt><span class="feature-list__index">04</span> Minimal admin UI</dt>
+						<dd>Create and restore snapshots from a small interface in the WordPress admin bar and Tools screen.</dd>
+					</div>
+					<div class="feature-list__row">
+						<dt><span class="feature-list__index">05</span> Configurable behavior</dt>
+						<dd>Settings are available through the admin screen, constants in <code>wp-config.php</code>, and filters for developers.</dd>
+					</div>
+				</dl>
 			</div>
 		</section>
 
-		<section id="agents" class="section agents-band">
-			<div class="agents-band__inner">
-				<div class="agents-band__art" aria-hidden="true">
-					<svg viewBox="0 0 200 200" width="200" height="200">
-						<defs>
-							<linearGradient id="ag" x1="0%" y1="0%" x2="100%" y2="100%">
-								<stop offset="0%" stop-color="#3db8d4"/>
-								<stop offset="100%" stop-color="#c4694a"/>
-							</linearGradient>
-						</defs>
-						<rect width="200" height="200" rx="24" fill="#121a20"/>
-						<path d="M40 140 L80 60 L120 100 L160 50" stroke="url(#ag)" stroke-width="4" fill="none" stroke-linecap="round"/>
-						<circle cx="80" cy="60" r="8" fill="#3db8d4"/>
-						<circle cx="160" cy="50" r="8" fill="#c4694a"/>
-						<text x="40" y="175" fill="#8aa4b4" font-family="monospace" font-size="14">agent@dev:~$</text>
-					</svg>
-				</div>
-				<div>
-					<h2 class="section__title">For coding agents</h2>
-					<p>Snapshot before risky work. List with <code>--format=json</code>. Restore only your task snapshot or when the user asks. Never delete unless asked.</p>
-					<p class="agents-band__links">
-						<a class="btn btn--primary btn--sm" href="agents.md">Agent guide</a>
-						<a class="btn btn--secondary btn--sm" href="llms.txt">llms.txt</a>
-					</p>
+		<section class="section section--dark" aria-labelledby="confidence-title">
+			<div class="container section--dark__inner">
+				<p class="meta-label meta-label--on-dark">A better way to experiment</p>
+				<h2 id="confidence-title" class="display-h2 display-h2--on-dark">Keep moving.<br>Know where you can go back.</h2>
+				<p class="section--dark__lede">One intentional checkpoint before an experiment can save a lot of manual undoing.</p>
+				<div class="dark-rail" aria-hidden="true">
+					<span class="dark-rail__line"></span>
+					<span class="dark-rail__dot"></span>
+					<span class="dark-rail__back">03</span>
 				</div>
 			</div>
 		</section>
 
 		<section id="requirements" class="section">
-			<h2 class="section__title">Requirements</h2>
-			<div class="req-grid">
-				<p>WordPress 6.6+, PHP 7.4+</p>
-				<p><a href="https://wp-cli.org/">WP-CLI</a> 2.2+ and PHP <code>exec</code></p>
-				<p><code>manage_options</code> to create / restore / delete</p>
-				<p>Works with <a href="https://localwp.com/">Local</a>; not on shell-blocked hosts</p>
+			<div class="container">
+				<p class="section-index">04 / Before you install</p>
+				<h2 class="display-h2">A few things to know.</h2>
+				<table class="spec-table">
+					<tbody>
+						<tr>
+							<th scope="row">WordPress</th>
+							<td>Check the current supported versions on <a href="https://wordpress.org/plugins/snapshots/">WordPress.org</a> before installing.</td>
+						</tr>
+						<tr>
+							<th scope="row">WP-CLI</th>
+							<td>Required. SnapShots runs <code>wp snapshot</code> for save, restore, and delete.</td>
+						</tr>
+						<tr>
+							<th scope="row">PHP execution</th>
+							<td>PHP must be able to call external commands via <code>exec()</code>.</td>
+						</tr>
+						<tr>
+							<th scope="row">Recommended environment</th>
+							<td>Development / local / staging.</td>
+						</tr>
+						<tr>
+							<th scope="row">Restore behavior</th>
+							<td>A restore can replace data; do not treat it as a read-only preview.</td>
+						</tr>
+					</tbody>
+				</table>
+				<p class="trust-note">SnapShots is a development convenience, not a substitute for a tested production backup and disaster-recovery process.</p>
 			</div>
 		</section>
 
-		<section id="changelog" class="section changelog">
-			<h2 class="section__title">Changelog</h2>
-			<p class="section__note">Synced from the plugin readme on every deploy.</p>
-			<div class="changelog__body">
-				<!-- changelog -->
+		<section id="faq" class="section section--faq">
+			<div class="container">
+				<p class="section-index">05 / Common questions</p>
+				<h2 class="display-h2">Good to know.</h2>
+				<div class="faq-list">
+					<details class="faq-item">
+						<summary>Does SnapShots need WP-CLI?</summary>
+						<p>Yes. WP-CLI is required, and PHP must allow <code>exec()</code> so the plugin can run shell commands.</p>
+					</details>
+					<details class="faq-item">
+						<summary>Can I save snapshots with names?</summary>
+						<p>Yes. Named states make it easier to find the snapshot you want later.</p>
+					</details>
+					<details class="faq-item">
+						<summary>What gets restored?</summary>
+						<p>Database tables and applicable site files according to your options and configuration—not every file on the server, and not plugins, themes, or core as a separate bundle.</p>
+					</details>
+					<details class="faq-item">
+						<summary>Should I use this instead of site backups?</summary>
+						<p>No. Use SnapShots as a development checkpoint. Keep proper backups for production and disaster recovery.</p>
+					</details>
+					<details class="faq-item">
+						<summary>Where do I download it?</summary>
+						<p>From the official <a href="https://wordpress.org/plugins/snapshots/">WordPress plugin directory</a>.</p>
+					</details>
+				</div>
+			</div>
+		</section>
+
+		<section id="changelog" class="section section--changelog">
+			<div class="container">
+				<p class="section-index">06 / Release notes</p>
+				<h2 class="display-h2">Changelog</h2>
+				<p class="meta-note">Synced from the plugin readme when the site is built for deploy.</p>
+				<div class="changelog__body prose">
+					<!-- changelog -->
+				</div>
+			</div>
+		</section>
+
+		<section class="section section--closing" aria-labelledby="closing-title">
+			<div class="container section--closing__inner">
+				<h2 id="closing-title" class="display-h2">Make room to experiment.</h2>
+				<p class="lead lead--center">Save the state you have. Build the next thing.</p>
+				<a class="btn btn--primary" href="https://wordpress.org/plugins/snapshots/">Get SnapShots on WordPress.org</a>
 			</div>
 		</section>
 	</main>
 
 	<footer class="site-footer">
-		<div class="site-footer__inner">
-			<img src="assets/icon.png" width="48" height="48" alt="">
-			<p>SnapShots by <a href="https://xaver.dev">EverPress</a> · <a href="https://www.gnu.org/licenses/gpl-2.0.html">GPLv2+</a> · <a href="https://wordpress.org/support/plugin/snapshots/">Support</a></p>
+		<div class="container site-footer__inner">
+			<p class="site-footer__brand"><strong>SnapShots</strong> <span class="site-footer__by">by EverPress</span></p>
+			<nav class="site-footer__nav" aria-label="Footer">
+				<a href="https://wordpress.org/plugins/snapshots/">Plugin listing</a>
+				<a href="https://wordpress.org/support/plugin/snapshots/">Support</a>
+				<a href="#top">Back to top</a>
+				<a href="agents.md" class="site-footer__dev">Agent guide</a>
+				<a href="llms.txt" class="site-footer__dev">llms.txt</a>
+			</nav>
 		</div>
 	</footer>
 </body>
