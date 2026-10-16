@@ -131,12 +131,19 @@ import './style.scss';
 				if ( root ) {
 					root.classList.remove( 'loading', 'create' );
 				}
-				if ( ! payload.success || ! payload.data || ! payload.data.snapshot ) {
+				if (
+					! payload.success ||
+					! payload.data ||
+					! payload.data.snapshot
+				) {
 					window.alert( getAjaxErrorMessage( payload ) );
 					return;
 				}
 
-				addSnapshotMenuItem( payload.data.snapshot, payload.data.count );
+				addSnapshotMenuItem(
+					payload.data.snapshot,
+					payload.data.count
+				);
 			} )
 			.catch( function () {
 				ajaxInFlight = false;
@@ -193,7 +200,11 @@ import './style.scss';
 				document.location.hash,
 		} )
 			.then( function ( payload ) {
-				if ( payload.success && payload.data && payload.data.redirect ) {
+				if (
+					payload.success &&
+					payload.data &&
+					payload.data.redirect
+				) {
 					window.location.assign( payload.data.redirect );
 					return;
 				}
@@ -244,8 +255,7 @@ import './style.scss';
 
 		var root = getSnapshotsRoot();
 		var listItem = this.closest( 'li' );
-		var wasCurrent =
-			listItem && listItem.classList.contains( 'current' );
+		var wasCurrent = listItem && listItem.classList.contains( 'current' );
 
 		if ( root ) {
 			root.classList.add( 'loading' );
@@ -299,14 +309,14 @@ import './style.scss';
 		try {
 			var url = new URL( href, window.location.href );
 			return url.searchParams.get( param ) || '';
-		} catch ( e ) {
+		} catch {
 			return '';
 		}
 	}
 
 	function postAdminBarAjax( action, fields ) {
 		var body = new URLSearchParams( {
-			action: action,
+			action,
 			nonce: snapshots.nonce,
 		} );
 		var keys = Object.keys( fields || {} );
@@ -317,7 +327,8 @@ import './style.scss';
 			method: 'POST',
 			credentials: 'same-origin',
 			headers: {
-				'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+				'Content-Type':
+					'application/x-www-form-urlencoded; charset=UTF-8',
 			},
 			body: body.toString(),
 		} ).then( function ( response ) {
