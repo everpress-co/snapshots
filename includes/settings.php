@@ -63,7 +63,14 @@ class Settings {
 
 						if ( $setting['type'] === 'number' ) {
 							return (int) $value;
-						} elseif ( $setting['type'] === 'string' && $value === '' ) {
+						}
+
+						if ( ! empty( $setting['choices'] ) && is_array( $setting['choices'] ) ) {
+							$value = is_string( $value ) ? $value : '';
+							return array_key_exists( $value, $setting['choices'] ) ? $value : $setting['default'];
+						}
+
+						if ( $setting['type'] === 'string' && $value === '' ) {
 							return;
 						}
 
@@ -95,17 +102,25 @@ class Settings {
 						$output_value = $type === 'boolean' ? ( $value ? 'true' : 'false' ) : ( $type === 'number' ? $value : '"' . $value . '"' );
 						echo ' <div class="description">' . sprintf( esc_html__( 'Define as: %s', 'snapshots' ), '<code>define("' . $const . '", ' . esc_attr( $output_value ) . ');</code>' ) . '</div>';
 					}
-					switch ( $setting['type'] ) {
-						case 'boolean':
-							echo '<label><input type="hidden" name="' . esc_attr( $id ) . '" value="0"><input type="checkbox" name="' . esc_attr( $id ) . '" value="1" ' . checked( $value, true, false ) . ' ' . ( $is_const ? 'disabled' : '' ) . '> ' . esc_html( $setting['description'] ) . '</label>';
+					if ( ! empty( $setting['choices'] ) && is_array( $setting['choices'] ) ) {
+						echo '<select name="' . esc_attr( $id ) . '" id="' . esc_attr( $id ) . '" ' . ( $is_const ? 'disabled' : '' ) . '>';
+						foreach ( $setting['choices'] as $choice_value => $choice_label ) {
+							echo '<option value="' . esc_attr( $choice_value ) . '"' . selected( (string) $value, (string) $choice_value, false ) . '>' . esc_html( $choice_label ) . '</option>';
+						}
+						echo '</select>';
+					} else {
+						switch ( $setting['type'] ) {
+							case 'boolean':
+								echo '<label><input type="hidden" name="' . esc_attr( $id ) . '" value="0"><input type="checkbox" name="' . esc_attr( $id ) . '" value="1" ' . checked( $value, true, false ) . ' ' . ( $is_const ? 'disabled' : '' ) . '> ' . esc_html( $setting['description'] ) . '</label>';
 
-							break;
-						case 'number':
-							echo '<input type="number" name="' . esc_attr( $id ) . '" value="' . esc_attr( $value ) . '" class="small-text" placeholder="' . esc_attr( $placeholder ) . '" ' . ( $is_const ? 'readonly' : '' ) . '>';
-							break;
-						default:
-							echo '<input type="text" name="' . esc_attr( $id ) . '" value="' . esc_attr( $value ) . '" class="regular-text" placeholder="' . esc_attr( $placeholder ) . '" ' . ( $is_const ? 'readonly' : '' ) . '>';
-							break;
+								break;
+							case 'number':
+								echo '<input type="number" name="' . esc_attr( $id ) . '" value="' . esc_attr( $value ) . '" class="small-text" placeholder="' . esc_attr( $placeholder ) . '" ' . ( $is_const ? 'readonly' : '' ) . '>';
+								break;
+							default:
+								echo '<input type="text" name="' . esc_attr( $id ) . '" value="' . esc_attr( $value ) . '" class="regular-text" placeholder="' . esc_attr( $placeholder ) . '" ' . ( $is_const ? 'readonly' : '' ) . '>';
+								break;
+						}
 					}
 					if ( $setting['description'] && $setting['type'] !== 'boolean' ) {
 						echo '<p class="description">' . esc_html( $setting['description'] ) . '</p>';

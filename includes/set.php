@@ -48,4 +48,14 @@ return array(
 		'description' => 'Comma separated list of tables to exclude from the snapshot.',
 		'default'     => '',
 	),
+	'list_order'     => array(
+		'name'        => 'List order',
+		'type'        => 'string',
+		'description' => 'How snapshots are ordered in the admin bar and Tools screen.',
+		'default'     => 'last_used',
+		'choices'     => array(
+			'last_used' => 'Last used (newest first)',
+			'created'   => 'Created (newest first)',
+		),
+	),
 );

@@ -18,6 +18,7 @@ class Plugin {
 		add_action( 'admin_menu', array( $this, 'admin_menu' ) );
 		add_filter( 'plugin_action_links_' . plugin_basename( SNAPSHOTS_FILE ), array( $this, 'apd_settings_link' ) );
 		add_action( 'admin_notices', array( $this, 'snapshots_tools_admin_notices' ) );
+		add_action( 'update_option_snapshots_list_order', array( $this, 'clear_snapshot_list_cache' ) );
 	}
 
 	public static function get_instance() {
@@ -311,12 +312,40 @@ class Plugin {
 	}
 
 
+	/**
+	 * Transient key for the snapshot list cache.
+	 *
+	 * @param string|false $snapshot_current_id Value of snapshot_current transient.
+	 * @param string       $order               `last_used` or `created`.
+	 * @return string
+	 */
+	private function snapshot_list_cache_key( $snapshot_current_id, $order ) {
+		$suffix = false !== $snapshot_current_id ? (string) $snapshot_current_id : '';
+		return 'snapshot_list_' . $suffix . '_' . $order;
+	}
+
+	/**
+	 * Snapshot list sort mode: manifest last_used vs folder created time.
+	 *
+	 * @return string `last_used`|`created`
+	 */
+	private function get_list_order() {
+		$order = snapshots_option( 'list_order' );
+		if ( 'created' !== $order && 'last_used' !== $order ) {
+			$order = 'last_used';
+		}
+		return apply_filters( 'snapshots_list_order', $order );
+	}
+
+
 	public function get_snapshots() {
 
-		$last = get_transient( 'snapshot_current' );
+		$last      = get_transient( 'snapshot_current' );
+		$order     = $this->get_list_order();
+		$cache_key = $this->snapshot_list_cache_key( $last, $order );
 
 		// add caching for the snapshots to improve performance
-		if ( false === ( $snapshots = get_transient( 'snapshot_list_' . $last ) ) ) {
+		if ( false === ( $snapshots = get_transient( $cache_key ) ) ) {
 
 			// raw snaps by reading files
 			$snaps = $this->get_snaps();
@@ -350,7 +379,7 @@ class Plugin {
 				}
 			}
 
-			set_transient( 'snapshot_list_' . $last, $snapshots, HOUR_IN_SECONDS );
+			set_transient( $cache_key, $snapshots, DAY_IN_SECONDS );
 		}
 
 		return (array) $snapshots;
@@ -369,11 +398,20 @@ class Plugin {
 
 		$files = list_files( snapshots_option( 'folder' ), 1 );
 		$files = preg_grep( '/([a-z0-9-]+)_(\d+)\/$/', $files );
+		$order = $this->get_list_order();
 		usort(
 			$files,
-			function ( $a, $b ) {
+			function ( $a, $b ) use ( $order ) {
 				$ma = $this->get_snapshot_sort_meta( $a );
 				$mb = $this->get_snapshot_sort_meta( $b );
+
+				if ( 'created' === $order ) {
+					if ( $ma['created'] !== $mb['created'] ) {
+						return $mb['created'] <=> $ma['created'];
+					}
+					return $mb['primary'] <=> $ma['primary'];
+				}
+
 				if ( $ma['primary'] !== $mb['primary'] ) {
 					return $mb['primary'] <=> $ma['primary'];
 				}
@@ -417,6 +455,16 @@ class Plugin {
 
 		$last = get_transient( 'snapshot_current' );
 		delete_transient( 'snapshot_list_' . $last );
+		foreach ( array( 'last_used', 'created' ) as $order ) {
+			delete_transient( $this->snapshot_list_cache_key( $last, $order ) );
+		}
+	}
+
+	/**
+	 * Public hook target: flush snapshot list transients (e.g. after settings change).
+	 */
+	public function clear_snapshot_list_cache() {
+		$this->clear_cache();
 	}
 
 
