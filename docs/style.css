@@ -557,13 +557,6 @@ a:hover {
 	}
 }
 
-@media (min-width: 1200px) {
-
-	.feature-list__row {
-		grid-template-columns: 48px minmax(0, 1.2fr) minmax(0, 2fr);
-	}
-}
-
 .feature-list__index {
 	font-family: var(--font-mono);
 	font-size: 0.75rem;
