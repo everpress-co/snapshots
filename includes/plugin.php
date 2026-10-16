@@ -533,7 +533,10 @@ class Plugin {
 		}
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Verified in the AJAX handler.
-		$location = htmlspecialchars_decode( sanitize_text_field( wp_unslash( $_POST['location'] ) ) );
+		$location = sanitize_url( wp_unslash( $_POST['location'] ) );
+		if ( '' === $location ) {
+			return $default;
+		}
 
 		return wp_validate_redirect( $location, $default );
 	}
