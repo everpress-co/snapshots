@@ -46,7 +46,6 @@
 		"lint:js": "wp-scripts lint-js",
 		"lint:pkg-json": "wp-scripts lint-pkg-json",
 		"packages-update": "wp-scripts packages-update",
-		"pages": "node scripts/build-pages.mjs",
 		"plugin-zip": "wp-scripts plugin-zip",
 		"start:poll": "npm run watch:poll",
 		"watch:poll": "WEBPACK_WATCH_POLL=1000 webpack --mode development --watch --progress",
