@@ -249,9 +249,9 @@ class CLI_Command extends WP_CLI_Command {
 		$location = $folder . '/dump.sql';
 
 		$manifest = array(
-			'name'       => $name,
-			'created'    => $timestamp,
-			'last_used'  => $timestamp,
+			'name'      => $name,
+			'created'   => $timestamp,
+			'last_used' => $timestamp,
 		);
 
 		$this->command( 'db export ' . $location, $command_args );
@@ -379,7 +379,7 @@ class CLI_Command extends WP_CLI_Command {
 			$raw           = file_get_contents( $manifest_path );
 			$manifest_data = json_decode( $raw, true );
 			if ( ! is_array( $manifest_data ) ) {
-				$obj = json_decode( $raw );
+				$obj           = json_decode( $raw );
 				$manifest_data = ( $obj && is_object( $obj ) ) ? get_object_vars( $obj ) : array();
 			}
 			if ( ! empty( $manifest_data['location'] ) ) {
