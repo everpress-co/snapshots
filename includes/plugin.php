@@ -481,10 +481,13 @@ class Plugin {
 
 		$item['isCurrent'] = true;
 
+		$removed = array_values( array_diff( $before, $this->get_snapshot_basenames() ) );
+
 		wp_send_json_success(
 			array(
 				'snapshot' => $item,
 				'count'    => count( $this->get_snapshots() ),
+				'removed'  => $removed,
 			)
 		);
 	}

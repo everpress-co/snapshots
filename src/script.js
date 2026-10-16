@@ -88,7 +88,7 @@ import './style.scss';
 			return;
 		}
 
-		if ( ! snapshots.ajaxUrl || ajaxInFlight ) {
+		if ( ! adminBarAjaxAvailable() || ajaxInFlight ) {
 			if ( snapshots.ajaxUrl && ajaxInFlight ) {
 				event.preventDefault();
 				return;
@@ -140,6 +140,7 @@ import './style.scss';
 					return;
 				}
 
+				removePrunedSnapshotMenuItems( payload.data.removed );
 				addSnapshotMenuItem(
 					payload.data.snapshot,
 					payload.data.count
@@ -164,7 +165,7 @@ import './style.scss';
 			return false;
 		}
 
-		if ( ! snapshots.ajaxUrl || ajaxInFlight ) {
+		if ( ! adminBarAjaxAvailable() || ajaxInFlight ) {
 			if ( snapshots.ajaxUrl && ajaxInFlight ) {
 				return false;
 			}
@@ -236,7 +237,7 @@ import './style.scss';
 			return false;
 		}
 
-		if ( ! snapshots.ajaxUrl || ajaxInFlight ) {
+		if ( ! adminBarAjaxAvailable() || ajaxInFlight ) {
 			if ( snapshots.ajaxUrl && ajaxInFlight ) {
 				return false;
 			}
@@ -311,6 +312,38 @@ import './style.scss';
 			return url.searchParams.get( param ) || '';
 		} catch {
 			return '';
+		}
+	}
+
+	function adminBarAjaxAvailable() {
+		if ( ! snapshots.ajaxUrl ) {
+			return false;
+		}
+		try {
+			return (
+				new URL( snapshots.ajaxUrl, window.location.href ).origin ===
+				window.location.origin
+			);
+		} catch {
+			return false;
+		}
+	}
+
+	function removePrunedSnapshotMenuItems( ids ) {
+		if ( ! ids || ! ids.length ) {
+			return;
+		}
+		var i;
+		for ( i = 0; i < ids.length; i++ ) {
+			var stale = document.getElementById(
+				'wp-admin-bar-snapshot-' + ids[ i ]
+			);
+			if ( stale && stale.parentNode ) {
+				stale.parentNode.removeChild( stale );
+			}
+			snapshotsElements = snapshotsElements.filter( function ( li ) {
+				return li !== stale;
+			} );
 		}
 	}
 
