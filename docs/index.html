@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>SnapShots — Save and restore WordPress development snapshots</title>
+	<meta name="description" content="Save and restore named WordPress development snapshots of the database and uploads from the admin bar or WP-CLI.">
+	<link rel="icon" href="assets/icon.png" type="image/png">
+	<link rel="stylesheet" href="style.css">
+</head>
+<body>
+	<header class="site-header">
+		<div class="site-header__inner">
+			<a class="site-header__brand" href="./">
+				<img class="site-header__icon" src="assets/icon.png" width="36" height="36" alt="">
+				SnapShots
+			</a>
+			<nav class="site-header__nav" aria-label="External links">
+				<a href="https://wordpress.org/plugins/snapshots/">WordPress.org</a>
+				<a href="https://github.com/everpress-co/snapshots">GitHub</a>
+				<a href="https://wordpress.org/support/plugin/snapshots/">Support</a>
+				<a href="agents.md">For agents</a>
+			</nav>
+		</div>
+	</header>
+
+	<div class="hero">
+		<div class="hero__inner">
+			<img class="hero__banner" src="assets/banner.png" width="772" height="250" alt="SnapShots admin bar menu with named snapshots">
+			<h1 class="hero__title">SnapShots</h1>
+			<p class="hero__lead">Save and restore named WordPress development snapshots of the database and uploads from the admin bar or WP-CLI.</p>
+			<a class="btn" href="https://wordpress.org/plugins/snapshots/">Install from WordPress.org</a>
+			<a class="btn btn--ghost" href="https://www.youtube.com/watch?v=-ybCpL5Ri44">Watch demo</a>
+		</div>
+	</div>
+
+	<main>
+		<section id="create-restore">
+			<h2>Create and restore</h2>
+			<p>Use SnapShots while you build and test on a local or development site. A restore replaces the current database and, when files were saved, the uploads directory. Plugins, themes, and WordPress core stay as they are.</p>
+			<ul>
+				<li>Name each snapshot from the admin bar. The prompt suggests the current snapshot name, or the site title when none is current.</li>
+				<li>Search the admin bar list by name. Press Ctrl+S to open the menu and focus search. Press Enter to restore the first match.</li>
+				<li>Store the current admin URL and return there after restore, including URL fragments.</li>
+				<li>Stay logged in as the same user after a restore started from the admin screen.</li>
+				<li>Keep a limited number of copies of the same name. Two copies are kept by default; older ones are removed.</li>
+				<li>Confirm before a restore or delete.</li>
+			</ul>
+			<figure class="figure">
+				<img src="assets/screenshot-1.png" width="772" height="250" alt="SnapShots dropdown in the WordPress admin bar">
+				<figcaption>Minimal dropdown in the admin bar.</figcaption>
+			</figure>
+		</section>
+
+		<section id="tools-settings">
+			<h2>Tools screen and settings</h2>
+			<p><strong>Tools → Snapshots</strong> lists every snapshot with its name, created time, last used time, and saved location. Select several rows and delete them together.</p>
+			<p><strong>Settings → Snapshots</strong> controls where snapshots are saved, how many copies to keep, whether uploads and the return URL are included, which database tables to leave out, and whether the list is sorted by last used or by created date. The Plugins screen and the admin bar both link to that settings page.</p>
+			<p>A PHP constant in <code>wp-config.php</code> overrides the matching setting. Each option can also be changed with the <code>snapshots_{option}</code> filter, for example <code>snapshots_max_shots</code>.</p>
+		</section>
+
+		<section id="includes">
+			<h2>What a snapshot includes</h2>
+			<ul>
+				<li>A database export (<code>dump.sql</code>) of the site tables, except tables you exclude.</li>
+				<li>The uploads directory as <code>data.zip</code>, when <strong>Save Files</strong> is enabled. It is enabled by default.</li>
+				<li>A manifest with the name, created time, last used time, and the optional return URL.</li>
+			</ul>
+			<p>On restore, tables that use this site's database prefix and are not in the snapshot are dropped. If the home URL inside the snapshot differs from the current home URL, WP-CLI runs a search-replace to the current URL.</p>
+			<div class="callout">
+				<p><strong>Development tool, not off-site backup.</strong> Snapshots are stored on the same server. They are not uploaded to a remote service. Keep a separate backup of anything you cannot afford to lose.</p>
+			</div>
+		</section>
+
+		<section id="wp-cli">
+			<h2>WP-CLI</h2>
+			<p>SnapShots adds a <code>wp snapshot</code> command. From the shell:</p>
+			<pre><code>wp snapshot backup "Before the experiment" --files
+wp snapshot restore before-the-experiment
+wp snapshot list
+wp snapshot delete before-the-experiment</code></pre>
+			<p><code>backup</code> accepts <code>--files</code> to include uploads, <code>--location=&lt;path&gt;</code> to store a return URL such as <code>wp-admin/plugins.php</code>, and <code>--exclude_tables=&lt;tables&gt;</code> as a comma-separated list.</p>
+			<p><code>restore</code> and <code>delete</code> accept the snapshot name, its slug, or a folder id such as <code>before-the-experiment_1587039434</code>. When you pass a name, the latest copy of that name is used.</p>
+		</section>
+
+		<section id="agents">
+			<h2>For agents</h2>
+			<p>If you are a coding agent on a site with SnapShots installed, use WP-CLI to snapshot before risky work and restore only when appropriate. List snapshots as JSON, prefer descriptive backup names, and do not delete snapshots unless the user asks.</p>
+			<p><a href="agents.md">Read the SnapShots agent guide</a> · <a href="llms.txt">llms.txt</a></p>
+		</section>
+
+		<section id="requirements">
+			<h2>Requirements</h2>
+			<ul>
+				<li>WordPress 6.6 or newer, PHP 7.4 or newer.</li>
+				<li><a href="https://wp-cli.org/">WP-CLI</a> 2.2 or newer and PHP <code>exec</code> so the plugin can run <code>wp snapshot</code>.</li>
+				<li>A <code>php</code> binary the web server can run. Set <code>SNAPSHOTS_PHP_PATH</code> when it is not on PATH.</li>
+				<li>Only users with the <code>manage_options</code> capability can create, restore, or delete snapshots.</li>
+				<li>Tested with <a href="https://localwp.com/">Local</a>. Many WordPress.com plans and hosts that disable shell access cannot use SnapShots.</li>
+			</ul>
+		</section>
+
+		<section id="changelog" class="changelog">
+			<h2>Changelog</h2>
+			<!-- changelog -->
+		</section>
+	</main>
+
+	<footer class="site-footer">
+		<p>SnapShots by <a href="https://xaver.dev">EverPress</a>. Licensed under <a href="https://www.gnu.org/licenses/gpl-2.0.html">GPLv2 or later</a>.</p>
+	</footer>
+</body>
+</html>
