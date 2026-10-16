@@ -37,6 +37,10 @@ class Plugin {
 		add_action( 'init', array( $this, 'enqueue_scripts' ) );
 		add_action( 'admin_bar_menu', array( $this, 'toolbar_snapshots' ), 20 );
 
+		add_action( 'wp_ajax_snapshots_delete', array( $this, 'ajax_delete_snapshot' ) );
+		add_action( 'wp_ajax_snapshots_restore', array( $this, 'ajax_restore_snapshot' ) );
+		add_action( 'wp_ajax_snapshots_create', array( $this, 'ajax_create_snapshot' ) );
+
 		add_action( 'admin_menu', array( $this, 'admin_menu' ) );
 		add_filter( 'plugin_action_links_' . plugin_basename( SNAPSHOTS_FILE ), array( $this, 'apd_settings_link' ) );
 		add_action( 'admin_notices', array( $this, 'snapshots_tools_admin_notices' ) );
@@ -301,6 +305,336 @@ class Plugin {
 	}
 
 	/**
+	 * Deletes a snapshot from an admin-bar AJAX request.
+	 *
+	 * @since [Unreleased]
+	 *
+	 * @return void
+	 */
+	public function ajax_delete_snapshot() {
+		check_ajax_referer( 'snapshots_admin_bar', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error(
+				array(
+					'message' => esc_html__( 'You do not have permission to delete snapshots.', 'snapshots' ),
+				),
+				403
+			);
+		}
+
+		$snapshot_id = $this->get_snapshot_id_from_ajax_request();
+		if ( '' === $snapshot_id ) {
+			wp_send_json_error(
+				array(
+					'message' => esc_html__( 'Invalid snapshot.', 'snapshots' ),
+				),
+				400
+			);
+		}
+
+		$result = $this->delete( $snapshot_id );
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error(
+				array(
+					'message' => $result->get_error_message(),
+				),
+				500
+			);
+		}
+
+		wp_send_json_success();
+	}
+
+	/**
+	 * Restores a snapshot from an admin-bar AJAX request.
+	 *
+	 * @since [Unreleased]
+	 *
+	 * @return void
+	 */
+	public function ajax_restore_snapshot() {
+		check_ajax_referer( 'snapshots_admin_bar', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error(
+				array(
+					'message' => esc_html__( 'You do not have permission to restore snapshots.', 'snapshots' ),
+				),
+				403
+			);
+		}
+
+		$snapshot_id = $this->get_snapshot_id_from_ajax_request();
+		if ( '' === $snapshot_id ) {
+			wp_send_json_error(
+				array(
+					'message' => esc_html__( 'Invalid snapshot.', 'snapshots' ),
+				),
+				400
+			);
+		}
+
+		$redirect = $this->restore( $snapshot_id, $this->get_restore_fallback_from_ajax_request() );
+		if ( is_wp_error( $redirect ) ) {
+			wp_send_json_error(
+				array(
+					'message' => $redirect->get_error_message(),
+				),
+				500
+			);
+		}
+
+		$this->login_user( wp_get_current_user() );
+
+		wp_send_json_success(
+			array(
+				'redirect' => $redirect,
+			)
+		);
+	}
+
+	/**
+	 * Creates a snapshot from an admin-bar AJAX request.
+	 *
+	 * @since [Unreleased]
+	 *
+	 * @return void
+	 */
+	public function ajax_create_snapshot() {
+		check_ajax_referer( 'snapshots_admin_bar', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error(
+				array(
+					'message' => esc_html__( 'You do not have permission to create snapshots.', 'snapshots' ),
+				),
+				403
+			);
+		}
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Verified in the AJAX handler.
+		if ( ! isset( $_POST['name'] ) ) {
+			wp_send_json_error(
+				array(
+					'message' => esc_html__( 'Please enter a snapshot name.', 'snapshots' ),
+				),
+				400
+			);
+		}
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Verified in the AJAX handler.
+		$name = sanitize_text_field( wp_unslash( $_POST['name'] ) );
+		if ( '' === $name ) {
+			wp_send_json_error(
+				array(
+					'message' => esc_html__( 'Please enter a snapshot name.', 'snapshots' ),
+				),
+				400
+			);
+		}
+
+		$before = $this->get_snapshot_basenames();
+
+		$files         = snapshots_option( 'save_files' );
+		$save_location = snapshots_option( 'save_location' );
+		$location_path = null;
+		if ( $save_location ) {
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Verified in the AJAX handler.
+			if ( isset( $_POST['location'] ) ) {
+				$location_path = htmlspecialchars_decode( sanitize_text_field( wp_unslash( $_POST['location'] ) ) );
+			}
+		}
+
+		$result = $this->backup( $name, $files, $save_location, $location_path );
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error(
+				array(
+					'message' => $result->get_error_message(),
+				),
+				500
+			);
+		}
+
+		$snapshot_id = $this->find_new_snapshot_id( $before );
+		if ( '' === $snapshot_id ) {
+			wp_send_json_error(
+				array(
+					'message' => esc_html__( 'Snapshot was created but could not be loaded.', 'snapshots' ),
+				),
+				500
+			);
+		}
+
+		set_transient( 'snapshot_current', $snapshot_id );
+		$this->clear_cache();
+
+		$item = $this->get_admin_bar_snapshot_for_client( $snapshot_id );
+		if ( null === $item ) {
+			wp_send_json_error(
+				array(
+					'message' => esc_html__( 'Snapshot was created but could not be loaded.', 'snapshots' ),
+				),
+				500
+			);
+		}
+
+		$item['isCurrent'] = true;
+		$item              = $this->with_page_action_urls( $item, $snapshot_id );
+
+		$removed = array_values( array_diff( $before, $this->get_snapshot_basenames() ) );
+
+		wp_send_json_success(
+			array(
+				'snapshot' => $item,
+				'count'    => count( $this->get_snapshots() ),
+				'removed'  => $removed,
+			)
+		);
+	}
+
+	/**
+	 * Reads and validates a snapshot ID from the current AJAX POST body.
+	 *
+	 * @since [Unreleased]
+	 *
+	 * @return string Snapshot ID or empty string when invalid.
+	 */
+	private function get_snapshot_id_from_ajax_request() {
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Verified in the AJAX handler.
+		if ( ! isset( $_POST['snapshot'] ) ) {
+			return '';
+		}
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Verified in the AJAX handler.
+		$snapshot = sanitize_text_field( wp_unslash( $_POST['snapshot'] ) );
+		if ( ! preg_match( '/^[a-z0-9-]+_\d+$/', $snapshot ) ) {
+			return '';
+		}
+
+		return $snapshot;
+	}
+
+	/**
+	 * Returns a non-AJAX URL to use when a restored snapshot has no saved location.
+	 *
+	 * Prefers the page that started the request. Falls back to the admin dashboard
+	 * when that value is missing or is not a local redirect.
+	 *
+	 * @since [Unreleased]
+	 *
+	 * @return string Redirect URL or path.
+	 */
+	private function get_restore_fallback_from_ajax_request() {
+		$default = admin_url();
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Verified in the AJAX handler.
+		if ( ! isset( $_POST['location'] ) ) {
+			return $default;
+		}
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Verified in the AJAX handler.
+		$location = sanitize_url( wp_unslash( $_POST['location'] ) );
+		if ( '' === $location ) {
+			return $default;
+		}
+
+		return wp_validate_redirect( $location, $default );
+	}
+
+	/**
+	 * Points a new admin-bar item at the page that created it.
+	 *
+	 * URLs built during the AJAX request would otherwise target admin-ajax.php.
+	 *
+	 * @since [Unreleased]
+	 *
+	 * @param array<string, mixed> $item        Client snapshot payload.
+	 * @param string               $snapshot_id Snapshot directory name.
+	 * @return array<string, mixed> Payload with page-relative action URLs.
+	 */
+	private function with_page_action_urls( array $item, $snapshot_id ) {
+		$page = $this->get_restore_fallback_from_ajax_request();
+		$hash = strpos( $page, '#' );
+		if ( false !== $hash ) {
+			$page = substr( $page, 0, $hash );
+		}
+
+		$item['restoreUrl'] = esc_url_raw( add_query_arg( 'snapshot_restore', $snapshot_id, $page ) );
+		$item['deleteUrl']  = esc_url_raw( add_query_arg( 'snapshot_delete', $snapshot_id, $page ) );
+
+		return $item;
+	}
+
+	/**
+	 * Returns snapshot directory basenames currently on disk.
+	 *
+	 * @since [Unreleased]
+	 *
+	 * @return array<int, string> Snapshot IDs (folder names).
+	 */
+	private function get_snapshot_basenames() {
+		$basenames = array();
+		foreach ( $this->get_snaps() as $path ) {
+			$basenames[] = basename( untrailingslashit( $path ) );
+		}
+		return $basenames;
+	}
+
+	/**
+	 * Finds a snapshot ID that exists after backup but not before.
+	 *
+	 * @since [Unreleased]
+	 *
+	 * @param array<int, string> $before_basenames Snapshot IDs before backup.
+	 * @return string New snapshot ID or empty string.
+	 */
+	private function find_new_snapshot_id( array $before_basenames ) {
+		foreach ( $this->get_snaps() as $path ) {
+			$id = basename( untrailingslashit( $path ) );
+			if ( ! in_array( $id, $before_basenames, true ) ) {
+				return $id;
+			}
+		}
+		return '';
+	}
+
+	/**
+	 * Builds admin-bar snapshot data for the browser script.
+	 *
+	 * @since [Unreleased]
+	 *
+	 * @param string $snapshot_id Snapshot directory name.
+	 * @return array<string, mixed>|null Client payload or null when missing.
+	 */
+	private function get_admin_bar_snapshot_for_client( $snapshot_id ) {
+		$snapshots = $this->get_snapshots();
+		if ( ! isset( $snapshots[ $snapshot_id ] ) ) {
+			return null;
+		}
+
+		$data           = $snapshots[ $snapshot_id ];
+		$current_string = __( 'current', 'snapshots' );
+
+		return array(
+			'id'           => $snapshot_id,
+			'name'         => $data->name,
+			'date'         => wp_date( 'Y-m-d H:i', $data->created ),
+			'createdAgo'   => human_time_diff( $data->created ),
+			'title'        => sprintf(
+				/* translators: %s: Human-readable time since snapshot creation. */
+				esc_attr__( 'created %s ago', 'snapshots' ),
+				human_time_diff( $data->created )
+			) . ' - ' . wp_date( 'Y-m-d H:i', $data->created ),
+			'restoreUrl'   => esc_url_raw( $data->restore ),
+			'deleteUrl'    => esc_url_raw( $data->delete ),
+			'isCurrent'    => (bool) $data->current,
+			'currentLabel' => $current_string,
+			'searchRel'    => $data->name . ' ' . strtolower( $data->name ),
+		);
+	}
+
+	/**
 	 * Enqueues admin bar scripts and localized strings.
 	 *
 	 * @since 1.0.0
@@ -328,11 +662,18 @@ class Plugin {
 			'snapshots-script',
 			'snapshots',
 			array(
-				'prompt'    => esc_attr__( 'Create a new Snapshot. Please define a name:', 'snapshots' ),
-				'restore'   => $restore_string,
-				'delete'    => $delete_string,
-				'currently' => $currently_string,
-				'blogname'  => get_option( 'blogname', 'snapshots' ),
+				'prompt'          => esc_attr__( 'Create a new Snapshot. Please define a name:', 'snapshots' ),
+				'restore'         => $restore_string,
+				'delete'          => $delete_string,
+				'currently'       => $currently_string,
+				'blogname'        => get_option( 'blogname', 'snapshots' ),
+				'ajaxUrl'         => admin_url( 'admin-ajax.php' ),
+				'nonce'           => wp_create_nonce( 'snapshots_admin_bar' ),
+				'requestFailed'   => esc_attr__( 'Something went wrong. Please try again.', 'snapshots' ),
+				'emptyCountLabel' => esc_html__( 'Click here to create your first Snapshot!', 'snapshots' ),
+				'searchLabel'     => esc_attr__( 'Search SnapShots...', 'snapshots' ),
+				'settingsUrl'     => esc_url( admin_url( 'options-general.php?page=snapshots-settings' ) ),
+				'settingsTitle'   => esc_attr__( 'Settings', 'snapshots' ),
 			)
 		);
 	}
@@ -361,13 +702,17 @@ class Plugin {
 			$last = '';
 		}
 
-		$title = $count ? $count : esc_html__( 'Click here to create your first Snapshot!', 'snapshots' );
+		if ( $count ) {
+			$title = '<span class="snapshots-count">' . esc_html( (string) $count ) . '</span>';
+		} else {
+			$title = esc_html__( 'Click here to create your first Snapshot!', 'snapshots' );
+		}
 
 		// The main menu entry.
 		$wp_admin_bar->add_node(
 			array(
 				'id'    => 'snapshots',
-				'title' => '<span class="ab-icon dashicons dashicons-backup" style="margin-top:2px"></span>' . esc_html( $title ) . '<span class="snapshot-extra-title" title="">' . esc_html( $last ) . '</span>',
+				'title' => '<span class="ab-icon dashicons dashicons-backup" style="margin-top:2px"></span>' . $title . '<span class="snapshot-extra-title" title="">' . esc_html( $last ) . '</span>',
 				'href'  => add_query_arg( 'snaphot_create', '1' ),
 
 			)
@@ -605,23 +950,26 @@ class Plugin {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param string|null $name     Snapshot name.
-	 * @param bool        $files    Optional. Include uploads. Default true.
-	 * @param bool|null   $location Optional. Store redirect location in manifest. Default null.
-	 * @return void
+	 * @param string|null $name          Snapshot name.
+	 * @param bool        $files         Optional. Include uploads. Default true.
+	 * @param bool|null   $location      Optional. Store redirect location in manifest. Default null.
+	 * @param string|null $location_path Optional. Path stored when location is enabled (AJAX).
+	 * @return array<int, string>|\WP_Error Command output lines or error.
 	 */
-	public function backup( $name = null, $files = true, $location = null ) {
+	public function backup( $name = null, $files = true, $location = null, $location_path = null ) {
 		$command = 'snapshot backup "' . esc_attr( $name ) . '"';
 		if ( $files ) {
 			$command .= ' --files';
 		}
 		if ( $location ) {
-			if ( array_key_exists( 'snapshot_location', $_GET ) ) {
-				$location = htmlspecialchars_decode( sanitize_text_field( wp_unslash( $_GET['snapshot_location'] ) ) );
+			if ( null !== $location_path && '' !== $location_path ) {
+				$redirect_location = $location_path;
+			} elseif ( array_key_exists( 'snapshot_location', $_GET ) ) {
+				$redirect_location = htmlspecialchars_decode( sanitize_text_field( wp_unslash( $_GET['snapshot_location'] ) ) );
 			} else {
-				$location = remove_query_arg( 'snaphot_create' );
+				$redirect_location = remove_query_arg( 'snaphot_create' );
 			}
-			$command .= ' --location="' . $location . '"';
+			$command .= ' --location="' . $redirect_location . '"';
 		}
 
 		$exclude_tables = snapshots_option( 'exclude_tables' );
@@ -629,8 +977,10 @@ class Plugin {
 			$command .= ' --exclude_tables="' . implode( ',', (array) $exclude_tables ) . '"';
 		}
 
-		$this->command( $command );
+		$result = $this->command( $command );
 		$this->clear_cache();
+
+		return $result;
 	}
 
 
@@ -639,10 +989,12 @@ class Plugin {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param string|null $name Snapshot ID or folder name.
+	 * @param string|null $name     Snapshot ID or folder name.
+	 * @param string      $fallback Optional. Redirect when the snapshot has no saved location.
+	 *                              Default empty string, which strips `snapshot_restore` from the current request.
 	 * @return string|\WP_Error Redirect URL, query-stripped URL, or error.
 	 */
-	public function restore( $name ) {
+	public function restore( $name, $fallback = '' ) {
 		$name = is_null( $name ) ? '' : basename( $name );
 
 		// Disable cron.
@@ -667,6 +1019,10 @@ class Plugin {
 		if ( ! empty( $redirect_matches ) ) {
 			$redirect = trim( str_replace( 'Redirect to:', '', $redirect_matches[0] ) );
 			return home_url( $redirect );
+		}
+
+		if ( is_string( $fallback ) && '' !== $fallback ) {
+			return $fallback;
 		}
 
 		return remove_query_arg( 'snapshot_restore' );
