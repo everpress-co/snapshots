@@ -418,128 +418,76 @@
 					<h2 class="display-h2">Changelog</h2>
 					<div class="changelog__body prose">
 						<!-- changelog -->
-						<h3>3.0.0</h3>
-						<ul>
-							<li>
-								fixed: install steps use the folder name <code>snapshots</code>
-							</li>
-							<li>
-								fixed: missing PHP, WP-CLI, or exec shows a notice instead of a
-								full-screen error
-							</li>
-							<li>
-								added: Tools → Snapshots to restore and delete snapshots,
-								including more than one at a time
-							</li>
-							<li>
-								added: Settings → Snapshots for the folder, copy limit, uploads,
-								return URL, excluded tables, and sort order
-							</li>
-							<li>
-								added: settings links on the Plugins screen and in the admin bar
-							</li>
-							<li>
-								changed: snapshots are sorted by last use, and the Tools list
-								shows that time
-							</li>
-						</ul>
-						<h3>2.8.2</h3>
-						<ul>
-							<li>
-								changed: no change to creating, restoring, or deleting snapshots
-							</li>
-						</ul>
-						<h3>2.8.1</h3>
-						<ul>
-							<li>fixed: a failed command shows which command failed</li>
-							<li>
-								added: <code>SNAPSHOTS_PHP_PATH</code> when the
-								<code>php</code> binary is not on PATH
-							</li>
-						</ul>
-						<h3>2.8.0</h3>
-						<ul>
-							<li>
-								fixed: the page you return to after restore keeps its #fragment
-							</li>
-							<li>
-								changed: the current snapshot name is stored in the database,
-								not in the browser
-							</li>
-							<li>changed: tested with PHP 8.3</li>
-						</ul>
-						<h3>2.7.0</h3>
-						<ul>
-							<li>
-								fixed: errors from the <code>wp</code> command are included in
-								the output
-							</li>
-							<li>
-								added: Ctrl+S opens the snapshot menu, and typing focuses the
-								search field
-							</li>
-							<li>changed: tested with WordPress 6.1</li>
-						</ul>
-						<h3>2.6.0</h3>
-						<ul>
-							<li>
-								fixed: snapshots whose names include numbers show in the list
-							</li>
-							<li>added: a search box in the admin bar menu</li>
-						</ul>
-						<h3>2.5.0</h3>
-						<ul>
-							<li>
-								changed: the name prompt suggests the snapshot you last restored
-							</li>
-						</ul>
-						<h3>2.4</h3>
-						<ul>
-							<li>changed: requires PHP 7.0 or newer</li>
-						</ul>
-						<h3>2.3</h3>
-						<ul>
-							<li>
-								changed: database export, import, and URL replacement run
-								through WP-CLI
-							</li>
-						</ul>
-						<h3>2.2</h3>
-						<ul>
-							<li>
-								added: uploads are zipped with PclZip when ZipArchive is missing
-							</li>
-							<li>
-								added: restore updates the home URL when it does not match the
-								snapshot
-							</li>
-						</ul>
-						<h3>2.1</h3>
-						<ul>
-							<li>
-								changed: a long list scrolls in the admin bar, and the date is
-								in the tooltip
-							</li>
-						</ul>
-						<h3>2.0</h3>
-						<ul>
-							<li>
-								changed: each snapshot is stored in its own folder, so older
-								flat files are not listed
-							</li>
-							<li>
-								added: delete a snapshot from the admin bar or with
-								<code>wp snapshot delete</code>
-							</li>
-						</ul>
-						<h3>1.0</h3>
-						<ul>
-							<li>
-								added: save and restore the database and uploads from the admin
-								bar
-							</li>
-						</ul>
-						<!-- /changelog -->
+<h3>3.0.0</h3>
+<ul>
+<li>fixed: command injection through unescaped snapshot names and locations in the create, restore, and delete actions</li>
+<li>fixed: create, restore, and delete links now require a valid nonce, blocking cross-site request forgery</li>
+<li>fixed: the return location after creating a snapshot stays on this site without doubling subdirectory paths</li>
+<li>fixed: snapshot storage folders now contain <code>.htaccess</code> and <code>index.php</code> files so database dumps are not downloadable from the web on Apache</li>
+<li>fixed: install steps use the folder name <code>snapshots</code></li>
+<li>fixed: missing PHP, WP-CLI, or exec shows a notice instead of a full-screen error</li>
+<li>added: Tools → Snapshots to restore and delete snapshots, including more than one at a time</li>
+<li>added: Settings → Snapshots for the folder, copy limit, uploads, return URL, excluded tables, and sort order</li>
+<li>added: settings links on the Plugins screen and in the admin bar</li>
+<li>changed: snapshots are sorted by last use, and the Tools list shows that time</li>
+</ul>
+<h3>2.8.2</h3>
+<ul>
+<li>changed: no change to creating, restoring, or deleting snapshots</li>
+</ul>
+<h3>2.8.1</h3>
+<ul>
+<li>fixed: a failed command shows which command failed</li>
+<li>added: <code>SNAPSHOTS_PHP_PATH</code> when the <code>php</code> binary is not on PATH</li>
+</ul>
+<h3>2.8.0</h3>
+<ul>
+<li>fixed: the page you return to after restore keeps its #fragment</li>
+<li>changed: the current snapshot name is stored in the database, not in the browser</li>
+<li>changed: tested with PHP 8.3</li>
+</ul>
+<h3>2.7.0</h3>
+<ul>
+<li>fixed: errors from the <code>wp</code> command are included in the output</li>
+<li>added: Ctrl+S opens the snapshot menu, and typing focuses the search field</li>
+<li>changed: tested with WordPress 6.1</li>
+</ul>
+<h3>2.6.0</h3>
+<ul>
+<li>fixed: snapshots whose names include numbers show in the list</li>
+<li>added: a search box in the admin bar menu</li>
+</ul>
+<h3>2.5.0</h3>
+<ul>
+<li>changed: the name prompt suggests the snapshot you last restored</li>
+</ul>
+<h3>2.4</h3>
+<ul>
+<li>changed: requires PHP 7.0 or newer</li>
+</ul>
+<h3>2.3</h3>
+<ul>
+<li>changed: database export, import, and URL replacement run through WP-CLI</li>
+</ul>
+<h3>2.2</h3>
+<ul>
+<li>added: uploads are zipped with PclZip when ZipArchive is missing</li>
+<li>added: restore updates the home URL when it does not match the snapshot</li>
+</ul>
+<h3>2.1</h3>
+<ul>
+<li>changed: a long list scrolls in the admin bar, and the date is in the tooltip</li>
+</ul>
+<h3>2.0</h3>
+<ul>
+<li>changed: each snapshot is stored in its own folder, so older flat files are not listed</li>
+<li>added: delete a snapshot from the admin bar or with <code>wp snapshot delete</code></li>
+</ul>
+<h3>1.0</h3>
+<ul>
+<li>added: save and restore the database and uploads from the admin bar</li>
+</ul>
+<!-- /changelog -->
 					</div>
 				</div>
 			</section>
