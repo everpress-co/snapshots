@@ -150,7 +150,7 @@
 				</p>
 				<pre>wp snapshot backup "Before the product import" --files
 wp snapshot list
-wp snapshot restore before-the-product-import</pre>
+wp snapshot restore before-the-product-import_1587039434</pre>
 				<p>
 					<code>backup</code> stores the words you typed. The folder on disk is a
 					slug plus the time it was saved. For this name the folder looks like
@@ -158,18 +158,16 @@ wp snapshot restore before-the-product-import</pre>
 				</p>
 				<p>
 					<code>list</code> shows both. <code>name</code> is the text you typed.
-					<code>file</code> is the folder id. Restore and delete need the slug or
-					that folder id. They do not find
+					<code>file</code> is the folder id. Pass that exact folder id to restore
+					or delete so the command selects the intended snapshot. They do not find
 					<code>Before the product import</code>, because of the capitals and
 					spaces.
 				</p>
-				<pre>wp snapshot restore before-the-product-import
-wp snapshot restore before-the-product-import_1587039434
-wp snapshot delete before-the-product-import</pre>
+				<pre>wp snapshot restore before-the-product-import_1587039434
+wp snapshot delete before-the-product-import_1587039434</pre>
 				<p>
-					The slug restores the newest copy of that name. The full folder id
-					restores that one copy. In the admin bar you do not type this. A click
-					already uses the folder id.
+					The full folder id selects that one copy. In the admin bar you do not
+					type this. A click already uses the folder id.
 				</p>
 				<p>Two optional flags on backup:</p>
 				<ul>

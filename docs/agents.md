@@ -35,11 +35,10 @@ wp snapshot backup "Before <short task description>" --files
 ### Restore
 
 ```bash
-wp snapshot restore before-the-experiment
 wp snapshot restore before-the-experiment_1587039434
 ```
 
-Pass the slug, or the full folder id from `file`. A slug restores the **latest** copy of that name. The full id restores that one copy.
+Pass the full folder id from `file`. This restores that exact snapshot and avoids ambiguous slug matches.
 
 Do not pass the display name from `name` when it contains capitals or spaces. `wp snapshot restore "Before the experiment"` does not match the folder `before-the-experiment_1587039434`.
 
@@ -69,7 +68,7 @@ Only delete when the user asks. Deletion is permanent on this server.
 1. `wp snapshot list --format=json` — see existing snapshots.
 2. `wp snapshot backup "Before …" --files` — save state before your change.
 3. Do the requested work.
-4. If the user wants to undo, or your snapshot was for a failed experiment: `wp snapshot list --format=json`, then `wp snapshot restore <slug>` from the `file` id (drop the `_timestamp` to restore the latest copy).
+4. If the user wants to undo, or your snapshot was for a failed experiment: `wp snapshot list --format=json`, then pass the exact `file` id to `wp snapshot restore`.
 
 ## Storage and retention
 
