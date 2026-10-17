@@ -19,7 +19,7 @@ Run these from the WordPress root (where `wp-config.php` lives).
 wp snapshot list --format=json
 ```
 
-JSON rows include `name`, `file` (folder id), `created`, and `past`. Inspect this before restore or delete.
+JSON rows include `name` (the text you passed to backup), `file` (folder id), `created`, and `past`. Inspect `file` before restore or delete. Backup stores that id as a slug plus a timestamp, such as `before-the-experiment_1587039434`.
 
 ### Create a snapshot
 
@@ -35,10 +35,13 @@ wp snapshot backup "Before <short task description>" --files
 ### Restore
 
 ```bash
-wp snapshot restore "<name>"
+wp snapshot restore before-the-experiment
+wp snapshot restore before-the-experiment_1587039434
 ```
 
-You can pass the display name, slug, or folder id such as `before-the-experiment_1587039434`. A name restores the **latest** copy of that name.
+Pass the slug, or the full folder id from `file`. A slug restores the **latest** copy of that name. The full id restores that one copy.
+
+Do not pass the display name from `name` when it contains capitals or spaces. `wp snapshot restore "Before the experiment"` does not match the folder `before-the-experiment_1587039434`.
 
 Restore only:
 
@@ -66,7 +69,7 @@ Only delete when the user asks. Deletion is permanent on this server.
 1. `wp snapshot list --format=json` — see existing snapshots.
 2. `wp snapshot backup "Before …" --files` — save state before your change.
 3. Do the requested work.
-4. If the user wants to undo, or your snapshot was for a failed experiment: `wp snapshot restore "Before …"`.
+4. If the user wants to undo, or your snapshot was for a failed experiment: `wp snapshot list --format=json`, then `wp snapshot restore <slug>` from the `file` id (drop the `_timestamp` to restore the latest copy).
 
 ## Storage and retention
 
