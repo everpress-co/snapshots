@@ -613,10 +613,16 @@ class Plugin {
 	 * @param string|null $name     Snapshot name.
 	 * @param bool        $files    Optional. Include uploads. Default true.
 	 * @param bool|null   $location Optional. Store redirect location in manifest. Default null.
-	 * @return void
+	 * @return void|\WP_Error Error when the name could be interpreted as a WP-CLI option.
 	 */
 	public function backup( $name = null, $files = true, $location = null ) {
-		$command = 'snapshot backup ' . escapeshellarg( (string) $name );
+		$name = (string) $name;
+
+		if ( 0 === strpos( $name, '-' ) ) {
+			return new \WP_Error( 'snapshots_invalid_name', __( 'Snapshot names cannot begin with a hyphen.', 'snapshots' ) );
+		}
+
+		$command = 'snapshot backup ' . escapeshellarg( $name );
 		if ( $files ) {
 			$command .= ' --files';
 		}
