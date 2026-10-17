@@ -160,6 +160,7 @@ copyFile( path.join( docsDir, 'CNAME' ), path.join( siteDir, 'CNAME' ) );
 
 const iconSrc = path.join( wpOrgDir, 'icon-256x256.png' );
 const iconSvgSrc = path.join( wpOrgDir, 'icon.svg' );
+const screenshotSrc = path.join( wpOrgDir, 'screenshot-1.png' );
 
 for ( const assetsDir of [
 	path.join( siteDir, 'assets' ),
@@ -168,4 +169,5 @@ for ( const assetsDir of [
 	fs.mkdirSync( assetsDir, { recursive: true } );
 	copyFile( iconSrc, path.join( assetsDir, 'icon.png' ) );
 	copyFile( iconSvgSrc, path.join( assetsDir, 'icon.svg' ) );
+	copyFile( screenshotSrc, path.join( assetsDir, 'screenshot-1.png' ) );
 }

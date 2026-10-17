@@ -322,14 +322,6 @@ a:hover {
 	margin: 0;
 }
 
-.checkpoint-diagram__caption {
-	font-family: var(--font-mono);
-	font-size: 0.6875rem;
-	color: var(--color-muted);
-	margin-bottom: var(--space-3);
-	text-align: right;
-}
-
 .checkpoint-diagram__panel {
 	position: relative;
 	background: var(--color-white);
@@ -533,6 +525,41 @@ a:hover {
 	font-size: 0.8125rem;
 	color: var(--color-muted);
 	max-width: 52ch;
+}
+
+/* Admin bar screenshot */
+.admin-shot {
+	display: grid;
+	grid-template-columns: 1fr;
+	gap: var(--space-12);
+	align-items: center;
+}
+
+@media (min-width: 900px) {
+
+	.admin-shot {
+		grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+		gap: var(--space-16);
+	}
+}
+
+.admin-shot__lede {
+	margin: var(--space-6) 0 0;
+	max-width: 36ch;
+	color: var(--color-muted);
+}
+
+.admin-shot__figure {
+	margin: 0;
+}
+
+.admin-shot__figure img {
+	display: block;
+	width: 100%;
+	height: auto;
+	background: var(--color-white);
+	border: 1px solid var(--color-line);
+	border-radius: var(--radius-medium);
 }
 
 /* Feature list */
@@ -835,6 +862,7 @@ code {
 }
 
 .guide h2 {
+	scroll-margin-top: calc(76px + var(--space-6));
 	margin: var(--space-16) 0 var(--space-4);
 	font-size: clamp(1.75rem, 3vw, 2.25rem);
 	font-weight: 600;
