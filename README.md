@@ -172,7 +172,10 @@ On **Settings → Snapshots**, enter a comma-separated list in **Exclude Tables*
 
 ## Screenshots
 
-1. Minimal dropdown UI of SnapShots in the admin bar.
+### 1. Minimal dropdown UI of SnapShots in the admin bar.
+
+![Minimal dropdown UI of SnapShots in the admin bar.](https://ps.w.org/snapshots/assets/screenshot-1.png)
+
 
 ## Changelog
 
