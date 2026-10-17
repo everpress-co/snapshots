@@ -271,33 +271,56 @@ class Plugin {
 
 		if ( array_key_exists( 'snapshot_restore', $_GET ) ) {
 			$snapshot_restore = sanitize_text_field( wp_unslash( $_GET['snapshot_restore'] ) );
-			$redirect         = $this->restore( $snapshot_restore );
-			$this->login_user( wp_get_current_user() );
-			wp_redirect( $redirect );
+			check_admin_referer( 'snapshots_restore_' . $snapshot_restore, 'snapshots_nonce' );
+			$redirect = $this->restore( $snapshot_restore );
+			if ( is_wp_error( $redirect ) ) {
+				$redirect = remove_query_arg( array( 'snapshot_restore', 'snapshots_nonce' ) );
+			} else {
+				// Re-authenticate only after a successful restore replaced the users table.
+				$this->login_user( wp_get_current_user() );
+			}
+			wp_safe_redirect( $redirect );
 			exit;
 		}
 
 		if ( array_key_exists( 'snaphot_create', $_GET ) ) {
+			check_admin_referer( 'snapshots_create', 'snapshots_nonce' );
 			$files    = snapshots_option( 'save_files' );
 			$location = snapshots_option( 'save_location' );
 			if ( array_key_exists( 'snapshot_location', $_GET ) ) {
-				$redirect_to = htmlspecialchars_decode( sanitize_text_field( wp_unslash( $_GET['snapshot_location'] ) ) );
+				$redirect_to = $this->same_site_url( sanitize_text_field( wp_unslash( $_GET['snapshot_location'] ) ) );
 			} else {
-				$redirect_to = remove_query_arg( 'snaphot_create' );
+				$redirect_to = remove_query_arg( array( 'snaphot_create', 'snapshots_nonce' ) );
 			}
 			$snapshot_create = sanitize_text_field( wp_unslash( $_GET['snaphot_create'] ) );
 			$this->backup( $snapshot_create, $files, $location );
 
-			wp_redirect( $redirect_to );
+			wp_safe_redirect( $redirect_to );
 			exit;
 		}
 
 		if ( array_key_exists( 'snapshot_delete', $_GET ) ) {
 			$snapshot_delete = sanitize_text_field( wp_unslash( $_GET['snapshot_delete'] ) );
+			check_admin_referer( 'snapshots_delete_' . $snapshot_delete, 'snapshots_nonce' );
 			$this->delete( $snapshot_delete );
-			wp_redirect( remove_query_arg( 'snapshot_delete' ) );
+			wp_safe_redirect( remove_query_arg( array( 'snapshot_delete', 'snapshots_nonce' ) ) );
 			exit;
 		}
+	}
+
+	/**
+	 * Reduces an arbitrary URL to its path and query on this site.
+	 *
+	 * @since [Unreleased]
+	 *
+	 * @param string $url URL or path supplied with the request.
+	 * @return string Same-site URL built from the path and query only.
+	 */
+	private function same_site_url( $url ) {
+		$path  = (string) wp_parse_url( $url, PHP_URL_PATH );
+		$query = wp_parse_url( $url, PHP_URL_QUERY );
+
+		return home_url( $path . ( $query ? '?' . $query : '' ) );
 	}
 
 	/**
@@ -368,7 +391,7 @@ class Plugin {
 			array(
 				'id'    => 'snapshots',
 				'title' => '<span class="ab-icon dashicons dashicons-backup" style="margin-top:2px"></span>' . esc_html( $title ) . '<span class="snapshot-extra-title" title="">' . esc_html( $last ) . '</span>',
-				'href'  => add_query_arg( 'snaphot_create', '1' ),
+				'href'  => wp_nonce_url( add_query_arg( 'snaphot_create', '1' ), 'snapshots_create', 'snapshots_nonce' ),
 
 			)
 		);
@@ -479,8 +502,6 @@ class Plugin {
 					'last_used' => 0,
 					'current'   => $id === $last,
 					'broken'    => false,
-					'restore'   => add_query_arg( array( 'snapshot_restore' => $id ) ),
-					'delete'    => add_query_arg( array( 'snapshot_delete' => $id ) ),
 
 				);
 				if ( ! file_exists( $file ) ) {
@@ -492,6 +513,21 @@ class Plugin {
 			}
 
 			set_transient( $cache_key, $snapshots, DAY_IN_SECONDS );
+		}
+
+		// Action URLs carry fresh nonces, so they are minted per request
+		// instead of being read from the day-long snapshot cache.
+		foreach ( $snapshots as $id => $snapshot ) {
+			$snapshot->restore = wp_nonce_url(
+				add_query_arg( array( 'snapshot_restore' => $id ) ),
+				'snapshots_restore_' . $id,
+				'snapshots_nonce'
+			);
+			$snapshot->delete  = wp_nonce_url(
+				add_query_arg( array( 'snapshot_delete' => $id ) ),
+				'snapshots_delete_' . $id,
+				'snapshots_nonce'
+			);
 		}
 
 		return (array) $snapshots;
