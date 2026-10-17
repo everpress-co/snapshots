@@ -314,6 +314,7 @@ class Plugin {
 	 * Uses the request path and query as-is (including any subdirectory
 	 * prefix already present in the browser pathname) with this site's
 	 * scheme and host, so home_url() does not double the base path.
+	 * Preserves a URL fragment when present (e.g. admin page anchors).
 	 *
 	 * @since [Unreleased]
 	 *
@@ -323,6 +324,7 @@ class Plugin {
 	private function same_site_url( $url ) {
 		$path       = (string) wp_parse_url( $url, PHP_URL_PATH );
 		$query      = wp_parse_url( $url, PHP_URL_QUERY );
+		$fragment   = wp_parse_url( $url, PHP_URL_FRAGMENT );
 		$home_parts = wp_parse_url( home_url( '/' ) );
 
 		if ( empty( $home_parts['host'] ) ) {
@@ -335,6 +337,9 @@ class Plugin {
 			$candidate .= ':' . $home_parts['port'];
 		}
 		$candidate .= $path . ( $query ? '?' . $query : '' );
+		if ( $fragment ) {
+			$candidate .= '#' . $fragment;
+		}
 
 		return wp_validate_redirect( $candidate, home_url( '/' ) );
 	}
