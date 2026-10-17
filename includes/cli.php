@@ -1,20 +1,37 @@
 <?php
+/**
+ * WP-CLI commands for creating, restoring, and listing snapshots.
+ *
+ * @package Snapshots
+ */
 
 namespace EverPress\Snapshots;
 
+use WP;
+use WP_CLI;
+use WP_CLI\Utils;
+use WP_CLI_Command;
+
 /**
- * Syncs a local
+ * WP-CLI `wp snapshot` command implementation.
+ *
+ * @since 1.0.0
  *
  * @when after_wp_load
- *
- * @author xaver
  */
-class CLI_Command extends \WP_CLI_Command {
+class CLI_Command extends WP_CLI_Command {
 
+	/**
+	 * Resolved snapshot name for the current command.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @var string
+	 */
 	private $name;
 
 	/**
-	 * Saves a SnapShot of your current database and content folder
+	 * Saves a SnapShot of your current database and content folder.
 	 *
 	 * ## OPTIONS
 	 *
@@ -35,18 +52,24 @@ class CLI_Command extends \WP_CLI_Command {
 	 *
 	 * ## USAGE
 	 *
+	 * @since 1.0.0
+	 *
 	 * @subcommand backup
-	 * @synopsis [<name>] [--files] [--location=<location>]
+	 * @synopsis [<name>] [--files] [--location=<location>] [--exclude_tables=<tables>]
+	 *
+	 * @param array $args       Positional arguments.
+	 * @param array $assoc_args Associative arguments from the CLI.
+	 * @return void
 	 */
 	public function backup( $args, $assoc_args ) {
 
 		do_action( 'snapshots_before_backup', $args, $assoc_args );
 
 		if ( $this->snapshots_create( $args, $assoc_args ) ) {
-			do_action( 'snapshots_before_backup', $args, $assoc_args );
-			\WP_CLI::success( 'Snapshot saved!' );
+			do_action( 'snapshots_after_backup', $args, $assoc_args );
+			WP_CLI::success( 'Snapshot saved!' );
 		} else {
-			\WP_CLI::error( 'Snapshot not saved!' );
+			WP_CLI::error( 'Snapshot not saved!' );
 		}
 	}
 
@@ -69,20 +92,26 @@ class CLI_Command extends \WP_CLI_Command {
 	 *
 	 * ## USAGE
 	 *
+	 * @since 1.0.0
+	 *
 	 * @subcommand restore
 	 * @synopsis [<name>]
+	 *
+	 * @param array $args       Positional arguments.
+	 * @param array $assoc_args Associative arguments from the CLI.
+	 * @return void
 	 */
 	public function restore( $args, $assoc_args ) {
 
 		do_action( 'snapshots_before_restore', $args, $assoc_args );
 
 		if ( $this->snapshots_restore( $args, $assoc_args ) ) {
-			do_action( 'snapshots_before_restore', $args, $assoc_args );
+			do_action( 'snapshots_after_restore', $args, $assoc_args );
 
-			\WP_CLI::success( 'Snapshot restored!' );
+			WP_CLI::success( 'Snapshot restored!' );
 
 		} else {
-			\WP_CLI::error( 'Snapshot not restored!' );
+			WP_CLI::error( 'Snapshot not restored!' );
 		}
 	}
 
@@ -105,8 +134,14 @@ class CLI_Command extends \WP_CLI_Command {
 	 *
 	 * ## USAGE
 	 *
+	 * @since 1.0.0
+	 *
 	 * @subcommand delete
 	 * @synopsis [<name>]
+	 *
+	 * @param array $args       Positional arguments.
+	 * @param array $assoc_args Associative arguments from the CLI.
+	 * @return void
 	 */
 	public function delete( $args, $assoc_args ) {
 
@@ -115,20 +150,15 @@ class CLI_Command extends \WP_CLI_Command {
 		if ( $this->snapshots_delete( $args, $assoc_args ) ) {
 			do_action( 'snapshots_before_delete', $args, $assoc_args );
 
-			\WP_CLI::success( 'Snapshot deleted!' );
+			WP_CLI::success( 'Snapshot deleted!' );
 
 		} else {
-			\WP_CLI::error( 'Snapshot not deleted!' );
+			WP_CLI::error( 'Snapshot not deleted!' );
 		}
 	}
 
 	/**
-	 * Sync to restore site
-	 *
-	 * @synopsis [<name>] [--format=<format>] [--limit=<limit>]
-	 */
-	/**
-	 * Restores a SnapShot of your current database and content folder
+	 * Lists saved snapshots.
 	 *
 	 * ## OPTIONS
 	 *
@@ -136,15 +166,21 @@ class CLI_Command extends \WP_CLI_Command {
 	 * : Name of your SnapShot.
 	 *
 	 * [--format]
-	 * : Format of output. Allow values ‘table’, ‘json’, ‘csv’, ‘yaml’, ‘ids’, ‘count’
+	 * : Format of output. Allow values 'table', 'json', 'csv', 'yaml', 'ids', 'count'
 	 *
 	 * [--limit]
 	 * : maximum of entries returned
 	 *
 	 * ## USAGE
 	 *
+	 * @since 1.0.0
+	 *
 	 * @subcommand list
 	 * @synopsis [<name>] [--format=<format>] [--limit=<limit>]
+	 *
+	 * @param array $args       Positional arguments.
+	 * @param array $assoc_args Associative arguments from the CLI.
+	 * @return void
 	 */
 	public function list( $args, $assoc_args ) {
 
@@ -155,14 +191,14 @@ class CLI_Command extends \WP_CLI_Command {
 		}
 
 		if ( empty( $files ) ) {
-			\WP_CLI::log( 'No files found!' );
+			WP_CLI::log( 'No files found!' );
 			return;
 		}
 
 		$data = array();
 
-		$format = \WP_CLI\Utils\get_flag_value( $assoc_args, 'format', 'table' );
-		$limit  = \WP_CLI\Utils\get_flag_value( $assoc_args, 'limit', count( $files ) );
+		$format = get_flag_value( $assoc_args, 'format', 'table' );
+		$limit  = get_flag_value( $assoc_args, 'limit', count( $files ) );
 
 		foreach ( $files as $i => $file ) {
 			if ( $i >= $limit ) {
@@ -181,27 +217,46 @@ class CLI_Command extends \WP_CLI_Command {
 			);
 		}
 
-		\WP_CLI\Utils\format_items( $format, $data, array_keys( $data[0] ) );
+		Utils\format_items( $format, $data, array_keys( $data[0] ) );
 	}
 
 
+	/**
+	 * Ensures the snapshots storage folder exists.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return bool True when the folder exists or was created.
+	 */
 	private function check() {
-		if ( ! file_exists( snapshots_option( 'folder' ) ) ) {
-			return wp_mkdir_p( snapshots_option( 'folder' ) );
+		if ( ! file_exists( snapshots_option( 'folder' ) ) && ! wp_mkdir_p( snapshots_option( 'folder' ) ) ) {
+			return false;
 		}
+
+		snapshots_harden_folder( snapshots_option( 'folder' ) );
 
 		return true;
 	}
 
 
+	/**
+	 * Returns snapshot directory paths, optionally filtered by name prefix.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string|null $name Optional snapshot name prefix.
+	 * @return array<int, string> Directory paths with trailing slash.
+	 */
 	private function get_snapshot_files( $name = null ) {
 
 		if ( ! is_dir( snapshots_option( 'folder' ) ) ) {
 			return array();
 		}
 
+		snapshots_harden_folder( snapshots_option( 'folder' ) );
+
 		$backups = list_files( snapshots_option( 'folder' ), 1 );
-		$backups = preg_grep( '/([a-z-]+)_(\d+)\/$/', $backups );
+		$backups = preg_grep( '/([a-z0-9-]+)_(\d+)\/$/', $backups );
 		if ( ! is_null( $name ) ) {
 			$backups = preg_grep( '/' . preg_quote( $name ) . '_(\d+)\/$/', $backups );
 		}
@@ -218,6 +273,15 @@ class CLI_Command extends \WP_CLI_Command {
 	}
 
 
+	/**
+	 * Creates snapshot files on disk (SQL dump, optional zip, manifest).
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $args       Positional arguments.
+	 * @param array $assoc_args Associative arguments from the CLI.
+	 * @return bool True on success.
+	 */
 	private function snapshots_create( $args, $assoc_args ) {
 
 		if ( ! $this->check() ) {
@@ -229,6 +293,14 @@ class CLI_Command extends \WP_CLI_Command {
 		$snapshot_name = sanitize_title( $name ) . '_' . $timestamp;
 		$folder        = trailingslashit( snapshots_option( 'folder' ) ) . $snapshot_name;
 
+		$command_args   = array();
+		$exclude_tables = '';
+		$tables         = Utils\get_flag_value( $assoc_args, 'exclude_tables', false );
+		if ( $tables ) {
+			$tables         = explode( ',', $tables );
+			$command_args[] = '--exclude_tables="' . implode( ',', $tables ) . '"';
+		}
+
 		if ( ! is_dir( $folder ) ) {
 			wp_mkdir_p( $folder );
 		}
@@ -236,43 +308,55 @@ class CLI_Command extends \WP_CLI_Command {
 		$location = $folder . '/dump.sql';
 
 		$manifest = array(
-			'name'    => $name,
-			'created' => $timestamp,
+			'name'      => $name,
+			'created'   => $timestamp,
+			'last_used' => $timestamp,
 		);
 
-		$this->command( 'db export ' . $location );
+		$this->command( 'db export ' . $location, $command_args );
 
 		if ( ! file_exists( $location ) ) {
-			\WP_CLI::error( sprintf( 'No snapshots found for %s', $snapshot_name ) );
+			WP_CLI::error( sprintf( 'No snapshots found for %s', $snapshot_name ) );
 		}
 
-		if ( $files = \WP_CLI\Utils\get_flag_value( $assoc_args, 'files', false ) ) {
+		$files = Utils\get_flag_value( $assoc_args, 'files', false );
+		if ( $files ) {
 			$upload_dir = wp_upload_dir();
 			$basedir    = $upload_dir['basedir'];
 			$zipfile    = $folder . '/data.zip';
 			$this->zip( $basedir, $zipfile );
 			if ( ! file_exists( $zipfile ) ) {
-				\WP_CLI::error( sprintf( 'No able to save zip file %s', $zipfile ) );
+				WP_CLI::error( sprintf( 'No able to save zip file %s', $zipfile ) );
 			}
 		}
-		if ( $location = \WP_CLI\Utils\get_flag_value( $assoc_args, 'location', false ) ) {
+		$location = Utils\get_flag_value( $assoc_args, 'location', false );
+		if ( $location ) {
 			$manifest['location'] = $location;
 		}
 		$manifestfile = $folder . '/manifest.json';
 
-		file_put_contents( $manifestfile, json_encode( $manifest ) );
+		file_put_contents( $manifestfile, wp_json_encode( $manifest ) );
 		if ( ! file_exists( $manifestfile ) ) {
-			\WP_CLI::error( sprintf( 'No able to save manifest file %s', $manifestfile ) );
+			WP_CLI::error( sprintf( 'No able to save manifest file %s', $manifestfile ) );
 		}
 
 		$this->destroy_snapshots( $snapshot_name );
 
-		set_transient( 'snapshot_current', $name );
+		set_transient( 'snapshot_current', $snapshot_name );
 
 		return true;
 	}
 
 
+	/**
+	 * Restores database and uploads from a snapshot directory.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $args       Positional arguments.
+	 * @param array $assoc_args Associative arguments from the CLI.
+	 * @return bool True on success.
+	 */
 	private function snapshots_restore( $args, $assoc_args ) {
 
 		if ( ! $this->check() ) {
@@ -282,13 +366,22 @@ class CLI_Command extends \WP_CLI_Command {
 		$snapshot_name = $this->get_name( $args );
 		$backup_dir    = false;
 
-		if ( $restore_file = $this->get_most_recent_file( $snapshot_name, 'dump.sql' ) ) {
-			$location = $restore_file;
-		} else {
-			\WP_CLI::error( sprintf( 'No snapshots found for %s', $snapshot_name ) );
+		// Get snapshot options to reinject them later.
+		$settings = require __DIR__ . '/set.php';
+		$options  = array();
+
+		foreach ( $settings as $key => $setting ) {
+			$options[ $key ] = get_option( 'snapshots_' . $key );
 		}
 
-		$manifest = $this->get_most_recent_file( $snapshot_name, 'manifest.json' );
+		$restore_file = $this->get_most_recent_file( $snapshot_name, 'dump.sql' );
+		if ( $restore_file ) {
+			$location = $restore_file;
+		} else {
+			WP_CLI::error( sprintf( 'No snapshots found for %s', $snapshot_name ) );
+		}
+
+		$manifest_path = $this->get_most_recent_file( $snapshot_name, 'manifest.json' );
 
 		$zip = $this->get_most_recent_file( $snapshot_name, 'data.zip' );
 
@@ -296,17 +389,16 @@ class CLI_Command extends \WP_CLI_Command {
 
 			$upload_dir = wp_upload_dir();
 			$backup_dir = $upload_dir['basedir'] . '.' . time();
-
-			if ( $unzip = $this->unzip( $zip, $backup_dir ) ) {
-			} else {
-				\WP_CLI::error( sprintf( 'Not able to extract uploads directory for %s', $snapshot_name ) );
+			$unzip      = $this->unzip( $zip, $backup_dir );
+			if ( ! $unzip ) {
+				WP_CLI::error( sprintf( 'Not able to extract uploads directory for %s', $snapshot_name ) );
 			}
 
 			$this->delete_folder( $upload_dir['basedir'] );
 
-			// rename old directory (back it up)
+			// Rename old directory (back it up).
 			if ( ! rename( $backup_dir, $upload_dir['basedir'] ) ) {
-				\WP_CLI::error( sprintf( 'Could not backup upload folder for %s', $snapshot_name ) );
+				WP_CLI::error( sprintf( 'Could not backup upload folder for %s', $snapshot_name ) );
 			}
 		}
 
@@ -314,7 +406,7 @@ class CLI_Command extends \WP_CLI_Command {
 
 		$sql_data = file_get_contents( $location );
 
-		// drop all tables who do not belong to this import
+		// Drop all tables who do not belong to this import.
 		if ( preg_match_all( '/-- Table structure for table `(.*?)`/', $sql_data, $matches ) ) {
 			$tables = $matches[1];
 
@@ -323,52 +415,104 @@ class CLI_Command extends \WP_CLI_Command {
 			if ( ! empty( $to_remove ) ) {
 				global $wpdb;
 				foreach ( $to_remove as $t ) {
+					// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Table name from WP-CLI db tables list.
 					$wpdb->query( 'DROP TABLE IF EXISTS `' . $t . '`;' );
 				}
 			}
 		}
 
-		// maybe replace the URL if the current one doesn't match the one from the SQL file
+		// Maybe replace the URL if the current one doesn't match the one from the SQL file.
 		if ( preg_match( "/'home','(https?:\/\/([^']+)?)'/", $sql_data, $match ) ) {
 			$sql_home_url = $match[1];
 			$home_url     = get_option( 'home' );
 
-			if ( $home_url != $sql_home_url ) {
+			if ( $home_url !== $sql_home_url ) {
 				$this->command( 'search-replace ' . $sql_home_url . ' ' . $home_url );
 			}
 		}
+
+		// Good time to clear thing up.
+		wp_cache_delete( 'alloptions', 'options' );
+
+		// Insert old Snapshot settings (reinjection disabled; options preserved in $options).
+		unset( $options );
 
 		if ( ! function_exists( 'wp_upgrade' ) ) {
 			require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 		}
 		wp_upgrade();
 
-		if ( file_exists( $manifest ) ) {
-			$manifest = json_decode( file_get_contents( $manifest ) );
-			if ( isset( $manifest->location ) ) {
-				\WP_CLI::line( 'Redirect to: ' . $manifest->location );
+		if ( $manifest_path && file_exists( $manifest_path ) ) {
+			$raw           = file_get_contents( $manifest_path );
+			$manifest_data = json_decode( $raw, true );
+			if ( ! is_array( $manifest_data ) ) {
+				$obj           = json_decode( $raw );
+				$manifest_data = ( $obj && is_object( $obj ) ) ? get_object_vars( $obj ) : array();
 			}
-			if ( isset( $manifest->name ) ) {
-				// don't use 'set_transient' here to prevent race conditions
-				global $wpdb;
-				$query = $wpdb->prepare( "INSERT INTO {$wpdb->options} SET option_name = '_transient_snapshot_current', option_value = '%s', autoload = 'yes' ON DUPLICATE KEY UPDATE option_value = '%s'", $manifest->name, $manifest->name );
-				$this->command( sprintf( 'db query "%s"', $query ) );
+			if ( ! empty( $manifest_data['location'] ) ) {
+				WP_CLI::line( 'Redirect to: ' . $manifest_data['location'] );
 			}
+			$manifest_data['last_used'] = time();
+			file_put_contents( $manifest_path, wp_json_encode( $manifest_data ) );
 		}
+
+		// Set the current snapshot.
+		set_transient( 'snapshot_current', $snapshot_name );
 
 		return true;
 	}
 
 
-	private function command( $command, $return = true, $exit_error = false ) {
-		$options = array(
-			'return'     => true,
-			// 'parse'      => 'json',
-			'launch'     => false,
-			'exit_error' => $exit_error,
+	/**
+	 * Debug wrapper that logs WP-CLI commands before execution.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $command      WP-CLI subcommand.
+	 * @param array  $command_args Optional. Extra CLI flags. Default empty array.
+	 * @param bool   $return       Optional. Return output instead of echoing. Default true.
+	 * @param bool   $exit_error   Optional. Exit on error. Default false.
+	 * @return mixed Command output from command().
+	 */
+	private function x_command( $command, $command_args = array(), $return = true, $exit_error = false ) {
+
+		error_log(
+			print_r(
+				'Command: ' . $command . ' ' . implode( ' ', $command_args ),
+				true
+			)
 		);
 
-		$result = \WP_CLI::runcommand( $command, $options );
+		$result = $this->command( $command, $command_args, $return, $exit_error );
+		return $result;
+	}
+
+
+	/**
+	 * Runs a nested WP-CLI command via WP_CLI::runcommand().
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $command      WP-CLI subcommand.
+	 * @param array  $command_args Optional. Extra CLI flags. Default empty array.
+	 * @param bool   $return       Optional. Return output instead of echoing. Default true.
+	 * @param bool   $exit_error   Optional. Exit on error. Default false.
+	 * @return array|string|void Command output; void when echoing.
+	 */
+	private function command( $command, $command_args = array(), $return = true, $exit_error = false ) {
+		$options = array(
+			'return'       => true,
+			// 'parse'      => 'json',
+			'launch'       => false,
+			'exit_error'   => $exit_error,
+			'command_args' => (array) $command_args,
+		);
+
+		if ( ! empty( $command_args ) ) {
+			$command .= ' ' . implode( ' ', $command_args );
+		}
+
+		$result = WP_CLI::runcommand( $command, $options );
 
 		$result = trim( $result );
 
@@ -380,29 +524,49 @@ class CLI_Command extends \WP_CLI_Command {
 			return $result;
 		}
 
-		echo $result;
+		WP_CLI::log( (string) $result );
 	}
 
 
+	/**
+	 * Deletes a snapshot directory from disk.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $args       Positional arguments.
+	 * @param array $assoc_args Associative arguments from the CLI.
+	 * @return bool True on success.
+	 */
 	private function snapshots_delete( $args, $assoc_args ) {
 
 		$snapshot_name = $this->get_name( $args );
 
-		if ( $restore_file = $this->get_most_recent_file( $snapshot_name, 'dump.sql' ) ) {
+		$restore_file = $this->get_most_recent_file( $snapshot_name, 'dump.sql' );
+		if ( $restore_file ) {
 			$location = dirname( $restore_file );
 		} else {
-			\WP_CLI::error( sprintf( 'No snapshots found for %s', $snapshot_name ) );
+			WP_CLI::error( sprintf( 'No snapshots found for %s', $snapshot_name ) );
 		}
 
 		if ( ! $this->delete_folder( $location ) ) {
-			\WP_CLI::error( sprintf( 'No able delete folder %s', $location ) );
+			WP_CLI::error( sprintf( 'No able delete folder %s', $location ) );
 		}
 
 		return true;
 	}
 
+	/**
+	 * Creates a zip archive of a folder using ZipArchive or PclZip.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string      $folder      Source directory path.
+	 * @param string|null $destination Optional. Destination zip path. Default null.
+	 * @return bool True on success.
+	 */
 	private function zip( $folder, $destination = null ) {
 
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Core filter name for zip backend selection.
 		if ( class_exists( 'ZipArchive', false ) && apply_filters( 'unzip_file_use_ziparchive', true ) ) {
 			return $this->zip_archive( $folder, $destination );
 		}
@@ -410,26 +574,35 @@ class CLI_Command extends \WP_CLI_Command {
 		return $this->zip_pclzip( $folder, $destination );
 	}
 
+	/**
+	 * Zips a folder with PHP ZipArchive.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string      $folder      Source directory path.
+	 * @param string|null $destination Optional. Destination zip path. Default null.
+	 * @return bool True on success.
+	 */
 	private function zip_archive( $folder, $destination = null ) {
-		// Get real path for our folder
-		$rootPath = realpath( $folder );
+		// Get real path for our folder.
+		$root_path = realpath( $folder );
 
-		$zipfile = ! is_null( $destination ) ? $destination : trailingslashit( $rootPath ) . basename( $folder ) . '.zip';
+		$zipfile = ! is_null( $destination ) ? $destination : trailingslashit( $root_path ) . basename( $folder ) . '.zip';
 
 		$zip = new \ZipArchive();
 		$zip->open( $zipfile, \ZipArchive::CREATE | \ZipArchive::OVERWRITE );
 
-		$files = list_files( $rootPath, 999 );
+		$files = list_files( $root_path, 999 );
 		$count = 0;
 
 		foreach ( $files as $file ) {
 
-			$relativePath = substr( $file, strlen( $rootPath ) + 1 );
+			$relative_path = substr( $file, strlen( $root_path ) + 1 );
 			if ( is_dir( $file ) ) {
-				$zip->addEmptyDir( $relativePath );
+				$zip->addEmptyDir( $relative_path );
 				continue;
 			}
-			$zip->addFile( $file, $relativePath );
+			$zip->addFile( $file, $relative_path );
 			++$count;
 		}
 
@@ -437,26 +610,53 @@ class CLI_Command extends \WP_CLI_Command {
 		return true;
 	}
 
+	/**
+	 * Zips a folder with PclZip when ZipArchive is unavailable.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string      $folder      Source directory path.
+	 * @param string|null $destination Optional. Destination zip path. Default null.
+	 * @return bool|int PclZip result.
+	 */
 	private function zip_pclzip( $folder, $destination = null ) {
-		// Get real path for our folder
-		$rootPath = realpath( $folder );
+		// Get real path for our folder.
+		$root_path = realpath( $folder );
 
-		$zipfile = ! is_null( $destination ) ? $destination : trailingslashit( $rootPath ) . basename( $folder ) . '.zip';
+		$zipfile = ! is_null( $destination ) ? $destination : trailingslashit( $root_path ) . basename( $folder ) . '.zip';
 
 		require_once ABSPATH . 'wp-admin/includes/class-pclzip.php';
 		$zip = new \PclZip( $zipfile );
 
-		$files = list_files( $rootPath, 999 );
+		$files = list_files( $root_path, 999 );
 		$count = 0;
 
-		return $zip->create( $files, '', $rootPath );
+		return $zip->create( $files, '', $root_path );
 	}
 
+	/**
+	 * Extracts a zip file via WordPress unzip_file().
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $zipfile     Path to the zip archive.
+	 * @param string $destination Destination directory.
+	 * @return bool|\WP_Error True on success.
+	 */
 	private function unzip( $zipfile, $destination ) {
 		WP_Filesystem();
 		return unzip_file( $zipfile, $destination );
 	}
 
+	/**
+	 * Deletes a file or directory through the WordPress filesystem API.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $target    Path to delete.
+	 * @param bool   $recursive Optional. Recurse into directories. Default true.
+	 * @return bool True on success.
+	 */
 	private function delete_folder( $target, $recursive = true ) {
 		global $wp_filesystem;
 		WP_Filesystem();
@@ -466,7 +666,19 @@ class CLI_Command extends \WP_CLI_Command {
 		return $wp_filesystem->delete( $target, $recursive, $type );
 	}
 
+	/**
+	 * Resolves the path to a file inside the newest matching snapshot folder.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $backup_name Snapshot name or full folder id.
+	 * @param string $extension   File name within the snapshot (e.g. dump.sql).
+	 * @return string|null Absolute file path or null when not found.
+	 */
 	private function get_most_recent_file( $backup_name, $extension ) {
+
+		// Covers the folder-id short-circuit that skips get_snaps().
+		snapshots_harden_folder( snapshots_option( 'folder' ) );
 
 		if ( false !== strpos( $backup_name, '_' ) ) {
 			return trailingslashit( snapshots_option( 'folder' ) ) . $backup_name . '/' . $extension;
@@ -476,11 +688,22 @@ class CLI_Command extends \WP_CLI_Command {
 		return isset( $backups[0] ) ? trailingslashit( $backups[0] ) . $extension : null;
 	}
 
+	/**
+	 * Lists snapshot directories, optionally filtered and sorted by manifest mtime.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string|null $name  Optional name prefix filter.
+	 * @param bool        $order Optional. Sort by manifest modification time. Default false.
+	 * @return array<int, string> Directory paths with trailing slash.
+	 */
 	public function get_snaps( $name = null, $order = false ) {
 
 		if ( ! is_dir( snapshots_option( 'folder' ) ) ) {
 			return array();
 		}
+
+		snapshots_harden_folder( snapshots_option( 'folder' ) );
 
 		if ( ! function_exists( 'list_files' ) ) {
 			require_once \ABSPATH . 'wp-admin/includes/file.php';
@@ -490,7 +713,7 @@ class CLI_Command extends \WP_CLI_Command {
 		if ( ! is_null( $name ) ) {
 			$files = preg_grep( '/' . preg_quote( $name ) . '_(\d+)\/$/', $files );
 		} else {
-			$files = preg_grep( '/([a-z-]+)_(\d+)\/$/', $files );
+			$files = preg_grep( '/([a-z0-9-]+)_(\d+)\/$/', $files );
 		}
 		if ( $order ) {
 			usort(
@@ -503,6 +726,14 @@ class CLI_Command extends \WP_CLI_Command {
 		return $files;
 	}
 
+	/**
+	 * Resolves the snapshot name from CLI positional arguments.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $args Positional arguments.
+	 * @return string Snapshot name.
+	 */
 	private function get_name( $args ) {
 
 		if ( array_key_exists( 0, $args ) ) {
@@ -512,11 +743,26 @@ class CLI_Command extends \WP_CLI_Command {
 		return $this->get_default_name();
 	}
 
+	/**
+	 * Returns the default snapshot name based on the site title.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return string Sanitized site name.
+	 */
 	private function get_default_name() {
 		return sanitize_title( get_option( 'blogname', '' ) );
 	}
 
 
+	/**
+	 * Removes older snapshots beyond the configured max_shots retention.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $name Snapshot folder id or name prefix.
+	 * @return void
+	 */
 	private function destroy_snapshots( $name ) {
 
 		if ( false !== strpos( $name, '_' ) ) {

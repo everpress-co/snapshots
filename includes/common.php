@@ -1,19 +1,119 @@
 <?php
+/**
+ * Shared helpers for Snapshots.
+ *
+ * @package Snapshots
+ */
 
+namespace EverPress\Snapshots;
+
+/**
+ * Returns a Snapshots setting from a constant, option, or default.
+ *
+ * @since 1.0.0
+ *
+ * @param string $option Setting key without the snapshots_ prefix.
+ * @return mixed Setting value.
+ */
 function snapshots_option( $option ) {
 
 	$constant = 'SNAPSHOTS_' . strtoupper( $option );
 	$return   = null;
 
+	// Constants take precedence over stored options.
 	if ( defined( $constant ) ) {
 		$return = constant( $constant );
+	} else {
+
+		$settings = require __DIR__ . '/set.php';
+		$return   = get_option( 'snapshots_' . $option, $settings[ $option ]['default'] );
 	}
 
+	/**
+	 * Filter the value of a Snapshots option.
+	 *
+	 * @param mixed $return The value of the Snapshots option.
+	 */
 	return apply_filters( 'snapshots_' . $option, $return );
+}
+
+/**
+ * Loads the settings schema.
+ *
+ * @since 1.0.0
+ *
+ * @return array<string, array<string, mixed>> Settings definitions.
+ */
+function snapshots_get_settings() {
+	return require __DIR__ . '/set.php';
+}
+
+/**
+ * Renders admin navigation tabs for Snapshots screens.
+ *
+ * @since 1.0.0
+ *
+ * @param string $current_tab Active tab slug.
+ * @return void
+ */
+function snapshots_get_nav( $current_tab = 'snapshots' ) {
+
+	?>
+	<nav class="nav-tab-wrapper">
+		<a href="<?php echo esc_url( admin_url( 'tools.php?page=snapshots' ) ); ?>" class="nav-tab<?php echo 'snapshots' === $current_tab ? ' nav-tab-active' : ''; ?>"><?php esc_html_e( 'Snapshots', 'snapshots' ); ?></a>
+		<a href="<?php echo esc_url( admin_url( 'options-general.php?page=snapshots-settings' ) ); ?>" class="nav-tab<?php echo 'settings' === $current_tab ? ' nav-tab-active' : ''; ?>"><?php esc_html_e( 'Settings', 'snapshots' ); ?></a>
+	</nav>
+
+	<?php
+}
+
+/**
+ * Writes access-protection files into the snapshot storage folder.
+ *
+ * The folder lives inside the web root by default and holds full database
+ * dumps; these files keep that data from being served by Apache or exposed
+ * through directory indexes. Idempotent: existing files are left untouched,
+ * and nginx setups still need a server-level dot-directory deny rule.
+ *
+ * @since 3.0.0
+ *
+ * @param string $folder Absolute path to the snapshot storage folder.
+ * @return void
+ */
+function snapshots_harden_folder( $folder ) {
+	if ( ! is_dir( $folder ) ) {
+		return;
+	}
+
+	$htaccess = trailingslashit( $folder ) . '.htaccess';
+	if ( ! file_exists( $htaccess ) ) {
+		// Apache 2.4 (mod_authz_core) with a 2.2 fallback.
+		$rules  = "# SnapShots: deny web access to snapshot data.\n";
+		$rules .= "<IfModule mod_authz_core.c>\n\tRequire all denied\n</IfModule>\n";
+		$rules .= "<IfModule !mod_authz_core.c>\n\tOrder allow,deny\n\tDeny from all\n</IfModule>\n";
+		file_put_contents( $htaccess, $rules );
+	}
+
+	$index = trailingslashit( $folder ) . 'index.php';
+	if ( ! file_exists( $index ) ) {
+		file_put_contents( $index, "<?php\n// Silence is golden.\n" );
+	}
 }
 
 if ( ! function_exists( 'wp_date' ) ) {
 
+	// phpcs:disable Squiz.Commenting.FunctionComment.Missing -- WordPress core polyfill for older sites.
+
+	/**
+	 * Polyfill for wp_date() on WordPress versions below 5.3.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string            $format    PHP date format.
+	 * @param int|null          $timestamp Optional. Unix timestamp.
+	 * @param DateTimeZone|null $timezone  Optional. Timezone.
+	 * @return string|false Formatted date string, or false on failure.
+	 */
 	function wp_date( $format, $timestamp = null, $timezone = null ) {
 		global $wp_locale;
 
@@ -82,10 +182,24 @@ if ( ! function_exists( 'wp_date' ) ) {
 		return $date;
 	}
 
+	/**
+	 * Polyfill for wp_timezone() on WordPress versions below 5.3.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return DateTimeZone Site timezone.
+	 */
 	function wp_timezone() {
 		return new DateTimeZone( wp_timezone_string() );
 	}
 
+	/**
+	 * Polyfill for wp_timezone_string() on WordPress versions below 5.3.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return string PHP timezone identifier or offset.
+	 */
 	function wp_timezone_string() {
 		$timezone_string = get_option( 'timezone_string' );
 
@@ -104,4 +218,6 @@ if ( ! function_exists( 'wp_date' ) ) {
 
 		return $tz_offset;
 	}
+
+	// phpcs:enable
 }

@@ -1,27 +1,55 @@
 {
 	"name": "snapshots",
-	"version": "2.8.2",
+	"version": "3.0.0",
+	"description": "Quickly create snapshots of your development sites and restore them with a click.",
 	"author": "everpress",
 	"license": "GPL-2.0-or-later",
-	"scripts": {
-		"build": "wp-scripts build",
-		"format": "wp-scripts format",
-		"lint:css": "wp-scripts lint-style",
-		"lint:js": "wp-scripts lint-js",
-		"packages-update": "wp-scripts packages-update",
-		"plugin-zip": "wp-scripts plugin-zip",
-		"start": "wp-scripts start"
+	"keywords": [
+		"snapshots",
+		"wordpress",
+		"development",
+		"backup",
+		"wp-cli"
+	],
+	"homepage": "https://wordpress.org/plugins/snapshots/",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/everpress-co/snapshots.git"
+	},
+	"bugs": {
+		"url": "https://wordpress.org/support/plugin/snapshots/"
 	},
 	"files": [
-		"build",
-		"src",
-		"vendor",
+		"snapshots.php",
 		"includes",
-		"assets",
-		"snapshots.php"
+		"build",
+		"readme.txt"
 	],
 	"devDependencies": {
-		"@wordpress/env": "^10.13.0",
-		"@wordpress/scripts": "^30.6.0"
+		"@wordpress/scripts": "^36.1.0",
+		"css-loader": "^7.1.5",
+		"mini-css-extract-plugin": "^2.9.5",
+		"sass": "^1.105.2",
+		"sass-loader": "^17.0.1",
+		"webpack": "^5.103.1",
+		"webpack-cli": "^7.2.3"
+	},
+	"scripts": {
+		"build": "webpack --mode production",
+		"develop": "webpack --mode development",
+		"watch": "webpack --mode development --watch --progress",
+		"prewatch": "npm run develop",
+		"start": "npm run watch",
+		"format": "wp-scripts format",
+		"lint": "npm run lint:js && npm run lint:css && npm run lint:pkg-json",
+		"lint:css": "wp-scripts lint-style",
+		"lint:js": "wp-scripts lint-js",
+		"lint:pkg-json": "wp-scripts lint-pkg-json",
+		"packages-update": "wp-scripts packages-update",
+		"pages": "node scripts/build-pages.mjs",
+		"plugin-zip": "wp-scripts plugin-zip",
+		"start:poll": "npm run watch:poll",
+		"watch:poll": "WEBPACK_WATCH_POLL=1000 webpack --mode development --watch --progress",
+		"prewatch:poll": "npm run develop"
 	}
 }
