@@ -180,6 +180,7 @@ On **Settings → Snapshots**, enter a comma-separated list in **Exclude Tables*
 
 ### Unreleased
 
+- fixed: command injection through unescaped snapshot names and locations in the create, restore, and delete actions
 - fixed: install steps use the folder name `snapshots`
 - fixed: missing PHP, WP-CLI, or exec shows a notice instead of a full-screen error
 - added: Tools → Snapshots to restore and delete snapshots, including more than one at a time
