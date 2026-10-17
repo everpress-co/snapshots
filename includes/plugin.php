@@ -309,18 +309,34 @@ class Plugin {
 	}
 
 	/**
-	 * Reduces an arbitrary URL to its path and query on this site.
+	 * Builds a same-site redirect from a supplied URL or path.
+	 *
+	 * Uses the request path and query as-is (including any subdirectory
+	 * prefix already present in the browser pathname) with this site's
+	 * scheme and host, so home_url() does not double the base path.
 	 *
 	 * @since [Unreleased]
 	 *
 	 * @param string $url URL or path supplied with the request.
-	 * @return string Same-site URL built from the path and query only.
+	 * @return string Same-site URL safe for wp_safe_redirect().
 	 */
 	private function same_site_url( $url ) {
-		$path  = (string) wp_parse_url( $url, PHP_URL_PATH );
-		$query = wp_parse_url( $url, PHP_URL_QUERY );
+		$path       = (string) wp_parse_url( $url, PHP_URL_PATH );
+		$query      = wp_parse_url( $url, PHP_URL_QUERY );
+		$home_parts = wp_parse_url( home_url( '/' ) );
 
-		return home_url( $path . ( $query ? '?' . $query : '' ) );
+		if ( empty( $home_parts['host'] ) ) {
+			return home_url( '/' );
+		}
+
+		$candidate  = ( isset( $home_parts['scheme'] ) ? $home_parts['scheme'] : 'https' ) . '://';
+		$candidate .= $home_parts['host'];
+		if ( ! empty( $home_parts['port'] ) ) {
+			$candidate .= ':' . $home_parts['port'];
+		}
+		$candidate .= $path . ( $query ? '?' . $query : '' );
+
+		return wp_validate_redirect( $candidate, home_url( '/' ) );
 	}
 
 	/**

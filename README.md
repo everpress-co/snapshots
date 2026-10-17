@@ -181,7 +181,7 @@ On **Settings → Snapshots**, enter a comma-separated list in **Exclude Tables*
 ### Unreleased
 
 - fixed: create, restore, and delete links now require a valid nonce, blocking cross-site request forgery
-- fixed: the return location after creating a snapshot can no longer redirect to an external site
+- fixed: the return location after creating a snapshot stays on this site without doubling subdirectory paths
 - fixed: install steps use the folder name `snapshots`
 - fixed: missing PHP, WP-CLI, or exec shows a notice instead of a full-screen error
 - added: Tools → Snapshots to restore and delete snapshots, including more than one at a time
