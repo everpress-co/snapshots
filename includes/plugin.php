@@ -455,6 +455,9 @@ class Plugin {
 	 */
 	public function get_snapshots() {
 
+		// Harden before the list cache: a warm transient must not delay protection.
+		snapshots_harden_folder( snapshots_option( 'folder' ) );
+
 		$last      = get_transient( 'snapshot_current' );
 		$order     = $this->get_list_order();
 		$cache_key = $this->snapshot_list_cache_key( $last, $order );

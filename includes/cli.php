@@ -253,6 +253,8 @@ class CLI_Command extends WP_CLI_Command {
 			return array();
 		}
 
+		snapshots_harden_folder( snapshots_option( 'folder' ) );
+
 		$backups = list_files( snapshots_option( 'folder' ), 1 );
 		$backups = preg_grep( '/([a-z-]+)_(\d+)\/$/', $backups );
 		if ( ! is_null( $name ) ) {
@@ -675,6 +677,9 @@ class CLI_Command extends WP_CLI_Command {
 	 */
 	private function get_most_recent_file( $backup_name, $extension ) {
 
+		// Covers the folder-id short-circuit that skips get_snaps().
+		snapshots_harden_folder( snapshots_option( 'folder' ) );
+
 		if ( false !== strpos( $backup_name, '_' ) ) {
 			return trailingslashit( snapshots_option( 'folder' ) ) . $backup_name . '/' . $extension;
 		}
@@ -697,6 +702,8 @@ class CLI_Command extends WP_CLI_Command {
 		if ( ! is_dir( snapshots_option( 'folder' ) ) ) {
 			return array();
 		}
+
+		snapshots_harden_folder( snapshots_option( 'folder' ) );
 
 		if ( ! function_exists( 'list_files' ) ) {
 			require_once \ABSPATH . 'wp-admin/includes/file.php';
