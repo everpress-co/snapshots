@@ -655,8 +655,9 @@ class Plugin {
 	 * Checks whether a snapshot identifier matches the on-disk folder format.
 	 *
 	 * Accepts a full folder id (`name_timestamp`) or a name prefix as produced
-	 * by sanitize_title(); everything else is rejected before it can reach a
-	 * shell command or a filesystem path.
+	 * by sanitize_title(). The value must start with an alphanumeric character
+	 * so WP-CLI cannot treat it as a global option (e.g. `--quiet`). Everything
+	 * else is rejected before it can reach a shell command or a filesystem path.
 	 *
 	 * @since [Unreleased]
 	 *
@@ -664,7 +665,7 @@ class Plugin {
 	 * @return bool True when the identifier is safe to use in commands and paths.
 	 */
 	private function is_valid_snapshot_id( $id ) {
-		return is_string( $id ) && (bool) preg_match( '/^[a-z0-9_-]+(_\d+)?$/', $id );
+		return is_string( $id ) && (bool) preg_match( '/^[a-z0-9][a-z0-9_-]*(_\d+)?$/', $id );
 	}
 
 	/**
