@@ -59,7 +59,7 @@ A restore:
 ### Delete
 
 ```bash
-wp snapshot delete "<name>"
+wp snapshot delete <slug-or-folder-id>
 ```
 
 Only delete when the user asks. Deletion is permanent on this server.
