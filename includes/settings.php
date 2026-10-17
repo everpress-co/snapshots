@@ -10,14 +10,14 @@ namespace EverPress\Snapshots;
 /**
  * Admin settings screen and option registration.
  *
- * @since [Unreleased]
+ * @since 3.0.0
  */
 class Settings {
 
 	/**
 	 * Singleton instance.
 	 *
-	 * @since [Unreleased]
+	 * @since 3.0.0
 	 *
 	 * @var Settings|null
 	 */
@@ -26,7 +26,7 @@ class Settings {
 	/**
 	 * Registers settings hooks.
 	 *
-	 * @since [Unreleased]
+	 * @since 3.0.0
 	 */
 	private function __construct() {
 
@@ -37,7 +37,7 @@ class Settings {
 	/**
 	 * Returns the singleton instance.
 	 *
-	 * @since [Unreleased]
+	 * @since 3.0.0
 	 *
 	 * @return Settings
 	 */
@@ -52,7 +52,7 @@ class Settings {
 	/**
 	 * Registers settings sections, fields, and sanitization callbacks.
 	 *
-	 * @since [Unreleased]
+	 * @since 3.0.0
 	 *
 	 * @return void
 	 */
@@ -173,7 +173,7 @@ class Settings {
 	/**
 	 * Adds the Snapshots entry under Settings.
 	 *
-	 * @since [Unreleased]
+	 * @since 3.0.0
 	 *
 	 * @return void
 	 */
@@ -196,7 +196,7 @@ class Settings {
 	/**
 	 * Renders the settings page markup.
 	 *
-	 * @since [Unreleased]
+	 * @since 3.0.0
 	 *
 	 * @return void
 	 */
@@ -225,7 +225,7 @@ class Settings {
 	/**
 	 * Replaces the admin footer text on the settings screen.
 	 *
-	 * @since [Unreleased]
+	 * @since 3.0.0
 	 *
 	 * @param string $default Default footer text.
 	 * @return string Filtered footer HTML.

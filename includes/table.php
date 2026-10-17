@@ -10,14 +10,14 @@ namespace EverPress\Snapshots;
 /**
  * WP_List_Table implementation for managing snapshots.
  *
- * @since [Unreleased]
+ * @since 3.0.0
  */
 class Table extends \WP_List_Table {
 
 	/**
 	 * Configures list table arguments for the Tools screen.
 	 *
-	 * @since [Unreleased]
+	 * @since 3.0.0
 	 */
 	public function __construct() {
 		parent::__construct(
@@ -37,7 +37,7 @@ class Table extends \WP_List_Table {
 	/**
 	 * Bulk actions dropdown (WordPress list table convention).
 	 *
-	 * @since [Unreleased]
+	 * @since 3.0.0
 	 *
 	 * @return array<string, string> Action slug to label map.
 	 */
@@ -50,7 +50,7 @@ class Table extends \WP_List_Table {
 	/**
 	 * Resolves the active bulk action from top or bottom dropdowns.
 	 *
-	 * @since [Unreleased]
+	 * @since 3.0.0
 	 *
 	 * @return string|false Action slug or false when none selected.
 	 */
@@ -75,7 +75,7 @@ class Table extends \WP_List_Table {
 	/**
 	 * Deletes selected snapshots and redirects with a status query arg.
 	 *
-	 * @since [Unreleased]
+	 * @since 3.0.0
 	 *
 	 * @return void
 	 */
@@ -138,7 +138,7 @@ class Table extends \WP_List_Table {
 	/**
 	 * Defines columns shown in the list table.
 	 *
-	 * @since [Unreleased]
+	 * @since 3.0.0
 	 *
 	 * @return array<string, string> Column slug to heading map.
 	 */
@@ -157,7 +157,7 @@ class Table extends \WP_List_Table {
 	/**
 	 * Renders the checkbox column for a row.
 	 *
-	 * @since [Unreleased]
+	 * @since 3.0.0
 	 *
 	 * @param array<string, mixed> $item Row data.
 	 * @return string Checkbox HTML.
@@ -174,7 +174,7 @@ class Table extends \WP_List_Table {
 	/**
 	 * Renders the created timestamp column.
 	 *
-	 * @since [Unreleased]
+	 * @since 3.0.0
 	 *
 	 * @param array<string, mixed> $item Row data.
 	 * @return string Human-readable created time.
@@ -196,7 +196,7 @@ class Table extends \WP_List_Table {
 	/**
 	 * Renders the last-used timestamp column.
 	 *
-	 * @since [Unreleased]
+	 * @since 3.0.0
 	 *
 	 * @param array<string, mixed> $item Row data.
 	 * @return string Human-readable last-used time or an em dash.
@@ -220,7 +220,7 @@ class Table extends \WP_List_Table {
 	/**
 	 * Renders the snapshot name with row actions.
 	 *
-	 * @since [Unreleased]
+	 * @since 3.0.0
 	 *
 	 * @param array<string, mixed> $item Row data.
 	 * @return string Name cell HTML.
@@ -238,7 +238,7 @@ class Table extends \WP_List_Table {
 	/**
 	 * Renders a default column value when no dedicated handler exists.
 	 *
-	 * @since [Unreleased]
+	 * @since 3.0.0
 	 *
 	 * @param array<string, mixed> $item        Row data.
 	 * @param string               $column_name Column slug.
@@ -256,7 +256,7 @@ class Table extends \WP_List_Table {
 	/**
 	 * Builds row data from registered snapshots.
 	 *
-	 * @since [Unreleased]
+	 * @since 3.0.0
 	 *
 	 * @return array<int, array<string, mixed>> List table rows.
 	 */
@@ -284,7 +284,7 @@ class Table extends \WP_List_Table {
 	/**
 	 * Loads columns, pagination, and items for display.
 	 *
-	 * @since [Unreleased]
+	 * @since 3.0.0
 	 *
 	 * @return void
 	 */

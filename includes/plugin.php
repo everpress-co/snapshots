@@ -61,7 +61,7 @@ class Plugin {
 	/**
 	 * Adds Settings and Snapshots links on the Plugins screen.
 	 *
-	 * @since [Unreleased]
+	 * @since 3.0.0
 	 *
 	 * @param array<string, string> $links Existing plugin action links.
 	 * @return array<string, string> Modified action links.
@@ -79,7 +79,7 @@ class Plugin {
 	/**
 	 * Registers the Tools → Snapshots admin page.
 	 *
-	 * @since [Unreleased]
+	 * @since 3.0.0
 	 *
 	 * @return void
 	 */
@@ -107,7 +107,7 @@ class Plugin {
 	/**
 	 * Processes list-table bulk actions before admin-header sends output.
 	 *
-	 * @since [Unreleased]
+	 * @since 3.0.0
 	 *
 	 * @return void
 	 */
@@ -126,7 +126,7 @@ class Plugin {
 	/**
 	 * Displays admin notices for bulk delete results on the Tools screen.
 	 *
-	 * @since [Unreleased]
+	 * @since 3.0.0
 	 *
 	 * @return void
 	 */
@@ -218,7 +218,7 @@ class Plugin {
 	/**
 	 * Renders the Tools → Snapshots list table page.
 	 *
-	 * @since [Unreleased]
+	 * @since 3.0.0
 	 *
 	 * @return void
 	 */
@@ -246,7 +246,7 @@ class Plugin {
 	/**
 	 * Replaces the admin footer text on the Tools snapshots screen.
 	 *
-	 * @since [Unreleased]
+	 * @since 3.0.0
 	 *
 	 * @param string $default Default footer text.
 	 * @return string Filtered footer HTML.
@@ -316,7 +316,7 @@ class Plugin {
 	 * scheme and host, so home_url() does not double the base path.
 	 * Preserves a URL fragment when present (e.g. admin page anchors).
 	 *
-	 * @since [Unreleased]
+	 * @since 3.0.0
 	 *
 	 * @param string $url URL or path supplied with the request.
 	 * @return string Same-site URL safe for wp_safe_redirect().
@@ -463,7 +463,7 @@ class Plugin {
 	/**
 	 * Builds the transient key for the snapshot list cache.
 	 *
-	 * @since [Unreleased]
+	 * @since 3.0.0
 	 *
 	 * @param string|false $snapshot_current_id Value of snapshot_current transient.
 	 * @param string       $order               Sort mode: `last_used` or `created`.
@@ -477,7 +477,7 @@ class Plugin {
 	/**
 	 * Returns the configured snapshot list sort mode.
 	 *
-	 * @since [Unreleased]
+	 * @since 3.0.0
 	 *
 	 * @return string `last_used` or `created`.
 	 */
@@ -493,7 +493,7 @@ class Plugin {
 	/**
 	 * Returns snapshot metadata for admin UI, with transient caching.
 	 *
-	 * @since [Unreleased]
+	 * @since 3.0.0
 	 *
 	 * @return array<string, object> Snapshot ID to metadata object map.
 	 */
@@ -606,7 +606,7 @@ class Plugin {
 	/**
 	 * Returns sort keys for a snapshot directory (last_used or created time).
 	 *
-	 * @since [Unreleased]
+	 * @since 3.0.0
 	 *
 	 * @param string $snapshot_dir Absolute path to snapshot directory (with trailing slash).
 	 * @return array{primary: int, created: int} Sort metadata.
@@ -654,7 +654,7 @@ class Plugin {
 	/**
 	 * Flushes snapshot list transients (hook target after settings change).
 	 *
-	 * @since [Unreleased]
+	 * @since 3.0.0
 	 *
 	 * @return void
 	 */
@@ -711,7 +711,7 @@ class Plugin {
 	 * so WP-CLI cannot treat it as a global option (e.g. `--quiet`). Everything
 	 * else is rejected before it can reach a shell command or a filesystem path.
 	 *
-	 * @since [Unreleased]
+	 * @since 3.0.0
 	 *
 	 * @param string $id Snapshot identifier or name prefix.
 	 * @return bool True when the identifier is safe to use in commands and paths.

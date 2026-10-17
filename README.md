@@ -3,9 +3,9 @@
 Contributors: everpress, xaverb  
 Tags: snapshots, database, development, restore, wp-cli  
 Requires at least: 6.6  
-Tested up to: 6.7  
+Tested up to: 7.1  
 Requires PHP: 7.4  
-Stable tag: 2.8.2  
+Stable tag: 3.0.0  
 License: GPLv2 or later  
 License URI: <https://www.gnu.org/licenses/gpl-2.0.html>  
 
@@ -176,7 +176,7 @@ On **Settings → Snapshots**, enter a comma-separated list in **Exclude Tables*
 
 ## Changelog
 
-### Unreleased
+### 3.0.0
 
 - fixed: command injection through unescaped snapshot names and locations in the create, restore, and delete actions
 - fixed: create, restore, and delete links now require a valid nonce, blocking cross-site request forgery
