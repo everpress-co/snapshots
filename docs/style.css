@@ -856,8 +856,10 @@ code {
 	line-height: 1.3;
 }
 
-.guide p,
-.guide li {
+.guide .admin-shot {
+	margin: 0 0 var(--space-6);
+	max-width: 668px;
+}
 	max-width: 65ch;
 	color: var(--color-muted);
 }
