@@ -256,7 +256,7 @@ class CLI_Command extends WP_CLI_Command {
 		snapshots_harden_folder( snapshots_option( 'folder' ) );
 
 		$backups = list_files( snapshots_option( 'folder' ), 1 );
-		$backups = preg_grep( '/([a-z-]+)_(\d+)\/$/', $backups );
+		$backups = preg_grep( '/([a-z0-9-]+)_(\d+)\/$/', $backups );
 		if ( ! is_null( $name ) ) {
 			$backups = preg_grep( '/' . preg_quote( $name ) . '_(\d+)\/$/', $backups );
 		}
@@ -713,7 +713,7 @@ class CLI_Command extends WP_CLI_Command {
 		if ( ! is_null( $name ) ) {
 			$files = preg_grep( '/' . preg_quote( $name ) . '_(\d+)\/$/', $files );
 		} else {
-			$files = preg_grep( '/([a-z-]+)_(\d+)\/$/', $files );
+			$files = preg_grep( '/([a-z0-9-]+)_(\d+)\/$/', $files );
 		}
 		if ( $order ) {
 			usort(
