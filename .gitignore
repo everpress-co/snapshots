@@ -49,3 +49,4 @@ ehthumbs.db
 # Cache
 .cache/
 .wp-cache/
+/.security-audit/
