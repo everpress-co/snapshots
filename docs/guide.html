@@ -6,7 +6,7 @@
 		<title>How SnapShots works — a guide</title>
 		<meta
 			name="description"
-			content="A plain guide to saving and restoring a WordPress development site with SnapShots, including admin and WP-CLI examples."
+			content="A plain guide to using SnapShots for quick rollbacks on WordPress development sites, including admin and WP-CLI examples."
 		/>
 		<link rel="canonical" href="https://snapshots.everpress.co/guide.html" />
 		<link rel="icon" href="assets/icon.png" type="image/png" />
@@ -54,6 +54,11 @@
 				<p class="lead">
 					Save a named copy of your development site before you try something.
 					Come back to that copy when the try goes wrong.
+				</p>
+				<p class="trust-note">
+					<strong>SnapShots is a quick rollback tool, not a backup tool.</strong>
+					Use it mainly on local, development, and staging sites while you build
+					and test. Keep separate backups for production and disaster recovery.
 				</p>
 
 				<nav class="guide-toc" aria-label="On this page">
@@ -331,9 +336,10 @@ define( 'SNAPSHOTS_PHP_PATH', '/usr/local/bin' );</pre>
 
 				<h2 id="not">What this is not</h2>
 				<p>
-					SnapShots is a checkpoint on the same server. The files stay in
-					<code>wp-content/.snapshots</code> unless you move that folder. Nothing
-					is uploaded to another service.
+					SnapShots is not a backup tool. It is a quick way to move a development
+					site back to an earlier stage while you build and test. Each checkpoint
+					stays on the same server in <code>wp-content/.snapshots</code> unless
+					you move that folder. Nothing is uploaded to another service.
 				</p>
 				<p>
 					Use it while you build and test. Keep a separate off-site backup of
