@@ -126,6 +126,8 @@ Use the socket path from your Local site.
 
 The default folder is `wp-content/.snapshots`. Change it under **Settings → Snapshots** or with the `SNAPSHOTS_FOLDER` constant. Files stay on this server. They are not uploaded to a remote service.
 
+Snapshots contain a full database export, so SnapShots places `.htaccess` and `index.php` files in the folder to block web access on Apache. On nginx, make sure your configuration denies dot-directories (for example `location ~ /\. { deny all; }`), as it does not read `.htaccess` files.
+
 ### What does a snapshot restore?
 
 It restores the database export and, when that snapshot included files, the uploads directory. It does not restore plugins, themes, or WordPress core. After the import, tables with this site's prefix that are not in the snapshot are dropped.
@@ -182,6 +184,7 @@ On **Settings → Snapshots**, enter a comma-separated list in **Exclude Tables*
 
 - fixed: create, restore, and delete links now require a valid nonce, blocking cross-site request forgery
 - fixed: the return location after creating a snapshot stays on this site without doubling subdirectory paths
+- fixed: snapshot storage folders now contain `.htaccess` and `index.php` files so database dumps are not downloadable from the web on Apache
 - fixed: install steps use the folder name `snapshots`
 - fixed: missing PHP, WP-CLI, or exec shows a notice instead of a full-screen error
 - added: Tools → Snapshots to restore and delete snapshots, including more than one at a time
