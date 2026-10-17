@@ -856,24 +856,6 @@ code {
 	line-height: 1.3;
 }
 
-.guide-shot {
-	width: 100vw;
-	margin-left: calc(50% - 50vw);
-}
-
-.guide-shot h2 {
-	margin-top: 0;
-	font-size: clamp(2.8rem, 5vw, 5.25rem);
-	line-height: 1.02;
-	letter-spacing: -0.045em;
-	max-width: 12ch;
-}
-
-.guide-shot .admin-shot {
-	max-width: 668px;
-	margin-top: var(--space-8);
-}
-
 .guide p,
 .guide li {
 	max-width: 65ch;
