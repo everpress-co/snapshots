@@ -75,7 +75,7 @@ function snapshots_get_nav( $current_tab = 'snapshots' ) {
  * through directory indexes. Idempotent: existing files are left untouched,
  * and nginx setups still need a server-level dot-directory deny rule.
  *
- * @since [Unreleased]
+ * @since 3.0.0
  *
  * @param string $folder Absolute path to the snapshot storage folder.
  * @return void
