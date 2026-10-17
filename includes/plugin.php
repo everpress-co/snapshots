@@ -460,6 +460,9 @@ class Plugin {
 	 */
 	public function get_snapshots() {
 
+		// Harden before the list cache: a warm transient must not delay protection.
+		snapshots_harden_folder( snapshots_option( 'folder' ) );
+
 		$last      = get_transient( 'snapshot_current' );
 		$order     = $this->get_list_order();
 		$cache_key = $this->snapshot_list_cache_key( $last, $order );
@@ -515,6 +518,9 @@ class Plugin {
 		if ( ! is_dir( snapshots_option( 'folder' ) ) ) {
 			return array();
 		}
+
+		// Existing folders predate access protection; harden them on read too.
+		snapshots_harden_folder( snapshots_option( 'folder' ) );
 
 		if ( ! function_exists( 'list_files' ) ) {
 			require_once ABSPATH . 'wp-admin/includes/file.php';
