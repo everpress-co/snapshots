@@ -229,9 +229,11 @@ class CLI_Command extends WP_CLI_Command {
 	 * @return bool True when the folder exists or was created.
 	 */
 	private function check() {
-		if ( ! file_exists( snapshots_option( 'folder' ) ) ) {
-			return wp_mkdir_p( snapshots_option( 'folder' ) );
+		if ( ! file_exists( snapshots_option( 'folder' ) ) && ! wp_mkdir_p( snapshots_option( 'folder' ) ) ) {
+			return false;
 		}
+
+		snapshots_harden_folder( snapshots_option( 'folder' ) );
 
 		return true;
 	}

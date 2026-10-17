@@ -511,6 +511,9 @@ class Plugin {
 			return array();
 		}
 
+		// Existing folders predate access protection; harden them on read too.
+		snapshots_harden_folder( snapshots_option( 'folder' ) );
+
 		if ( ! function_exists( 'list_files' ) ) {
 			require_once ABSPATH . 'wp-admin/includes/file.php';
 		}

@@ -67,6 +67,39 @@ function snapshots_get_nav( $current_tab = 'snapshots' ) {
 	<?php
 }
 
+/**
+ * Writes access-protection files into the snapshot storage folder.
+ *
+ * The folder lives inside the web root by default and holds full database
+ * dumps; these files keep that data from being served by Apache or exposed
+ * through directory indexes. Idempotent: existing files are left untouched,
+ * and nginx setups still need a server-level dot-directory deny rule.
+ *
+ * @since [Unreleased]
+ *
+ * @param string $folder Absolute path to the snapshot storage folder.
+ * @return void
+ */
+function snapshots_harden_folder( $folder ) {
+	if ( ! is_dir( $folder ) ) {
+		return;
+	}
+
+	$htaccess = trailingslashit( $folder ) . '.htaccess';
+	if ( ! file_exists( $htaccess ) ) {
+		// Apache 2.4 (mod_authz_core) with a 2.2 fallback.
+		$rules  = "# SnapShots: deny web access to snapshot data.\n";
+		$rules .= "<IfModule mod_authz_core.c>\n\tRequire all denied\n</IfModule>\n";
+		$rules .= "<IfModule !mod_authz_core.c>\n\tOrder allow,deny\n\tDeny from all\n</IfModule>\n";
+		file_put_contents( $htaccess, $rules );
+	}
+
+	$index = trailingslashit( $folder ) . 'index.php';
+	if ( ! file_exists( $index ) ) {
+		file_put_contents( $index, "<?php\n// Silence is golden.\n" );
+	}
+}
+
 if ( ! function_exists( 'wp_date' ) ) {
 
 	// phpcs:disable Squiz.Commenting.FunctionComment.Missing -- WordPress core polyfill for older sites.
