@@ -135,9 +135,9 @@
 					The same work from the WordPress root, the folder that contains
 					<code>wp-config.php</code>:
 				</p>
-				<pre><code>wp snapshot backup "Before the product import" --files
+				<pre>wp snapshot backup "Before the product import" --files
 wp snapshot list
-wp snapshot restore before-the-product-import</code></pre>
+wp snapshot restore before-the-product-import</pre>
 				<p>
 					<code>backup</code> stores the words you typed. The folder on disk is a
 					slug plus the time it was saved. For this name the folder looks like
@@ -150,9 +150,9 @@ wp snapshot restore before-the-product-import</code></pre>
 					<code>Before the product import</code>, because of the capitals and
 					spaces.
 				</p>
-				<pre><code>wp snapshot restore before-the-product-import
+				<pre>wp snapshot restore before-the-product-import
 wp snapshot restore before-the-product-import_1587039434
-wp snapshot delete before-the-product-import</code></pre>
+wp snapshot delete before-the-product-import</pre>
 				<p>
 					The slug restores the newest copy of that name. The full folder id
 					restores that one copy. In the admin bar you do not type this. A click
@@ -247,10 +247,10 @@ wp snapshot delete before-the-product-import</code></pre>
 					<code>wp-config.php</code>. A constant wins over the value saved in the
 					database.
 				</p>
-				<pre><code>define( 'SNAPSHOTS_FOLDER', WP_CONTENT_DIR . '/.snapshots' );
+				<pre>define( 'SNAPSHOTS_FOLDER', WP_CONTENT_DIR . '/.snapshots' );
 define( 'SNAPSHOTS_MAX_SHOTS', 2 );
 define( 'SNAPSHOTS_CLI_PATH', '/usr/local/bin' );
-define( 'SNAPSHOTS_PHP_PATH', '/usr/local/bin' );</code></pre>
+define( 'SNAPSHOTS_PHP_PATH', '/usr/local/bin' );</pre>
 				<p>
 					<code>SNAPSHOTS_CLI_PATH</code> and <code>SNAPSHOTS_PHP_PATH</code> are
 					directories. They are the folder that contains <code>wp</code> or
@@ -279,9 +279,9 @@ define( 'SNAPSHOTS_PHP_PATH', '/usr/local/bin' );</code></pre>
 					<code>snapshots_{option}</code>. For example,
 					<code>snapshots_max_shots</code> can force five copies:
 				</p>
-				<pre><code>add_filter( 'snapshots_max_shots', function () {
+				<pre>add_filter( 'snapshots_max_shots', function () {
     return 5;
-} );</code></pre>
+} );</pre>
 				<p>
 					Constants in <code>wp-config.php</code> are still there after a restore.
 					Settings that live only in the database are part of the database
@@ -317,13 +317,9 @@ define( 'SNAPSHOTS_PHP_PATH', '/usr/local/bin' );</code></pre>
 					It has been tested with Local. Local often reaches MySQL through a
 					socket. If WP-CLI cannot talk to the database, set
 					<code>DB_HOST</code> to <code>localhost:</code> plus that site's socket
-					path, and limit the change to WP-CLI:
+					path:
 				</p>
-				<pre><code>if ( defined( 'WP_CLI' ) &amp;&amp; WP_CLI ) {
-    define( 'DB_HOST', 'localhost:/absolute/path/to/mysql/mysqld.sock' );
-} else {
-    define( 'DB_HOST', 'localhost' );
-}</code></pre>
+				<pre>define( 'DB_HOST', 'localhost:/absolute/path/to/mysql/mysqld.sock' );</pre>
 
 				<h2 id="not">What this is not</h2>
 				<p>
@@ -337,24 +333,26 @@ define( 'SNAPSHOTS_PHP_PATH', '/usr/local/bin' );</code></pre>
 					site. It is not a read-only look at an old state, and it is not a
 					disaster-recovery plan for production.
 				</p>
-				<p class="guide-credit">Created with AI, reviewed by human.</p>
 			</article>
 		</main>
 
 		<footer class="site-footer">
-			<div class="container site-footer__inner">
-				<p class="site-footer__brand">
-					<strong>SnapShots</strong>
-					<span class="site-footer__by">by EverPress</span>
-				</p>
-				<nav class="site-footer__nav" aria-label="Footer">
-					<a href="https://wordpress.org/plugins/snapshots/">Plugin listing</a>
-					<a href="https://wordpress.org/support/plugin/snapshots/">Support</a>
-					<a href="./">Home</a>
-					<a href="#top">Back to top</a>
-					<a href="agents.md" class="site-footer__dev">Agent guide</a>
-					<a href="llms.txt" class="site-footer__dev">llms.txt</a>
-				</nav>
+			<div class="container">
+				<div class="site-footer__inner">
+					<p class="site-footer__brand">
+						<strong>SnapShots</strong>
+						<span class="site-footer__by">by EverPress</span>
+					</p>
+					<nav class="site-footer__nav" aria-label="Footer">
+						<a href="https://wordpress.org/plugins/snapshots/">Plugin listing</a>
+						<a href="https://wordpress.org/support/plugin/snapshots/">Support</a>
+						<a href="./">Home</a>
+						<a href="#top">Back to top</a>
+						<a href="agents.md" class="site-footer__dev">Agent guide</a>
+						<a href="llms.txt" class="site-footer__dev">llms.txt</a>
+					</nav>
+				</div>
+				<p class="site-footer__credit">Created with AI, reviewed by human.</p>
 			</div>
 		</footer>
 	</body>

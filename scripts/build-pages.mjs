@@ -12,7 +12,8 @@ const siteDir = path.join( root, '_site' );
 const readmePath = path.join( root, 'README.md' );
 const wpOrgDir = path.join( root, '.wordpress-org' );
 
-const CHANGELOG_MARKER = '<!-- changelog -->';
+const CHANGELOG_START = '<!-- changelog -->';
+const CHANGELOG_END = '<!-- /changelog -->';
 const CHANGELOG_HEADING = '## Changelog';
 
 /**
@@ -89,9 +90,40 @@ function changelogMarkdownToHtml( md ) {
 }
 
 /**
- * @param {string} src
- * @param {string} dest
+ * Insert README changelog HTML between the stable markers.
+ *
+ * The published site is the docs folder, so the filled block is written back
+ * to docs/index.html as well as the deploy output.
+ *
+ * @param {string} html          Homepage HTML.
+ * @param {string} changelogHtml Changelog fragment.
+ * @return {string} Homepage HTML with the changelog filled in.
  */
+function applyChangelog( html, changelogHtml ) {
+	const block = `${ CHANGELOG_START }\n${ changelogHtml }\n${ CHANGELOG_END }`;
+	const region = new RegExp(
+		`${ escapeRegExp( CHANGELOG_START ) }[\\s\\S]*?${ escapeRegExp( CHANGELOG_END ) }`
+	);
+
+	if ( region.test( html ) ) {
+		return html.replace( region, block );
+	}
+
+	if ( ! html.includes( CHANGELOG_START ) ) {
+		throw new Error( `Missing ${ CHANGELOG_START } in docs/index.html` );
+	}
+
+	return html.replace( CHANGELOG_START, block );
+}
+
+/**
+ * @param {string} value Literal text.
+ * @return {string} RegExp-safe text.
+ */
+function escapeRegExp( value ) {
+	return value.replace( /[.*+?^${}()|[\]\\]/g, '\\$&' );
+}
+
 function copyFile( src, dest ) {
 	fs.mkdirSync( path.dirname( dest ), { recursive: true } );
 	fs.copyFileSync( src, dest );
@@ -105,13 +137,12 @@ const changelogHtml = changelogMarkdownToHtml(
 	extractChangelogMarkdown( readme )
 );
 
-let indexHtml = fs.readFileSync( path.join( docsDir, 'index.html' ), 'utf8' );
-if ( ! indexHtml.includes( CHANGELOG_MARKER ) ) {
-	throw new Error( `Missing ${ CHANGELOG_MARKER } in docs/index.html` );
-}
-indexHtml = indexHtml.replace( CHANGELOG_MARKER, changelogHtml );
+const indexPath = path.join( docsDir, 'index.html' );
+let indexHtml = fs.readFileSync( indexPath, 'utf8' );
+indexHtml = applyChangelog( indexHtml, changelogHtml );
 
 fs.writeFileSync( path.join( siteDir, 'index.html' ), indexHtml );
+fs.writeFileSync( indexPath, indexHtml );
 copyFile(
 	path.join( docsDir, 'guide.html' ),
 	path.join( siteDir, 'guide.html' )

@@ -815,6 +815,15 @@ code {
 	font-size: 0.75rem;
 }
 
+.site-footer__credit {
+	margin: var(--space-6) 0 0;
+	font-family: var(--font-mono);
+	font-size: 0.75rem;
+	font-weight: 500;
+	letter-spacing: 0.04em;
+	color: var(--color-muted);
+}
+
 /* Human guide */
 .guide {
 	padding-top: clamp(var(--space-12), 6vw, var(--space-16));
@@ -910,17 +919,6 @@ code {
 
 .guide-example p:last-child {
 	margin-bottom: 0;
-}
-
-.guide-credit {
-	margin: var(--space-16) 0 0;
-	padding-top: var(--space-6);
-	border-top: 1px solid var(--color-line);
-	font-family: var(--font-mono);
-	font-size: 0.75rem;
-	font-weight: 500;
-	letter-spacing: 0.04em;
-	color: var(--color-muted);
 }
 
 /* Mobile nav simplification */

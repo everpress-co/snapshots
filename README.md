@@ -112,13 +112,9 @@ The web server must be allowed to run `exec`, find `php`, and run the `wp` binar
 
 ### Does it work with Local?
 
-It has been tested with [Local](https://localwp.com/). Local often connects to MySQL through a socket. If WP-CLI reports that it cannot talk to the database, set `DB_HOST` to `localhost:` plus the socket path for that site. You can limit the change to WP-CLI:
+It has been tested with [Local](https://localwp.com/). Local often connects to MySQL through a socket. If WP-CLI reports that it cannot talk to the database, set `DB_HOST` to `localhost:` plus the socket path for that site:
 
-    if ( defined( 'WP_CLI' ) && WP_CLI ) {
-        define( 'DB_HOST', 'localhost:/absolute/path/to/mysql/mysqld.sock' );
-    } else {
-        define( 'DB_HOST', 'localhost' );
-    }
+    define( 'DB_HOST', 'localhost:/absolute/path/to/mysql/mysqld.sock' );
 
 Use the socket path from your Local site.
 
