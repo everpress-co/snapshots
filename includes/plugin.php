@@ -671,10 +671,16 @@ class Plugin {
 	 * @param string|null $name     Snapshot name.
 	 * @param bool        $files    Optional. Include uploads. Default true.
 	 * @param bool|null   $location Optional. Store redirect location in manifest. Default null.
-	 * @return void
+	 * @return void|\WP_Error Error when the name could be interpreted as a WP-CLI option.
 	 */
 	public function backup( $name = null, $files = true, $location = null ) {
-		$command = 'snapshot backup "' . esc_attr( $name ) . '"';
+		$name = (string) $name;
+
+		if ( 0 === strpos( $name, '-' ) ) {
+			return new \WP_Error( 'snapshots_invalid_name', __( 'Snapshot names cannot begin with a hyphen.', 'snapshots' ) );
+		}
+
+		$command = 'snapshot backup ' . escapeshellarg( $name );
 		if ( $files ) {
 			$command .= ' --files';
 		}
@@ -684,12 +690,12 @@ class Plugin {
 			} else {
 				$location = remove_query_arg( 'snaphot_create' );
 			}
-			$command .= ' --location="' . $location . '"';
+			$command .= ' --location=' . escapeshellarg( $location );
 		}
 
 		$exclude_tables = snapshots_option( 'exclude_tables' );
 		if ( ! empty( $exclude_tables ) ) {
-			$command .= ' --exclude_tables="' . implode( ',', (array) $exclude_tables ) . '"';
+			$command .= ' --exclude_tables=' . escapeshellarg( implode( ',', (array) $exclude_tables ) );
 		}
 
 		$this->command( $command );
@@ -698,15 +704,36 @@ class Plugin {
 
 
 	/**
+	 * Checks whether a snapshot identifier matches the on-disk folder format.
+	 *
+	 * Accepts a full folder id (`name_timestamp`) or a name prefix as produced
+	 * by sanitize_title(). The value must start with an alphanumeric character
+	 * so WP-CLI cannot treat it as a global option (e.g. `--quiet`). Everything
+	 * else is rejected before it can reach a shell command or a filesystem path.
+	 *
+	 * @since [Unreleased]
+	 *
+	 * @param string $id Snapshot identifier or name prefix.
+	 * @return bool True when the identifier is safe to use in commands and paths.
+	 */
+	private function is_valid_snapshot_id( $id ) {
+		return is_string( $id ) && (bool) preg_match( '/^[a-z0-9][a-z0-9_-]*(_\d+)?$/', $id );
+	}
+
+	/**
 	 * Restores a snapshot and returns the post-restore redirect URL.
 	 *
 	 * @since 1.0.0
 	 *
 	 * @param string|null $name Snapshot ID or folder name.
-	 * @return string|\WP_Error Redirect URL, query-stripped URL, or error.
+	 * @return string|\WP_Error Redirect URL, query-stripped URL, or error when the identifier is invalid.
 	 */
 	public function restore( $name ) {
 		$name = is_null( $name ) ? '' : basename( $name );
+
+		if ( ! $this->is_valid_snapshot_id( $name ) ) {
+			return new \WP_Error( 'snapshots_invalid_id', __( 'Invalid snapshot identifier.', 'snapshots' ) );
+		}
 
 		// Disable cron.
 		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedConstantFound -- WordPress core constant.
@@ -714,7 +741,7 @@ class Plugin {
 
 		$this->check_environment();
 
-		$command = trim( 'snapshot restore ' . $name );
+		$command = 'snapshot restore ' . escapeshellarg( $name );
 		$result  = $this->command( $command );
 
 		if ( is_wp_error( $result ) ) {
@@ -744,8 +771,13 @@ class Plugin {
 	 * @return array<int, string>|\WP_Error Command output lines or error.
 	 */
 	public function delete( $name ) {
-		$name    = is_null( $name ) ? '' : basename( $name );
-		$command = trim( 'snapshot delete ' . $name );
+		$name = is_null( $name ) ? '' : basename( $name );
+
+		if ( ! $this->is_valid_snapshot_id( $name ) ) {
+			return new \WP_Error( 'snapshots_invalid_id', __( 'Invalid snapshot identifier.', 'snapshots' ) );
+		}
+
+		$command = 'snapshot delete ' . escapeshellarg( $name );
 		$result  = $this->command( $command );
 		$this->clear_cache();
 
@@ -830,20 +862,18 @@ class Plugin {
 	 * @return mixed Command output, echoed string, or WP_Error.
 	 */
 	private function command( $cmd, $echo = false, $output = ARRAY_A ) {
-		$cmd = trailingslashit( snapshots_option( 'cli_path' ) ) . 'wp ' . $cmd;
+		$cmd = escapeshellarg( trailingslashit( snapshots_option( 'cli_path' ) ) . 'wp' ) . ' ' . $cmd;
 		if ( snapshots_option( 'cli_allow_root' ) ) {
 			$cmd .= ' --allow-root';
 		}
 
-		$home_url = home_url();
-
 		// $cmd .= ' --debug=false'; // prevent error outputs
 		// $cmd .= ' --exec="echo phpversion();"'; // prevent color outputs
-		$cmd .= ' --path=\'' . ABSPATH . '\'';
+		$cmd .= ' --path=' . escapeshellarg( ABSPATH );
 		// $cmd .= ' --quiet';
 		// $cmd .= ' 2> /dev/null';
 
-		$cmd .= ' --url=' . $home_url;
+		$cmd .= ' --url=' . escapeshellarg( home_url() );
 
 		// $cmd .= ' --require=' . __DIR__ . '/require.php';
 
