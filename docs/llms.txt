@@ -7,6 +7,7 @@ SnapShots saves and restores site state on the same server via the admin bar or 
 ## Docs
 
 - Landing page: https://snapshots.everpress.co/
+- Human guide: https://snapshots.everpress.co/guide.html
 - Agent guide (WP-CLI workflow): https://snapshots.everpress.co/agents.md
 - Source repository: https://github.com/everpress-co/snapshots
 - WordPress.org plugin: https://wordpress.org/plugins/snapshots/

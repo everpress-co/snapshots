@@ -1,0 +1,361 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>How SnapShots works — a guide</title>
+		<meta
+			name="description"
+			content="A plain guide to saving and restoring a WordPress development site with SnapShots, including admin and WP-CLI examples."
+		/>
+		<link rel="canonical" href="https://snapshots.everpress.co/guide.html" />
+		<link rel="icon" href="assets/icon.png" type="image/png" />
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link
+			href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
+			rel="stylesheet"
+		/>
+		<link rel="stylesheet" href="style.css" />
+	</head>
+	<body>
+		<header class="site-header" id="top">
+			<div class="container site-header__inner">
+				<a class="wordmark" href="./">
+					<img
+						class="wordmark__mark"
+						src="assets/icon.svg"
+						alt=""
+						width="52"
+						height="52"
+					/>
+					<span class="wordmark__text">SnapShots</span>
+					<span class="wordmark__by">by EverPress</span>
+				</a>
+				<nav class="site-nav" aria-label="Primary">
+					<a href="./#idea">Why it works</a>
+					<a href="./#how-it-works">How it works</a>
+					<a href="./#requirements">Requirements</a>
+					<a href="./#faq">FAQ</a>
+					<a href="guide.html" aria-current="page">Guide</a>
+					<a
+						class="site-nav__cta"
+						href="https://wordpress.org/plugins/snapshots/"
+						>Get SnapShots <span aria-hidden="true">↗</span></a
+					>
+				</nav>
+			</div>
+		</header>
+
+		<main class="guide">
+			<article class="container">
+				<p class="meta-label">A guide for people</p>
+				<h1 class="display-h1">How SnapShots works.</h1>
+				<p class="lead">
+					Save a named copy of your development site before you try something.
+					Come back to that copy when the try goes wrong.
+				</p>
+
+				<nav class="guide-toc" aria-label="On this page">
+					<ol>
+						<li><a href="#example">One example, start to finish</a></li>
+						<li><a href="#admin">From the WordPress admin</a></li>
+						<li><a href="#cli">From the command line</a></li>
+						<li><a href="#inside">What is inside a snapshot</a></li>
+						<li><a href="#restore">What a restore actually does</a></li>
+						<li><a href="#names">Names, slugs, and old copies</a></li>
+						<li><a href="#settings">Where snapshots live</a></li>
+						<li><a href="#need">What the site needs</a></li>
+						<li><a href="#not">What this is not</a></li>
+					</ol>
+				</nav>
+
+				<h2 id="example">One example, start to finish</h2>
+				<p>
+					You are about to import two thousand products on a staging site. If the
+					import is wrong, you want yesterday's catalog back, not a weekend of
+					cleanup.
+				</p>
+				<div class="guide-example">
+					<p>
+						<strong>Before.</strong> Open the admin bar, create a snapshot, and
+						name it <code>Before the product import</code>.
+					</p>
+					<p>
+						<strong>During.</strong> Run the import. Products, orders, and media
+						change. That is the experiment.
+					</p>
+					<p>
+						<strong>After, if you need to go back.</strong> Open the same menu,
+						choose that snapshot, and confirm. The database returns to the saved
+						copy. Uploads return too, when the snapshot included files.
+					</p>
+				</div>
+				<p>
+					The plugin you installed after the snapshot is still on disk. SnapShots
+					does not put plugins, themes, or WordPress core back. Only the database,
+					and uploads when they were saved.
+				</p>
+
+				<h2 id="admin">From the WordPress admin</h2>
+				<p>
+					Only a user who can manage options can create, restore, or delete a
+					snapshot.
+				</p>
+				<h3>Create one</h3>
+				<p>
+					In the admin bar, choose the prompt to create a snapshot. The suggested
+					name is the current snapshot, or the site title when none is current.
+					Type a name you will recognize later, such as
+					<code>Before the product import</code>.
+				</p>
+				<p>
+					The menu can search by name. Press <code>Ctrl+S</code> to open it and
+					focus the search. Press Enter to restore the first match. Restore and
+					delete both ask you to confirm.
+				</p>
+				<h3>Come back to the same screen</h3>
+				<p>
+					When you restore from the admin, SnapShots can remember the page you
+					were on, including the part of the address after <code>#</code>, and
+					send you back there. It also keeps you logged in as the same user. Both
+					of those are on by default. Turn them off under
+					<strong>Settings → Snapshots</strong> if you do not want them.
+				</p>
+				<h3>The list on the Tools screen</h3>
+				<p>
+					<strong>Tools → Snapshots</strong> lists every snapshot with its name,
+					when it was created, when it was last used, and where it is saved.
+					Select several rows to delete them together. The Plugins screen and the
+					admin bar both link to <strong>Settings → Snapshots</strong>.
+				</p>
+
+				<h2 id="cli">From the command line</h2>
+				<p>
+					The same work from the WordPress root, the folder that contains
+					<code>wp-config.php</code>:
+				</p>
+				<pre><code>wp snapshot backup "Before the product import" --files
+wp snapshot list
+wp snapshot restore before-the-product-import</code></pre>
+				<p>
+					<code>backup</code> stores the words you typed. The folder on disk is a
+					slug plus the time it was saved. For this name the folder looks like
+					<code>before-the-product-import_1587039434</code>.
+				</p>
+				<p>
+					<code>list</code> shows both. <code>name</code> is the text you typed.
+					<code>file</code> is the folder id. Restore and delete need the slug or
+					that folder id. They do not find
+					<code>Before the product import</code>, because of the capitals and
+					spaces.
+				</p>
+				<pre><code>wp snapshot restore before-the-product-import
+wp snapshot restore before-the-product-import_1587039434
+wp snapshot delete before-the-product-import</code></pre>
+				<p>
+					The slug restores the newest copy of that name. The full folder id
+					restores that one copy. In the admin bar you do not type this. A click
+					already uses the folder id.
+				</p>
+				<p>Two optional flags on backup:</p>
+				<ul>
+					<li>
+						<code>--files</code> includes the uploads folder. The settings screen
+						can include files by default. Pass the flag when you want this
+						command to include them.
+					</li>
+					<li>
+						<code>--location=wp-admin/plugins.php</code> stores a return address
+						for after restore.
+					</li>
+					<li>
+						<code>--exclude_tables=table_one,table_two</code> leaves those tables
+						out of this snapshot. Use the real table names, separated by
+						commas.
+					</li>
+				</ul>
+
+				<h2 id="inside">What is inside a snapshot</h2>
+				<p>Each snapshot is a folder on this server. It holds:</p>
+				<ul>
+					<li>
+						<code>dump.sql</code>, a database export of the site tables, except
+						tables you excluded.
+					</li>
+					<li>
+						<code>data.zip</code>, the uploads directory, when files were saved.
+						Saving files is on by default.
+					</li>
+					<li>
+						<code>manifest.json</code>, with the name, the created time, the last
+						used time, and the return address when one was stored.
+					</li>
+				</ul>
+				<p>
+					Zip files are written with PHP's ZipArchive, or with PclZip when
+					ZipArchive is missing.
+				</p>
+
+				<h2 id="restore">What a restore actually does</h2>
+				<p>A restore is not a preview. It replaces data on this server.</p>
+				<ul>
+					<li>The database is loaded from <code>dump.sql</code>.</li>
+					<li>
+						Tables that use this site's prefix and are not in the snapshot are
+						dropped. A table created after the snapshot disappears.
+					</li>
+					<li>
+						The uploads folder is replaced only when that snapshot has
+						<code>data.zip</code>.
+					</li>
+					<li>
+						Plugins, themes, and WordPress core stay as they are on disk. Code
+						can be newer than the database you just restored.
+					</li>
+					<li>
+						If the home URL inside the snapshot is different from the current
+						home URL, restore runs a search-replace to the current URL. Moving a
+						snapshot from <code>https://staging.example</code> onto
+						<code>https://local.example</code> updates the addresses in the
+						database.
+					</li>
+				</ul>
+
+				<h2 id="names">Names, slugs, and old copies</h2>
+				<p>
+					Use a name that says what you are about to risk.
+					<code>Before the product import</code> is useful.
+					<code>test</code> is not, once you have three of them.
+				</p>
+				<p>
+					The slug is that name in lowercase, with spaces turned into hyphens:
+					<code>before-the-product-import</code>. The folder id adds an underscore
+					and the time: <code>before-the-product-import_1587039434</code>.
+				</p>
+				<p>
+					Two copies of the same name are kept, unless you change
+					<strong>Max shots</strong>. Saving a third
+					<code>Before the product import</code> deletes the oldest of that name.
+					Other names are left alone.
+				</p>
+
+				<h2 id="settings">Where snapshots live</h2>
+				<p>
+					The default folder is <code>wp-content/.snapshots</code>. Change it
+					under <strong>Settings → Snapshots</strong>, or in
+					<code>wp-config.php</code>. A constant wins over the value saved in the
+					database.
+				</p>
+				<pre><code>define( 'SNAPSHOTS_FOLDER', WP_CONTENT_DIR . '/.snapshots' );
+define( 'SNAPSHOTS_MAX_SHOTS', 2 );
+define( 'SNAPSHOTS_CLI_PATH', '/usr/local/bin' );
+define( 'SNAPSHOTS_PHP_PATH', '/usr/local/bin' );</code></pre>
+				<p>
+					<code>SNAPSHOTS_CLI_PATH</code> and <code>SNAPSHOTS_PHP_PATH</code> are
+					directories. They are the folder that contains <code>wp</code> or
+					<code>php</code>, not the file itself.
+					<code>SNAPSHOTS_CLI_PATH</code> is not a field on the settings screen.
+					Set it in <code>wp-config.php</code> when <code>wp</code> is outside the
+					server's search path.
+				</p>
+				<p>The settings screen also controls:</p>
+				<ul>
+					<li>Whether uploads are included.</li>
+					<li>Whether the return address is stored.</li>
+					<li>
+						Which database tables to leave out, as a comma-separated list.
+					</li>
+					<li>
+						Whether the list is sorted by last used or by created date.
+					</li>
+					<li>
+						Whether WP-CLI may run as root. Leave that off unless the commands
+						have to run as root.
+					</li>
+				</ul>
+				<p>
+					A developer can change any of those with a filter named
+					<code>snapshots_{option}</code>. For example,
+					<code>snapshots_max_shots</code> can force five copies:
+				</p>
+				<pre><code>add_filter( 'snapshots_max_shots', function () {
+    return 5;
+} );</code></pre>
+				<p>
+					Constants in <code>wp-config.php</code> are still there after a restore.
+					Settings that live only in the database are part of the database
+					snapshot, so a restore can bring those saved values back.
+				</p>
+
+				<h2 id="need">What the site needs</h2>
+				<p>
+					SnapShots runs <code>wp snapshot</code> for every save, restore, and
+					delete. The site needs:
+				</p>
+				<ul>
+					<li>
+						<a href="https://wp-cli.org/">WP-CLI</a> 2.2 or newer, and a web
+						server that can run the <code>wp</code> binary.
+					</li>
+					<li>
+						PHP <code>exec()</code>. If the host disables it, there is no other
+						way to run the command.
+					</li>
+					<li>
+						A <code>php</code> binary the web server can find. When
+						<code>which php</code> fails, set <code>SNAPSHOTS_PHP_PATH</code> to
+						the directory from <code>dirname $(which php)</code>.
+					</li>
+				</ul>
+				<p>
+					Activation stops with an error when <code>exec</code>, PHP, or WP-CLI
+					is missing. Hosts that block the shell, including many WordPress.com
+					plans, cannot use the plugin.
+				</p>
+				<p>
+					It has been tested with Local. Local often reaches MySQL through a
+					socket. If WP-CLI cannot talk to the database, set
+					<code>DB_HOST</code> to <code>localhost:</code> plus that site's socket
+					path, and limit the change to WP-CLI:
+				</p>
+				<pre><code>if ( defined( 'WP_CLI' ) &amp;&amp; WP_CLI ) {
+    define( 'DB_HOST', 'localhost:/absolute/path/to/mysql/mysqld.sock' );
+} else {
+    define( 'DB_HOST', 'localhost' );
+}</code></pre>
+
+				<h2 id="not">What this is not</h2>
+				<p>
+					SnapShots is a checkpoint on the same server. The files stay in
+					<code>wp-content/.snapshots</code> unless you move that folder. Nothing
+					is uploaded to another service.
+				</p>
+				<p>
+					Use it while you build and test. Keep a separate off-site backup of
+					anything you cannot afford to lose. A restore overwrites the current
+					site. It is not a read-only look at an old state, and it is not a
+					disaster-recovery plan for production.
+				</p>
+				<p class="guide-credit">Created with AI, reviewed by human.</p>
+			</article>
+		</main>
+
+		<footer class="site-footer">
+			<div class="container site-footer__inner">
+				<p class="site-footer__brand">
+					<strong>SnapShots</strong>
+					<span class="site-footer__by">by EverPress</span>
+				</p>
+				<nav class="site-footer__nav" aria-label="Footer">
+					<a href="https://wordpress.org/plugins/snapshots/">Plugin listing</a>
+					<a href="https://wordpress.org/support/plugin/snapshots/">Support</a>
+					<a href="./">Home</a>
+					<a href="#top">Back to top</a>
+					<a href="agents.md" class="site-footer__dev">Agent guide</a>
+					<a href="llms.txt" class="site-footer__dev">llms.txt</a>
+				</nav>
+			</div>
+		</footer>
+	</body>
+</html>

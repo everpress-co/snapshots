@@ -113,6 +113,10 @@ indexHtml = indexHtml.replace( CHANGELOG_MARKER, changelogHtml );
 
 fs.writeFileSync( path.join( siteDir, 'index.html' ), indexHtml );
 copyFile(
+	path.join( docsDir, 'guide.html' ),
+	path.join( siteDir, 'guide.html' )
+);
+copyFile(
 	path.join( docsDir, 'style.css' ),
 	path.join( siteDir, 'style.css' )
 );
