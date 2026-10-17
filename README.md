@@ -182,6 +182,8 @@ On **Settings → Snapshots**, enter a comma-separated list in **Exclude Tables*
 
 ### Unreleased
 
+- fixed: create, restore, and delete links now require a valid nonce, blocking cross-site request forgery
+- fixed: the return location after creating a snapshot stays on this site without doubling subdirectory paths
 - fixed: snapshot storage folders now contain `.htaccess` and `index.php` files so database dumps are not downloadable from the web on Apache
 - fixed: install steps use the folder name `snapshots`
 - fixed: missing PHP, WP-CLI, or exec shows a notice instead of a full-screen error
