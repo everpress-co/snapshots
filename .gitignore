@@ -7,6 +7,7 @@ yarn-error.log*
 
 coverage
 build
+_site/
 
 node_modules/
 .npm
@@ -48,3 +49,4 @@ ehthumbs.db
 # Cache
 .cache/
 .wp-cache/
+/.security-audit/
