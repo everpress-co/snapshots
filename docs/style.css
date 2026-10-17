@@ -869,6 +869,11 @@ code {
 	max-width: 12ch;
 }
 
+.guide-shot .admin-shot {
+	max-width: 668px;
+	margin-top: var(--space-8);
+}
+
 .guide p,
 .guide li {
 	max-width: 65ch;
