@@ -747,9 +747,9 @@ class CLI_Command extends WP_CLI_Command {
 
 		$files = list_files( snapshots_option( 'folder' ), 1 );
 		if ( ! is_null( $name ) ) {
-			$files = preg_grep( '/' . preg_quote( $name ) . '_(\d+)\/$/', $files );
+			$files = preg_grep( '/\/' . preg_quote( $name, '/' ) . '_(\d+)\/$/', $files );
 		} else {
-			$files = preg_grep( '/([a-z0-9-]+)_(\d+)\/$/', $files );
+			$files = preg_grep( '/\/([a-z0-9-]+)_(\d+)\/$/', $files );
 		}
 		if ( $order ) {
 			usort(
