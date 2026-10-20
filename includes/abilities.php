@@ -323,7 +323,11 @@ class Abilities {
 			$filter = sanitize_title( $input['name'] );
 			if ( '' === $filter ) {
 				// Fall back to a safe alphanumeric prefix when sanitize_title empties the value.
-				$filter = preg_replace( '/[^a-z0-9_-]/', '', strtolower( $input['name'] ) );
+				$filter = (string) preg_replace( '/[^a-z0-9_-]/', '', strtolower( $input['name'] ) );
+			}
+			// A supplied name that cannot form a usable prefix must not list every snapshot.
+			if ( '' === $filter ) {
+				return array();
 			}
 		}
 

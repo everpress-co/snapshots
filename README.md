@@ -198,7 +198,9 @@ On **Settings → Snapshots**, enter a comma-separated list in **Exclude Tables*
 - fixed: snapshots/delete is not marked idempotent, so slug-based deletes are not retried as safe DELETE calls
 - fixed: backup keeps the current-snapshot marker when a persistent object cache is enabled
 - fixed: backup rejects names that cannot form a listable folder id
+- fixed: snapshots/list returns no matches when a name filter cannot form a usable slug prefix
 - added: WordPress Abilities API endpoints to list, create, restore, and delete snapshots (WordPress 6.9+)
+
 - changed: snapshots/backup is marked destructive because retention can remove older same-name snapshots
 
 ### 3.0.0
