@@ -40,7 +40,7 @@ wp snapshot restore before-the-experiment
 wp snapshot restore "Before the experiment"
 ```
 
-Pass the full folder id from `file` to restore that exact copy. Pass the slug or display name without a timestamp to restore the newest matching snapshot. Display names are sanitized the same way as on backup.
+Pass the full folder id from `file` to restore that exact copy. A missing folder id fails; it does not fall back to another snapshot. Pass the slug or display name without a timestamp to restore the newest-created matching snapshot. Display names are sanitized the same way as on backup.
 
 Restore only:
 
@@ -68,7 +68,7 @@ Only delete when the user asks. Deletion is permanent on this server.
 1. `wp snapshot list --format=json` — see existing snapshots.
 2. `wp snapshot backup "Before …" --files` — save state before your change.
 3. Do the requested work.
-4. If the user wants to undo, or your snapshot was for a failed experiment: `wp snapshot list --format=json`, then `wp snapshot restore` with the exact `file` id for that copy, or the slug alone for the newest matching snapshot.
+4. If the user wants to undo, or your snapshot was for a failed experiment: `wp snapshot list --format=json`, then `wp snapshot restore` with the exact `file` id for that copy, or the slug alone for the newest-created matching snapshot.
 
 ## Storage and retention
 

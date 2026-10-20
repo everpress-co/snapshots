@@ -57,7 +57,7 @@ SnapShots adds a `wp snapshot` command. From the shell:
 
 `backup` accepts `--files` to include uploads, `--location=<path>` to store a return URL such as `wp-admin/plugins.php`, and `--exclude_tables=<tables>` as a comma-separated list.
 
-`restore` and `delete` accept the snapshot name, its slug, or a folder id such as `before-the-experiment_1587039434`. When you pass a name, the latest copy of that name is used.
+`restore` and `delete` accept the snapshot name, its slug, or a folder id such as `before-the-experiment_1587039434`. When you pass a name or slug without a timestamp, the newest-created matching copy is used. A folder id that is not on disk is an error; it does not fall back to another copy.
 
 ### Settings reference
 
@@ -182,8 +182,9 @@ On **Settings → Snapshots**, enter a comma-separated list in **Exclude Tables*
 ### Unreleased
 
 - fixed: wp snapshot list no longer fatals on PHP 8 and no longer triggers a usort deprecation
-- improved: restore and delete accept a name or slug without a timestamp and use the newest matching snapshot
+- fixed: restore and delete return not-found for a missing folder id instead of falling back to another snapshot
 - fixed: CLI restore stores the current snapshot folder id in the snapshot_current transient
+- improved: restore and delete accept a name or slug without a timestamp and use the newest-created matching snapshot
 
 ### 3.0.0
 

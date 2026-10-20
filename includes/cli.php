@@ -675,8 +675,9 @@ class CLI_Command extends WP_CLI_Command {
 	/**
 	 * Resolves the path to a file inside a matching snapshot folder.
 	 *
-	 * A trailing `_timestamp` folder id selects that exact copy when it exists.
-	 * Otherwise the newest folder for the sanitized name/slug is used.
+	 * A trailing `_timestamp` folder id selects that exact copy, or null when
+	 * the folder is missing. A name or slug without a timestamp selects the
+	 * newest-created matching folder (by the timestamp in the folder id).
 	 *
 	 * @since 1.0.0
 	 *
@@ -690,18 +691,33 @@ class CLI_Command extends WP_CLI_Command {
 
 		$folder = trailingslashit( snapshots_option( 'folder' ) );
 
-		if ( preg_match( '/^(.+)_(\d+)$/', $backup_name, $matches ) ) {
+		if ( preg_match( '/^(.+)_(\d+)$/', $backup_name ) ) {
 			$exact_dir = $folder . $backup_name;
-			if ( is_dir( $exact_dir ) ) {
-				return trailingslashit( $exact_dir ) . $extension;
+			if ( ! is_dir( $exact_dir ) ) {
+				return null;
 			}
-			$backup_name = $matches[1];
+			return trailingslashit( $exact_dir ) . $extension;
 		}
 
 		$slug    = sanitize_title( $backup_name );
-		$backups = $this->get_snaps( $slug, true );
+		$backups = $this->get_snaps( $slug, false );
 
-		return isset( $backups[0] ) ? trailingslashit( $backups[0] ) . $extension : null;
+		if ( empty( $backups ) ) {
+			return null;
+		}
+
+		usort(
+			$backups,
+			function ( $a, $b ) {
+				preg_match( '/_(\d+)\/?$/', $a, $ma );
+				preg_match( '/_(\d+)\/?$/', $b, $mb );
+				$ta = isset( $ma[1] ) ? (int) $ma[1] : 0;
+				$tb = isset( $mb[1] ) ? (int) $mb[1] : 0;
+				return $tb <=> $ta;
+			}
+		);
+
+		return trailingslashit( $backups[0] ) . $extension;
 	}
 
 	/**
