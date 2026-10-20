@@ -197,8 +197,8 @@ class CLI_Command extends WP_CLI_Command {
 
 		$data = array();
 
-		$format = get_flag_value( $assoc_args, 'format', 'table' );
-		$limit  = get_flag_value( $assoc_args, 'limit', count( $files ) );
+		$format = Utils\get_flag_value( $assoc_args, 'format', 'table' );
+		$limit  = Utils\get_flag_value( $assoc_args, 'limit', count( $files ) );
 
 		foreach ( $files as $i => $file ) {
 			if ( $i >= $limit ) {
@@ -265,7 +265,7 @@ class CLI_Command extends WP_CLI_Command {
 		usort(
 			$backups,
 			function ( $a, $b ) {
-				return filemtime( $a . 'manifest.json' ) < filemtime( $b . 'manifest.json' );
+				return filemtime( $b . 'manifest.json' ) - filemtime( $a . 'manifest.json' );
 			}
 		);
 

@@ -179,6 +179,10 @@ On **Settings → Snapshots**, enter a comma-separated list in **Exclude Tables*
 
 ## Changelog
 
+### Unreleased
+
+- fixed: wp snapshot list no longer fatals on PHP 8 and no longer triggers a usort deprecation
+
 ### 3.0.0
 
 - fixed: command injection through unescaped snapshot names and locations in the create, restore, and delete actions
