@@ -286,7 +286,7 @@ class Plugin {
 		if ( array_key_exists( 'snaphot_create', $_GET ) ) {
 			check_admin_referer( 'snapshots_create', 'snapshots_nonce' );
 			$files    = snapshots_option( 'save_files' );
-			$location = snapshots_option( 'save_location' );
+			$location = snapshots_option( 'save_location' ) ? true : null;
 			if ( array_key_exists( 'snapshot_location', $_GET ) ) {
 				$redirect_to = $this->same_site_url( sanitize_text_field( wp_unslash( $_GET['snapshot_location'] ) ) );
 			} else {
@@ -559,20 +559,74 @@ class Plugin {
 
 
 	/**
+	 * Lists snapshot rows for programmatic callers (Abilities API).
+	 *
+	 * Read-only: does not harden the storage folder or write list caches, so it
+	 * stays compatible with a `readonly` ability annotation.
+	 *
+	 * @since [Unreleased]
+	 *
+	 * @param string $name_filter Optional slug prefix filter (sanitize_title form).
+	 * @return array<int, array{name:string,file:string,created:string,past:string}>
+	 */
+	public function list_snapshot_rows( $name_filter = '' ) {
+		$dirs = $this->get_snaps( false );
+		$rows = array();
+
+		foreach ( $dirs as $dir ) {
+			$file_id = basename( trailingslashit( $dir ) );
+			if ( '' !== $name_filter && 0 !== strpos( $file_id, $name_filter ) ) {
+				continue;
+			}
+
+			$created_ts = 0;
+			$name       = $file_id;
+			$manifest   = trailingslashit( $dir ) . 'manifest.json';
+			if ( is_file( $manifest ) ) {
+				$data = json_decode( (string) file_get_contents( $manifest ) );
+				if ( is_object( $data ) ) {
+					if ( isset( $data->name ) ) {
+						$name = (string) $data->name;
+					}
+					if ( isset( $data->created ) ) {
+						$created_ts = (int) $data->created;
+					}
+				}
+			}
+			if ( ! $created_ts ) {
+				$parts      = explode( '_', $file_id );
+				$created_ts = (int) end( $parts );
+			}
+
+			$rows[] = array(
+				'name'    => $name,
+				'file'    => $file_id,
+				'created' => $created_ts ? wp_date( 'Y-m-d H:i:s', $created_ts ) : '',
+				'past'    => $created_ts ? human_time_diff( $created_ts ) . ' ago' : '',
+			);
+		}
+
+		return $rows;
+	}
+
+	/**
 	 * Lists snapshot directories on disk, sorted per list_order setting.
 	 *
 	 * @since 1.0.0
 	 *
+	 * @param bool $harden Optional. Write access-protection files when missing. Default true.
 	 * @return array<int, string> Absolute directory paths.
 	 */
-	private function get_snaps() {
+	private function get_snaps( $harden = true ) {
 
 		if ( ! is_dir( snapshots_option( 'folder' ) ) ) {
 			return array();
 		}
 
-		// Existing folders predate access protection; harden them on read too.
-		snapshots_harden_folder( snapshots_option( 'folder' ) );
+		// Existing folders predate access protection; harden them on admin reads.
+		if ( $harden ) {
+			snapshots_harden_folder( snapshots_option( 'folder' ) );
+		}
 
 		if ( ! function_exists( 'list_files' ) ) {
 			require_once ABSPATH . 'wp-admin/includes/file.php';
@@ -666,12 +720,18 @@ class Plugin {
 	/**
 	 * Creates a snapshot via the WP-CLI wrapper command.
 	 *
+	 * When `$location` is boolean true (admin UI with save_location enabled), the
+	 * path is taken from `snapshot_location` in the request or the current page.
+	 * When `$location` is a non-empty string, that value is stored as-is (abilities
+	 * and other programmatic callers).
+	 *
 	 * @since 1.0.0
 	 *
-	 * @param string|null $name     Snapshot name.
-	 * @param bool        $files    Optional. Include uploads. Default true.
-	 * @param bool|null   $location Optional. Store redirect location in manifest. Default null.
-	 * @return void|\WP_Error Error when the name could be interpreted as a WP-CLI option.
+	 * @param string|null      $name     Snapshot name.
+	 * @param bool             $files    Optional. Include uploads. Default true.
+	 * @param bool|string|null $location Optional. True to resolve from the admin request,
+	 *                                   a path/URL string to store, or null/false to omit.
+	 * @return array{success:bool,file?:string,message:string}|\WP_Error Success payload or error.
 	 */
 	public function backup( $name = null, $files = true, $location = null ) {
 		$name = (string) $name;
@@ -684,13 +744,20 @@ class Plugin {
 		if ( $files ) {
 			$command .= ' --files';
 		}
-		if ( $location ) {
+
+		$location_arg = null;
+		if ( true === $location ) {
 			if ( array_key_exists( 'snapshot_location', $_GET ) ) {
-				$location = htmlspecialchars_decode( sanitize_text_field( wp_unslash( $_GET['snapshot_location'] ) ) );
+				$location_arg = htmlspecialchars_decode( sanitize_text_field( wp_unslash( $_GET['snapshot_location'] ) ) );
 			} else {
-				$location = remove_query_arg( 'snaphot_create' );
+				$location_arg = remove_query_arg( 'snaphot_create' );
 			}
-			$command .= ' --location=' . escapeshellarg( $location );
+		} elseif ( is_string( $location ) && '' !== $location ) {
+			$location_arg = $location;
+		}
+
+		if ( null !== $location_arg ) {
+			$command .= ' --location=' . escapeshellarg( $location_arg );
 		}
 
 		$exclude_tables = snapshots_option( 'exclude_tables' );
@@ -698,8 +765,63 @@ class Plugin {
 			$command .= ' --exclude_tables=' . escapeshellarg( implode( ',', (array) $exclude_tables ) );
 		}
 
-		$this->command( $command );
+		$result = $this->command( $command );
 		$this->clear_cache();
+
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		// CLI set the transient in another process; drop this request's option
+		// cache so we do not return a stale snapshot_current from alloptions.
+		wp_cache_delete( 'alloptions', 'options' );
+		wp_cache_delete( 'notoptions', 'options' );
+		wp_cache_delete( 'snapshot_current', 'transient' );
+		wp_cache_delete( '_transient_snapshot_current', 'options' );
+
+		$file = get_transient( 'snapshot_current' );
+		$file = is_string( $file ) ? $file : '';
+
+		$expected_prefix = sanitize_title( $name ) . '_';
+		if ( '' === $file || 0 !== strpos( $file, $expected_prefix ) ) {
+			$file = $this->latest_snapshot_file_for_prefix( $expected_prefix );
+		}
+
+		return array(
+			'success' => true,
+			'file'    => $file,
+			'message' => __( 'Snapshot created.', 'snapshots' ),
+		);
+	}
+
+	/**
+	 * Returns the newest on-disk snapshot folder id for a slug prefix.
+	 *
+	 * @since [Unreleased]
+	 *
+	 * @param string $prefix Folder id prefix including trailing underscore (e.g. `before-task_`).
+	 * @return string Folder id or empty string when none match.
+	 */
+	private function latest_snapshot_file_for_prefix( $prefix ) {
+		$folder = snapshots_option( 'folder' );
+		if ( ! is_dir( $folder ) || '' === $prefix ) {
+			return '';
+		}
+
+		$matches = array();
+		foreach ( (array) glob( trailingslashit( $folder ) . $prefix . '*', GLOB_ONLYDIR ) as $path ) {
+			$id = basename( $path );
+			if ( preg_match( '/^[a-z0-9][a-z0-9_-]*_\d+$/', $id ) ) {
+				$matches[] = $id;
+			}
+		}
+
+		if ( empty( $matches ) ) {
+			return '';
+		}
+
+		rsort( $matches, SORT_STRING );
+		return (string) $matches[0];
 	}
 
 

@@ -14,11 +14,11 @@ SnapShots saves and restores site state on the same server via the admin bar or 
 
 ## Agent quick reference
 
-When SnapShots is installed on a dev site:
+When SnapShots is installed on a dev site (WP-CLI shell, or WordPress 6.9+ Abilities API with `manage_options`):
 
-1. `wp snapshot list --format=json`
-2. `wp snapshot backup "Before <task>" --files` before risky changes
-3. `wp snapshot restore <file-id>` only for your task snapshot or when the user asks. Use the exact `file` id from `list`, not a shortened slug or the display name.
-4. Do not `wp snapshot delete` unless the user asks
+1. List: `wp snapshot list --format=json` or ability `snapshots/list`
+2. Backup: `wp snapshot backup "Before <task>" --files` or ability `snapshots/backup` before risky changes
+3. Restore: `wp snapshot restore <file-id>` or ability `snapshots/restore` only for your task snapshot or when the user asks. Use the exact `file` id from list, not a shortened slug or the display name.
+4. Do not delete (`wp snapshot delete` / ability `snapshots/delete`) unless the user asks
 
-See agents.md for restore side effects and requirements.
+Abilities: `snapshots/list`, `snapshots/backup`, `snapshots/restore`, `snapshots/delete`. See agents.md for restore side effects and requirements.

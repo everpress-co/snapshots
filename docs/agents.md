@@ -11,13 +11,17 @@ Do not use SnapShots as a substitute for production backups or remote disaster r
 
 ## Commands
 
-Run these from the WordPress root (where `wp-config.php` lives).
+Prefer **WP-CLI** when you have a shell on the WordPress root (where `wp-config.php` lives). On WordPress 6.9+, you may instead use the **Abilities API** abilities below when the host exposes them (for example via `wp-abilities/v1` or an MCP bridge). Both paths require the same server setup (WP-CLI, `exec`, PHP). Ability callers need a user with `manage_options`.
+
+REST runs use `GET …/abilities/snapshots/list/run`, `POST …/abilities/snapshots/backup/run` and `…/restore/run` with JSON body `{ "input": { … } }`, and `DELETE …/abilities/snapshots/delete/run?input[id]=<file-id>` (query `input`; destructive + idempotent abilities use DELETE).
 
 ### List snapshots
 
 ```bash
 wp snapshot list --format=json
 ```
+
+Ability: `snapshots/list` (optional input `name` to filter). Output rows match CLI JSON: `name`, `file`, `created`, `past`.
 
 JSON rows include `name` (the text you passed to backup), `file` (folder id), `created`, and `past`. Inspect `file` before restore or delete. Backup stores that id as a slug plus a timestamp, such as `before-the-experiment_1587039434`.
 
@@ -27,16 +31,20 @@ JSON rows include `name` (the text you passed to backup), `file` (folder id), `c
 wp snapshot backup "Before <short task description>" --files
 ```
 
+Ability: `snapshots/backup` with input `{ "name": "Before …", "files": true }` (optional `location`).
+
 - Use a clear, unique name tied to the task.
-- Add `--files` when uploads matter for the change (media, uploads-dependent behavior).
-- Optional: `--location=wp-admin/plugins.php` to store a return URL.
-- Optional: `--exclude_tables=table_one,table_two` on backup.
+- Add `--files` / `"files": true` when uploads matter for the change (media, uploads-dependent behavior).
+- Optional: `--location=wp-admin/plugins.php` / `"location"` to store a return URL.
+- Optional: `--exclude_tables=table_one,table_two` on backup (CLI only; abilities use the site setting).
 
 ### Restore
 
 ```bash
 wp snapshot restore before-the-experiment_1587039434
 ```
+
+Ability: `snapshots/restore` with input `{ "id": "before-the-experiment_1587039434" }`.
 
 Pass the full folder id from `file`. This restores that exact snapshot and avoids ambiguous slug matches.
 
@@ -61,14 +69,16 @@ A restore:
 wp snapshot delete <slug-or-folder-id>
 ```
 
+Ability: `snapshots/delete` with input `{ "id": "<slug-or-folder-id>" }`.
+
 Only delete when the user asks. Deletion is permanent on this server.
 
 ## Suggested workflow
 
-1. `wp snapshot list --format=json` — see existing snapshots.
-2. `wp snapshot backup "Before …" --files` — save state before your change.
+1. List — `wp snapshot list --format=json` or ability `snapshots/list` — see existing snapshots.
+2. Backup — `wp snapshot backup "Before …" --files` or ability `snapshots/backup` — save state before your change.
 3. Do the requested work.
-4. If the user wants to undo, or your snapshot was for a failed experiment: `wp snapshot list --format=json`, then pass the exact `file` id to `wp snapshot restore`.
+4. If the user wants to undo, or your snapshot was for a failed experiment: list again, then pass the exact `file` id to `wp snapshot restore` or ability `snapshots/restore`.
 
 ## Storage and retention
 
