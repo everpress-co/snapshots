@@ -740,6 +740,17 @@ class Plugin {
 			return new \WP_Error( 'snapshots_invalid_name', __( 'Snapshot names cannot begin with a hyphen.', 'snapshots' ) );
 		}
 
+		// Folder ids are sanitize_title( $name ) . '_' . timestamp and must match
+		// is_valid_snapshot_id() / get_snaps(). Empty or percent-encoded slugs
+		// (e.g. "!!!", CJK-only names) would create unlistable directories.
+		$slug = sanitize_title( $name );
+		if ( '' === $slug || ! preg_match( '/^[a-z0-9][a-z0-9_-]*$/', $slug ) ) {
+			return new \WP_Error(
+				'snapshots_invalid_name',
+				__( 'Snapshot names must include letters or numbers that form a URL-safe slug.', 'snapshots' )
+			);
+		}
+
 		$command = 'snapshot backup ' . escapeshellarg( $name );
 		if ( $files ) {
 			$command .= ' --files';
@@ -776,15 +787,23 @@ class Plugin {
 		// cache so we do not return a stale snapshot_current from alloptions.
 		wp_cache_delete( 'alloptions', 'options' );
 		wp_cache_delete( 'notoptions', 'options' );
-		wp_cache_delete( 'snapshot_current', 'transient' );
-		wp_cache_delete( '_transient_snapshot_current', 'options' );
+		if ( ! wp_using_ext_object_cache() ) {
+			// Without a persistent object cache, transients live in options.
+			// With Redis/Memcached the CLI wrote the shared key — do not delete it.
+			wp_cache_delete( 'snapshot_current', 'transient' );
+			wp_cache_delete( '_transient_snapshot_current', 'options' );
+		}
 
 		$file = get_transient( 'snapshot_current' );
 		$file = is_string( $file ) ? $file : '';
 
-		$expected_prefix = sanitize_title( $name ) . '_';
+		$expected_prefix = $slug . '_';
 		if ( '' === $file || 0 !== strpos( $file, $expected_prefix ) ) {
 			$file = $this->latest_snapshot_file_for_prefix( $expected_prefix );
+		}
+
+		if ( '' !== $file ) {
+			set_transient( 'snapshot_current', $file );
 		}
 
 		return array(

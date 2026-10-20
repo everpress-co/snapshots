@@ -64,7 +64,7 @@ SnapShots adds a `wp snapshot` command. From the shell:
 On WordPress 6.9 or newer, SnapShots registers public abilities that list, create, restore, and delete snapshots through the Abilities API (`wp-abilities/v1`). They require the `manage_options` capability and use the same WP-CLI-backed operations as the admin UI:
 
 - `snapshots/list` — optional `name` filter; returns `name`, `file`, `created`, `past`
-- `snapshots/backup` — required `name`; optional `files` (default true) and `location`
+- `snapshots/backup` — required `name` (must form a URL-safe slug); optional `files` (default true) and `location`
 - `snapshots/restore` — required `id` (prefer the exact `file` folder id from list)
 - `snapshots/delete` — required `id` (delete only when the user asks)
 
@@ -196,6 +196,8 @@ On **Settings → Snapshots**, enter a comma-separated list in **Exclude Tables*
 - fixed: CLI restore stores the current snapshot folder id in the snapshot_current transient
 - fixed: Abilities API abilities stay available over REST on WordPress 6.9 and 7.0
 - fixed: snapshots/delete is not marked idempotent, so slug-based deletes are not retried as safe DELETE calls
+- fixed: backup keeps the current-snapshot marker when a persistent object cache is enabled
+- fixed: backup rejects names that cannot form a listable folder id
 - added: WordPress Abilities API endpoints to list, create, restore, and delete snapshots (WordPress 6.9+)
 - changed: snapshots/backup is marked destructive because retention can remove older same-name snapshots
 

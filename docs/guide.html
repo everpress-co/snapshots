@@ -257,6 +257,10 @@ wp snapshot delete before-the-product-import_1587039434</pre>
 					The slug is that name in lowercase, with spaces turned into hyphens:
 					<code>before-the-product-import</code>. The folder id adds an underscore
 					and the time: <code>before-the-product-import_1587039434</code>.
+					The name must produce a URL-safe slug that starts with a letter or
+					number (ASCII letters, digits, hyphens, underscores). Names that
+					sanitize to nothing, or only to percent-encoded characters, are
+					rejected.
 				</p>
 				<p>
 					Two copies of the same name are kept, unless you change

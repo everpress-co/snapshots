@@ -34,6 +34,7 @@ wp snapshot backup "Before <short task description>" --files
 Ability: `snapshots/backup` with input `{ "name": "Before …", "files": true }` (optional `location`). Creating a snapshot may permanently remove older copies with the same name once `max_shots` retention is exceeded.
 
 - Use a clear, unique name tied to the task.
+- The name must produce a URL-safe slug (`sanitize_title`) that starts with `a-z` or `0-9`. Names that sanitize to empty or percent-encoded-only values (for example `!!!` or CJK-only text) are rejected by backup/abilities.
 - Add `--files` / `"files": true` when uploads matter for the change (media, uploads-dependent behavior).
 - Optional: `--location=wp-admin/plugins.php` / `"location"` to store a return URL.
 - Optional: `--exclude_tables=table_one,table_two` on backup (CLI only; abilities use the site setting).
