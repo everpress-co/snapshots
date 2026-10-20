@@ -182,6 +182,7 @@ On **Settings → Snapshots**, enter a comma-separated list in **Exclude Tables*
 ### Unreleased
 
 - fixed: wp snapshot list no longer fatals on PHP 8 and no longer triggers a usort deprecation
+- improved: restore and delete accept a name or slug without a timestamp and use the newest matching snapshot
 
 ### 3.0.0
 

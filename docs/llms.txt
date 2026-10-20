@@ -18,7 +18,7 @@ When SnapShots is installed on a dev site:
 
 1. `wp snapshot list --format=json`
 2. `wp snapshot backup "Before <task>" --files` before risky changes
-3. `wp snapshot restore <file-id>` only for your task snapshot or when the user asks. Use the exact `file` id from `list`, not a shortened slug or the display name.
+3. `wp snapshot restore <file-id-or-slug>` only for your task snapshot or when the user asks. Prefer the exact `file` id from `list` for a specific copy; a slug or display name without a timestamp restores the newest matching snapshot.
 4. Do not `wp snapshot delete` unless the user asks
 
 See agents.md for restore side effects and requirements.

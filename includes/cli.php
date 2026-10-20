@@ -667,7 +667,10 @@ class CLI_Command extends WP_CLI_Command {
 	}
 
 	/**
-	 * Resolves the path to a file inside the newest matching snapshot folder.
+	 * Resolves the path to a file inside a matching snapshot folder.
+	 *
+	 * A trailing `_timestamp` folder id selects that exact copy when it exists.
+	 * Otherwise the newest folder for the sanitized name/slug is used.
 	 *
 	 * @since 1.0.0
 	 *
@@ -677,14 +680,21 @@ class CLI_Command extends WP_CLI_Command {
 	 */
 	private function get_most_recent_file( $backup_name, $extension ) {
 
-		// Covers the folder-id short-circuit that skips get_snaps().
 		snapshots_harden_folder( snapshots_option( 'folder' ) );
 
-		if ( false !== strpos( $backup_name, '_' ) ) {
-			return trailingslashit( snapshots_option( 'folder' ) ) . $backup_name . '/' . $extension;
+		$folder = trailingslashit( snapshots_option( 'folder' ) );
+
+		if ( preg_match( '/^(.+)_(\d+)$/', $backup_name, $matches ) ) {
+			$exact_dir = $folder . $backup_name;
+			if ( is_dir( $exact_dir ) ) {
+				return trailingslashit( $exact_dir ) . $extension;
+			}
+			$backup_name = $matches[1];
 		}
 
-		$backups = $this->get_snaps( $backup_name, true );
+		$slug    = sanitize_title( $backup_name );
+		$backups = $this->get_snaps( $slug, true );
+
 		return isset( $backups[0] ) ? trailingslashit( $backups[0] ) . $extension : null;
 	}
 
@@ -765,12 +775,11 @@ class CLI_Command extends WP_CLI_Command {
 	 */
 	private function destroy_snapshots( $name ) {
 
-		if ( false !== strpos( $name, '_' ) ) {
-			$name = explode( '_', $name );
-			$name = $name[0];
+		if ( preg_match( '/^(.+)_(\d+)$/', $name, $matches ) ) {
+			$name = $matches[1];
 		}
 
-		$backups = $this->get_snaps( $name, true );
+		$backups = $this->get_snaps( sanitize_title( $name ), true );
 
 		$skipped = 0;
 		foreach ( $backups as $backup ) {
