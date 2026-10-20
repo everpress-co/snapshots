@@ -456,8 +456,14 @@ class CLI_Command extends WP_CLI_Command {
 			file_put_contents( $manifest_path, wp_json_encode( $manifest_data ) );
 		}
 
-		// Set the current snapshot.
-		set_transient( 'snapshot_current', $snapshot_name );
+		// Store the resolved folder id (slug_timestamp), not the CLI argument.
+		// Admin UI matches snapshot_current against folder basenames.
+		// After db import, clear caches so update_option cannot skip a write
+		// when a stale pre-import value matches the folder we are marking current.
+		$current_id = basename( dirname( $location ) );
+		wp_cache_delete( 'alloptions', 'options' );
+		delete_transient( 'snapshot_current' );
+		set_transient( 'snapshot_current', $current_id );
 
 		return true;
 	}
