@@ -11,13 +11,17 @@ Do not use SnapShots as a substitute for production backups or remote disaster r
 
 ## Commands
 
-Run these from the WordPress root (where `wp-config.php` lives).
+Prefer **WP-CLI** when you have a shell on the WordPress root (where `wp-config.php` lives). On WordPress 6.9+, you may instead use the **Abilities API** abilities below when the host exposes them (for example via `wp-abilities/v1` or an MCP bridge). Both paths require the same server setup (WP-CLI, `exec`, PHP). Ability callers need a user with `manage_options`.
+
+REST runs use `GET …/abilities/snapshots/list/run` for list, and `POST …/abilities/snapshots/backup/run`, `…/restore/run`, and `…/delete/run` with JSON body `{ "input": { … } }`. Delete is destructive but not idempotent (a slug can match more than one folder), so it uses POST like restore—not DELETE.
 
 ### List snapshots
 
 ```bash
 wp snapshot list --format=json
 ```
+
+Ability: `snapshots/list` (optional input `name` to filter). Output rows match CLI JSON: `name`, `file`, `created`, `past`.
 
 JSON rows include `name` (the text you passed to backup), `file` (folder id), `created`, and `past`. Inspect `file` before restore or delete. Backup stores that id as a slug plus a timestamp, such as `before-the-experiment_1587039434`.
 
@@ -27,11 +31,13 @@ JSON rows include `name` (the text you passed to backup), `file` (folder id), `c
 wp snapshot backup "Before <short task description>" --files
 ```
 
+Ability: `snapshots/backup` with input `{ "name": "Before …", "files": true }` (optional `location`). Creating a snapshot may permanently remove older copies with the same name once `max_shots` retention is exceeded.
+
 - Use a clear, unique name tied to the task.
-- The name must keep a letter or number after sanitizing. A name such as `!!!` is rejected.
-- Add `--files` when uploads matter for the change (media, uploads-dependent behavior).
-- Optional: `--location=wp-admin/plugins.php` to store a return URL.
-- Optional: `--exclude_tables=table_one,table_two` on backup.
+- The name must produce a URL-safe slug (`sanitize_title`) that starts with `a-z` or `0-9`. Names that sanitize to empty or percent-encoded-only values (for example `!!!` or CJK-only text) are rejected by backup/abilities.
+- Add `--files` / `"files": true` when uploads matter for the change (media, uploads-dependent behavior).
+- Optional: `--location=wp-admin/plugins.php` / `"location"` to store a return URL.
+- Optional: `--exclude_tables=table_one,table_two` on backup (CLI only; abilities use the site setting).
 
 ### Restore
 
@@ -41,7 +47,11 @@ wp snapshot restore before-the-experiment
 wp snapshot restore "Before the experiment"
 ```
 
-Pass the full folder id from `file` to restore that exact copy. A missing folder id fails; it does not fall back to another snapshot. Pass the slug or display name without a timestamp to restore the newest-created matching snapshot. Display names are sanitized the same way as on backup. A folder id with no slug, such as `_1587039434`, still selects that exact copy.
+Ability: `snapshots/restore` with input `{ "id": "before-the-experiment_1587039434" }`.
+
+Pass the full folder id from `file`. This restores that exact snapshot and avoids ambiguous slug matches.
+
+Do not pass the display name from `name` when it contains capitals or spaces. `wp snapshot restore "Before the experiment"` does not match the folder `before-the-experiment_1587039434`.
 
 Restore only:
 
@@ -62,14 +72,16 @@ A restore:
 wp snapshot delete <slug-or-folder-id>
 ```
 
+Ability: `snapshots/delete` with input `{ "id": "<slug-or-folder-id>" }`. Prefer the exact `file` id from list. A slug deletes the newest matching snapshot; repeating the same slug can delete another.
+
 Only delete when the user asks. Deletion is permanent on this server.
 
 ## Suggested workflow
 
-1. `wp snapshot list --format=json` — see existing snapshots.
-2. `wp snapshot backup "Before …" --files` — save state before your change.
+1. List — `wp snapshot list --format=json` or ability `snapshots/list` — see existing snapshots.
+2. Backup — `wp snapshot backup "Before …" --files` or ability `snapshots/backup` — save state before your change.
 3. Do the requested work.
-4. If the user wants to undo, or your snapshot was for a failed experiment: `wp snapshot list --format=json`, then `wp snapshot restore` with the exact `file` id for that copy, or the slug alone for the newest-created matching snapshot.
+4. If the user wants to undo, or your snapshot was for a failed experiment: list again, then pass the exact `file` id to `wp snapshot restore` or ability `snapshots/restore`.
 
 ## Storage and retention
 

@@ -426,6 +426,15 @@
 <li>fixed: CLI restore stores the current snapshot folder id in the snapshot_current transient</li>
 <li>improved: restore and delete accept a name or slug without a timestamp and use the newest-created matching snapshot</li>
 <li>changed: backup rejects a name that sanitizes to an empty slug</li>
+<li>fixed: Abilities API abilities stay available over REST on WordPress 6.9 and 7.0</li>
+<li>fixed: snapshots/delete is not marked idempotent, so slug-based deletes are not retried as safe DELETE calls</li>
+<li>fixed: backup keeps the current-snapshot marker when a persistent object cache is enabled</li>
+<li>fixed: backup rejects names that cannot form a listable folder id</li>
+<li>fixed: snapshots/list returns no matches when a name filter cannot form a usable slug prefix</li>
+<li>added: WordPress Abilities API endpoints to list, create, restore, and delete snapshots (WordPress 6.9+)</li>
+</ul>
+<ul>
+<li>changed: snapshots/backup is marked destructive because retention can remove older same-name snapshots</li>
 </ul>
 <h3>3.0.0</h3>
 <ul>

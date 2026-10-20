@@ -68,6 +68,7 @@
 						<li><a href="#example">One example, start to finish</a></li>
 						<li><a href="#admin">From the WordPress admin</a></li>
 						<li><a href="#cli">From the command line</a></li>
+						<li><a href="#abilities">From the Abilities API</a></li>
 						<li><a href="#inside">What is inside a snapshot</a></li>
 						<li><a href="#restore">What a restore actually does</a></li>
 						<li><a href="#names">Names, slugs, and old copies</a></li>
@@ -190,6 +191,19 @@ wp snapshot delete before-the-product-import</pre>
 					</li>
 				</ul>
 
+				<h2 id="abilities">From the Abilities API</h2>
+				<p>
+					On WordPress 6.9 or newer, SnapShots also registers public abilities so
+					agents and tools can list, create, restore, and delete snapshots through
+					the Abilities API (for example <code>wp-abilities/v1</code>). The same
+					<code>manage_options</code> capability applies. The abilities are
+					<code>snapshots/list</code>, <code>snapshots/backup</code>,
+					<code>snapshots/restore</code>, and <code>snapshots/delete</code>. Prefer
+					the exact <code>file</code> folder id from list when restoring or
+					deleting. See the
+					<a href="agents.md">agent guide</a> for inputs and workflow.
+				</p>
+
 				<h2 id="inside">What is inside a snapshot</h2>
 				<p>Each snapshot is a folder on this server. It holds:</p>
 				<ul>
@@ -246,10 +260,10 @@ wp snapshot delete before-the-product-import</pre>
 					The slug is that name in lowercase, with spaces turned into hyphens:
 					<code>before-the-product-import</code>. The folder id adds an underscore
 					and the time: <code>before-the-product-import_1587039434</code>.
-					A name needs at least one letter or number. Punctuation alone, such as
-					<code>!!!</code>, is rejected. A folder saved earlier with no slug still
-					has an id like <code>_1587039434</code>. Restore and delete accept that
-					exact id.
+					The name must produce a URL-safe slug that starts with a letter or
+					number (ASCII letters, digits, hyphens, underscores). Names that
+					sanitize to nothing, or only to percent-encoded characters, are
+					rejected.
 				</p>
 				<p>
 					Two copies of the same name are kept, unless you change

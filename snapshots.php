@@ -35,9 +35,11 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) :
 else :
 
 	require_once __DIR__ . '/includes/plugin.php';
+	require_once __DIR__ . '/includes/abilities.php';
 	require_once __DIR__ . '/includes/upgrade.php';
 
 	Plugin::get_instance();
+	Abilities::get_instance();
 	Upgrade::get_instance();
 
 endif;
