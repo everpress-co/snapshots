@@ -43,6 +43,8 @@ Ability: `snapshots/backup` with input `{ "name": "Before …", "files": true }`
 
 ```bash
 wp snapshot restore before-the-experiment_1587039434
+wp snapshot restore before-the-experiment
+wp snapshot restore "Before the experiment"
 ```
 
 Ability: `snapshots/restore` with input `{ "id": "before-the-experiment_1587039434" }`.
