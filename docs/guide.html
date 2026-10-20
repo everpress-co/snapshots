@@ -246,6 +246,10 @@ wp snapshot delete before-the-product-import</pre>
 					The slug is that name in lowercase, with spaces turned into hyphens:
 					<code>before-the-product-import</code>. The folder id adds an underscore
 					and the time: <code>before-the-product-import_1587039434</code>.
+					A name needs at least one letter or number. Punctuation alone, such as
+					<code>!!!</code>, is rejected. A folder saved earlier with no slug still
+					has an id like <code>_1587039434</code>. Restore and delete accept that
+					exact id.
 				</p>
 				<p>
 					Two copies of the same name are kept, unless you change

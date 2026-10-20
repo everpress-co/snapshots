@@ -28,6 +28,7 @@ wp snapshot backup "Before <short task description>" --files
 ```
 
 - Use a clear, unique name tied to the task.
+- The name must keep a letter or number after sanitizing. A name such as `!!!` is rejected.
 - Add `--files` when uploads matter for the change (media, uploads-dependent behavior).
 - Optional: `--location=wp-admin/plugins.php` to store a return URL.
 - Optional: `--exclude_tables=table_one,table_two` on backup.
@@ -40,7 +41,7 @@ wp snapshot restore before-the-experiment
 wp snapshot restore "Before the experiment"
 ```
 
-Pass the full folder id from `file` to restore that exact copy. A missing folder id fails; it does not fall back to another snapshot. Pass the slug or display name without a timestamp to restore the newest-created matching snapshot. Display names are sanitized the same way as on backup.
+Pass the full folder id from `file` to restore that exact copy. A missing folder id fails; it does not fall back to another snapshot. Pass the slug or display name without a timestamp to restore the newest-created matching snapshot. Display names are sanitized the same way as on backup. A folder id with no slug, such as `_1587039434`, still selects that exact copy.
 
 Restore only:
 

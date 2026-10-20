@@ -17,8 +17,8 @@ SnapShots saves and restores site state on the same server via the admin bar or 
 When SnapShots is installed on a dev site:
 
 1. `wp snapshot list --format=json`
-2. `wp snapshot backup "Before <task>" --files` before risky changes
-3. `wp snapshot restore <file-id-or-slug>` only for your task snapshot or when the user asks. Prefer the exact `file` id from `list` for a specific copy (missing ids fail; no fallback). A slug or display name without a timestamp restores the newest-created matching snapshot.
+2. `wp snapshot backup "Before <task>" --files` before risky changes. The name must keep a letter or number after sanitizing.
+3. `wp snapshot restore <file-id-or-slug>` only for your task snapshot or when the user asks. Prefer the exact `file` id from `list` for a specific copy (missing ids fail; no fallback). A slug or display name without a timestamp restores the newest-created matching snapshot. A folder id with no slug, such as `_1587039434`, still selects that copy.
 4. Do not `wp snapshot delete` unless the user asks
 
 See agents.md for restore side effects and requirements.

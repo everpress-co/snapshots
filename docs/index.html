@@ -374,7 +374,7 @@
 							<summary>Can I save snapshots with names?</summary>
 							<p>
 								Yes. Named states make it easier to find the snapshot you want
-								later.
+								later. The name needs at least one letter or number.
 							</p>
 						</details>
 						<details class="faq-item">
@@ -422,8 +422,10 @@
 <ul>
 <li>fixed: wp snapshot list no longer fatals on PHP 8 and no longer triggers a usort deprecation</li>
 <li>fixed: restore and delete return not-found for a missing folder id instead of falling back to another snapshot</li>
+<li>fixed: restore and delete accept an existing folder id with no slug, such as <code>_1587039434</code></li>
 <li>fixed: CLI restore stores the current snapshot folder id in the snapshot_current transient</li>
 <li>improved: restore and delete accept a name or slug without a timestamp and use the newest-created matching snapshot</li>
+<li>changed: backup rejects a name that sanitizes to an empty slug</li>
 </ul>
 <h3>3.0.0</h3>
 <ul>
