@@ -182,6 +182,7 @@ On **Settings → Snapshots**, enter a comma-separated list in **Exclude Tables*
 ### Unreleased
 
 - fixed: wp snapshot list no longer fatals on PHP 8 and no longer triggers a usort deprecation
+- fixed: CLI restore stores the current snapshot folder id in the snapshot_current transient
 
 ### 3.0.0
 
