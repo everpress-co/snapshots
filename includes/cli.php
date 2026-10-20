@@ -699,7 +699,11 @@ class CLI_Command extends WP_CLI_Command {
 			return trailingslashit( $exact_dir ) . $extension;
 		}
 
-		$slug    = sanitize_title( $backup_name );
+		$slug = sanitize_title( $backup_name );
+		if ( '' === $slug ) {
+			return null;
+		}
+
 		$backups = $this->get_snaps( $slug, false );
 
 		if ( empty( $backups ) ) {
