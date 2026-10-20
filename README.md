@@ -59,6 +59,17 @@ SnapShots adds a `wp snapshot` command. From the shell:
 
 `restore` and `delete` accept the snapshot name, its slug, or a folder id such as `before-the-experiment_1587039434`. When you pass a name, the latest copy of that name is used.
 
+### Abilities API (WordPress 6.9+)
+
+On WordPress 6.9 or newer, SnapShots registers public abilities that list, create, restore, and delete snapshots through the Abilities API (`wp-abilities/v1`). They require the `manage_options` capability and use the same WP-CLI-backed operations as the admin UI:
+
+- `snapshots/list` — optional `name` filter; returns `name`, `file`, `created`, `past`
+- `snapshots/backup` — required `name` (must form a URL-safe slug); optional `files` (default true) and `location`
+- `snapshots/restore` — required `id` (prefer the exact `file` folder id from list)
+- `snapshots/delete` — required `id` (delete only when the user asks)
+
+On older WordPress versions the plugin runs without these abilities.
+
 ### Settings reference
 
 These options are on **Settings → Snapshots**. The matching constant in `wp-config.php` overrides the saved value.
@@ -183,6 +194,14 @@ On **Settings → Snapshots**, enter a comma-separated list in **Exclude Tables*
 
 - fixed: wp snapshot list no longer fatals on PHP 8 and no longer triggers a usort deprecation
 - fixed: CLI restore stores the current snapshot folder id in the snapshot_current transient
+- fixed: Abilities API abilities stay available over REST on WordPress 6.9 and 7.0
+- fixed: snapshots/delete is not marked idempotent, so slug-based deletes are not retried as safe DELETE calls
+- fixed: backup keeps the current-snapshot marker when a persistent object cache is enabled
+- fixed: backup rejects names that cannot form a listable folder id
+- fixed: snapshots/list returns no matches when a name filter cannot form a usable slug prefix
+- added: WordPress Abilities API endpoints to list, create, restore, and delete snapshots (WordPress 6.9+)
+
+- changed: snapshots/backup is marked destructive because retention can remove older same-name snapshots
 
 ### 3.0.0
 
