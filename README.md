@@ -194,7 +194,10 @@ On **Settings → Snapshots**, enter a comma-separated list in **Exclude Tables*
 
 - fixed: wp snapshot list no longer fatals on PHP 8 and no longer triggers a usort deprecation
 - fixed: CLI restore stores the current snapshot folder id in the snapshot_current transient
+- fixed: Abilities API abilities stay available over REST on WordPress 6.9 and 7.0
+- fixed: snapshots/delete is not marked idempotent, so slug-based deletes are not retried as safe DELETE calls
 - added: WordPress Abilities API endpoints to list, create, restore, and delete snapshots (WordPress 6.9+)
+- changed: snapshots/backup is marked destructive because retention can remove older same-name snapshots
 
 ### 3.0.0
 

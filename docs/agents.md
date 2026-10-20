@@ -13,7 +13,7 @@ Do not use SnapShots as a substitute for production backups or remote disaster r
 
 Prefer **WP-CLI** when you have a shell on the WordPress root (where `wp-config.php` lives). On WordPress 6.9+, you may instead use the **Abilities API** abilities below when the host exposes them (for example via `wp-abilities/v1` or an MCP bridge). Both paths require the same server setup (WP-CLI, `exec`, PHP). Ability callers need a user with `manage_options`.
 
-REST runs use `GET …/abilities/snapshots/list/run`, `POST …/abilities/snapshots/backup/run` and `…/restore/run` with JSON body `{ "input": { … } }`, and `DELETE …/abilities/snapshots/delete/run?input[id]=<file-id>` (query `input`; destructive + idempotent abilities use DELETE).
+REST runs use `GET …/abilities/snapshots/list/run` for list, and `POST …/abilities/snapshots/backup/run`, `…/restore/run`, and `…/delete/run` with JSON body `{ "input": { … } }`. Delete is destructive but not idempotent (a slug can match more than one folder), so it uses POST like restore—not DELETE.
 
 ### List snapshots
 
@@ -31,7 +31,7 @@ JSON rows include `name` (the text you passed to backup), `file` (folder id), `c
 wp snapshot backup "Before <short task description>" --files
 ```
 
-Ability: `snapshots/backup` with input `{ "name": "Before …", "files": true }` (optional `location`).
+Ability: `snapshots/backup` with input `{ "name": "Before …", "files": true }` (optional `location`). Creating a snapshot may permanently remove older copies with the same name once `max_shots` retention is exceeded.
 
 - Use a clear, unique name tied to the task.
 - Add `--files` / `"files": true` when uploads matter for the change (media, uploads-dependent behavior).
@@ -69,7 +69,7 @@ A restore:
 wp snapshot delete <slug-or-folder-id>
 ```
 
-Ability: `snapshots/delete` with input `{ "id": "<slug-or-folder-id>" }`.
+Ability: `snapshots/delete` with input `{ "id": "<slug-or-folder-id>" }`. Prefer the exact `file` id from list. A slug deletes the newest matching snapshot; repeating the same slug can delete another.
 
 Only delete when the user asks. Deletion is permanent on this server.
 

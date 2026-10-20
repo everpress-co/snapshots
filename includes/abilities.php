@@ -126,8 +126,9 @@ class Abilities {
 				'execute_callback'    => array( $this, 'execute_list' ),
 				'permission_callback' => array( $this, 'can_manage' ),
 				'meta'                => array(
-					'public'      => true,
-					'annotations' => array(
+					'public'       => true,
+					'show_in_rest' => true,
+					'annotations'  => array(
 						'readonly'    => true,
 						'destructive' => false,
 						'idempotent'  => true,
@@ -141,7 +142,7 @@ class Abilities {
 			array(
 				'label'               => __( 'Create snapshot', 'snapshots' ),
 				'description'         => __(
-					'Creates a named development snapshot of the database and optionally the uploads folder. Use a clear name tied to the task (for example Before experiment). Does not modify site content; it only saves a copy. After success, prefer the returned file id for a later restore.',
+					'Creates a named development snapshot of the database and optionally the uploads folder. Use a clear name tied to the task (for example Before experiment). Does not change live site content, but may permanently delete older snapshots that share the same name once the configured max_shots retention limit is exceeded. After success, prefer the returned file id for a later restore.',
 					'snapshots'
 				),
 				'category'            => 'snapshots',
@@ -184,10 +185,11 @@ class Abilities {
 				'execute_callback'    => array( $this, 'execute_backup' ),
 				'permission_callback' => array( $this, 'can_manage' ),
 				'meta'                => array(
-					'public'      => true,
-					'annotations' => array(
+					'public'       => true,
+					'show_in_rest' => true,
+					'annotations'  => array(
 						'readonly'    => false,
-						'destructive' => false,
+						'destructive' => true,
 						'idempotent'  => false,
 					),
 				),
@@ -233,8 +235,9 @@ class Abilities {
 				'execute_callback'    => array( $this, 'execute_restore' ),
 				'permission_callback' => array( $this, 'can_manage' ),
 				'meta'                => array(
-					'public'      => true,
-					'annotations' => array(
+					'public'       => true,
+					'show_in_rest' => true,
+					'annotations'  => array(
 						'readonly'    => false,
 						'destructive' => true,
 						'idempotent'  => false,
@@ -278,11 +281,12 @@ class Abilities {
 				'execute_callback'    => array( $this, 'execute_delete' ),
 				'permission_callback' => array( $this, 'can_manage' ),
 				'meta'                => array(
-					'public'      => true,
-					'annotations' => array(
+					'public'       => true,
+					'show_in_rest' => true,
+					'annotations'  => array(
 						'readonly'    => false,
 						'destructive' => true,
-						'idempotent'  => true,
+						'idempotent'  => false,
 					),
 				),
 			)
