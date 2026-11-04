@@ -32,7 +32,7 @@
 		"sass": "^1.105.2",
 		"sass-loader": "^17.0.1",
 		"webpack": "^5.103.1",
-		"webpack-cli": "^7.2.3"
+		"webpack-cli": "^7.3.1"
 	},
 	"scripts": {
 		"build": "webpack --mode production",
