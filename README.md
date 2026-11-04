@@ -57,7 +57,7 @@ SnapShots adds a `wp snapshot` command. From the shell:
 
 `backup` accepts `--files` to include uploads, `--location=<path>` to store a return URL such as `wp-admin/plugins.php`, and `--exclude_tables=<tables>` as a comma-separated list.
 
-`restore` and `delete` accept the snapshot name, its slug, or a folder id such as `before-the-experiment_1587039434`. When you pass a name, the latest copy of that name is used.
+`restore` and `delete` accept the snapshot name, its slug, or a folder id such as `before-the-experiment_1587039434`. When you pass a name or slug without a timestamp, the newest-created matching copy is used. A folder id that is not on disk is an error; it does not fall back to another copy. The name must include a letter or number. An older folder id with no slug, such as `_1587039434`, still selects that exact copy.
 
 ### Abilities API (WordPress 6.9+)
 
@@ -193,7 +193,11 @@ On **Settings → Snapshots**, enter a comma-separated list in **Exclude Tables*
 ### Unreleased
 
 - fixed: wp snapshot list no longer fatals on PHP 8 and no longer triggers a usort deprecation
+- fixed: restore and delete return not-found for a missing folder id instead of falling back to another snapshot
+- fixed: restore and delete accept an existing folder id with no slug, such as `_1587039434`
 - fixed: CLI restore stores the current snapshot folder id in the snapshot_current transient
+- improved: restore and delete accept a name or slug without a timestamp and use the newest-created matching snapshot
+- changed: backup rejects a name that sanitizes to an empty slug
 - fixed: Abilities API abilities stay available over REST on WordPress 6.9 and 7.0
 - fixed: snapshots/delete is not marked idempotent, so slug-based deletes are not retried as safe DELETE calls
 - fixed: backup keeps the current-snapshot marker when a persistent object cache is enabled
