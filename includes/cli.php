@@ -256,7 +256,8 @@ class CLI_Command extends WP_CLI_Command {
 		snapshots_harden_folder( snapshots_option( 'folder' ) );
 
 		$backups = list_files( snapshots_option( 'folder' ), 1 );
-		$backups = preg_grep( '/([a-z0-9-]+)_(\d+)\/$/', $backups );
+		// Optional slug so an older folder id `_timestamp` still appears in the list.
+		$backups = preg_grep( '/(?:^|\/)(?:[a-z0-9-]+)?_(\d+)\/$/', $backups );
 		if ( ! is_null( $name ) ) {
 			$backups = preg_grep( '/' . preg_quote( $name ) . '_(\d+)\/$/', $backups );
 		}
@@ -284,13 +285,18 @@ class CLI_Command extends WP_CLI_Command {
 	 */
 	private function snapshots_create( $args, $assoc_args ) {
 
+		$name = $this->get_name( $args );
+		$slug = sanitize_title( $name );
+		if ( '' === $slug ) {
+			WP_CLI::error( 'Snapshot name must include letters or numbers.' );
+		}
+
 		if ( ! $this->check() ) {
 			exit;
 		}
 
-		$name          = $this->get_name( $args );
 		$timestamp     = time();
-		$snapshot_name = sanitize_title( $name ) . '_' . $timestamp;
+		$snapshot_name = $slug . '_' . $timestamp;
 		$folder        = trailingslashit( snapshots_option( 'folder' ) ) . $snapshot_name;
 
 		$command_args   = array();
@@ -673,7 +679,13 @@ class CLI_Command extends WP_CLI_Command {
 	}
 
 	/**
-	 * Resolves the path to a file inside the newest matching snapshot folder.
+	 * Resolves the path to a file inside a matching snapshot folder.
+	 *
+	 * A trailing `_timestamp` folder id selects that exact copy, or null when
+	 * the folder is missing. The slug may be empty (`_timestamp`) for a folder
+	 * created before empty names were rejected. A name or slug without a
+	 * timestamp selects the newest-created matching folder (by the timestamp
+	 * in the folder id).
 	 *
 	 * @since 1.0.0
 	 *
@@ -683,15 +695,42 @@ class CLI_Command extends WP_CLI_Command {
 	 */
 	private function get_most_recent_file( $backup_name, $extension ) {
 
-		// Covers the folder-id short-circuit that skips get_snaps().
 		snapshots_harden_folder( snapshots_option( 'folder' ) );
 
-		if ( false !== strpos( $backup_name, '_' ) ) {
-			return trailingslashit( snapshots_option( 'folder' ) ) . $backup_name . '/' . $extension;
+		$folder = trailingslashit( snapshots_option( 'folder' ) );
+
+		// The slug before `_` may be empty for an older folder id `_timestamp`.
+		if ( preg_match( '/^(.*)_(\d+)$/', $backup_name ) ) {
+			$exact_dir = $folder . $backup_name;
+			if ( ! is_dir( $exact_dir ) ) {
+				return null;
+			}
+			return trailingslashit( $exact_dir ) . $extension;
 		}
 
-		$backups = $this->get_snaps( $backup_name, true );
-		return isset( $backups[0] ) ? trailingslashit( $backups[0] ) . $extension : null;
+		$slug = sanitize_title( $backup_name );
+		if ( '' === $slug ) {
+			return null;
+		}
+
+		$backups = $this->get_snaps( $slug, false );
+
+		if ( empty( $backups ) ) {
+			return null;
+		}
+
+		usort(
+			$backups,
+			function ( $a, $b ) {
+				preg_match( '/_(\d+)\/?$/', $a, $ma );
+				preg_match( '/_(\d+)\/?$/', $b, $mb );
+				$ta = isset( $ma[1] ) ? (int) $ma[1] : 0;
+				$tb = isset( $mb[1] ) ? (int) $mb[1] : 0;
+				return $tb <=> $ta;
+			}
+		);
+
+		return trailingslashit( $backups[0] ) . $extension;
 	}
 
 	/**
@@ -717,9 +756,9 @@ class CLI_Command extends WP_CLI_Command {
 
 		$files = list_files( snapshots_option( 'folder' ), 1 );
 		if ( ! is_null( $name ) ) {
-			$files = preg_grep( '/' . preg_quote( $name ) . '_(\d+)\/$/', $files );
+			$files = preg_grep( '/\/' . preg_quote( $name, '/' ) . '_(\d+)\/$/', $files );
 		} else {
-			$files = preg_grep( '/([a-z0-9-]+)_(\d+)\/$/', $files );
+			$files = preg_grep( '/\/([a-z0-9-]+)_(\d+)\/$/', $files );
 		}
 		if ( $order ) {
 			usort(
@@ -771,12 +810,12 @@ class CLI_Command extends WP_CLI_Command {
 	 */
 	private function destroy_snapshots( $name ) {
 
-		if ( false !== strpos( $name, '_' ) ) {
-			$name = explode( '_', $name );
-			$name = $name[0];
+		// Group `_timestamp` folders (empty slug) together for retention.
+		if ( preg_match( '/^(.*)_(\d+)$/', $name, $matches ) ) {
+			$name = $matches[1];
 		}
 
-		$backups = $this->get_snaps( $name, true );
+		$backups = $this->get_snaps( sanitize_title( $name ), true );
 
 		$skipped = 0;
 		foreach ( $backups as $backup ) {
