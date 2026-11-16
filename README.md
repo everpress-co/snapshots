@@ -192,6 +192,7 @@ On **Settings → Snapshots**, enter a comma-separated list in **Exclude Tables*
 
 ### Unreleased
 
+- fixed: Settings → Snapshots no longer crashes when WP-CLI cannot read the site URL
 - fixed: wp snapshot list no longer fatals on PHP 8 and no longer triggers a usort deprecation
 - fixed: restore and delete return not-found for a missing folder id instead of falling back to another snapshot
 - fixed: restore and delete accept an existing folder id with no slug, such as `_1587039434`

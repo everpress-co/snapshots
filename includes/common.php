@@ -26,7 +26,8 @@ function snapshots_option( $option ) {
 	} else {
 
 		$settings = require __DIR__ . '/set.php';
-		$return   = get_option( 'snapshots_' . $option, $settings[ $option ]['default'] );
+		$default  = isset( $settings[ $option ]['default'] ) ? $settings[ $option ]['default'] : null;
+		$return   = get_option( 'snapshots_' . $option, $default );
 	}
 
 	/**

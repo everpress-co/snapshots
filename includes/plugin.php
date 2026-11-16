@@ -1033,7 +1033,7 @@ class Plugin {
 		}
 
 		if ( ARRAY_A !== $output ) {
-			$result = $result[0];
+			$result = isset( $result[0] ) ? $result[0] : '';
 		}
 
 		if ( $echo ) {
@@ -1140,18 +1140,20 @@ class Plugin {
 	/**
 	 * Verifies exec, PHP, WP-CLI, and database connectivity for Snapshots.
 	 *
+	 * Stops after the first failure so later checks cannot fatal on a WP_Error.
+	 *
 	 * @since 1.0.0
 	 *
 	 * @param bool $return_on_error Optional. Reserved for future use. Default false.
 	 * @return void
 	 */
 	public function check_environment( $return_on_error = false ) {
-
 		if ( ! $this->is_exec() ) {
 			$heading = esc_html__( 'SnapShots requires the "exec" method!', 'snapshots' );
 			/* translators: %s: Link to PHP exec documentation. */
 			$body = sprintf( esc_html__( 'Please make sure the %s is installed and working on your server.', 'snapshots' ), '<a href="https://www.php.net/manual/en/function.exec.php" rel="noopener noreferrer" target="_blank">exec command</a>' );
 			$this->error( $body, $heading );
+			return;
 		}
 
 		$php_path = $this->exec( 'which php' );
@@ -1163,6 +1165,7 @@ class Plugin {
 			$body .= '<p>Run following command in your terminal to get the path: <br><code>which php</code></p>';
 
 			$this->error( $body, $heading, array( 'command' => 'which php' ) );
+			return;
 		}
 
 		$cli_version = $this->command( 'cli version' );
@@ -1172,45 +1175,53 @@ class Plugin {
 			/* translators: 1: WP-CLI install link, 2: WP-CLI home link. */
 			$body = sprintf( esc_html__( 'Please make sure the command line interface %1$s is installed and working on your server. Read the official guide %2$s.', 'snapshots' ), '<a href="https://wp-cli.org/#installing" rel="noopener noreferrer" target="_blank">WP-CLI</a>', '<a href="https://wp-cli.org/" rel="noopener noreferrer" target="_blank">' . esc_html__( 'here', 'snapshots' ) . '</a>' );
 			$this->error( $body, $heading, array( 'command' => 'wp cli version' ) );
+			return;
 		}
 
 		$db_check = $this->command( 'db check' );
 
 		if ( is_wp_error( $db_check ) ) {
-			$heading = esc_html__( 'SnapShots cannot talk to your Database!', 'snapshots' );
+			$heading     = esc_html__( 'SnapShots cannot talk to your Database!', 'snapshots' );
+			$error_data  = $db_check->get_error_data();
+			$cli_command = ( is_array( $error_data ) && isset( $error_data['command'] ) ) ? $error_data['command'] : 'wp db check';
 			/* translators: %s: Suggested WP-CLI command to run. */
-			$body  = sprintf( esc_html__( 'Please make sure the command line interface is setup correct. Run this command in your terminal to check: %s', 'snapshots' ), '<br><code>' . esc_html( implode( ' ', $db_check->get_error_data() ) ) . '</code>' );
-			$body .= '<p>Following error was returned:<br><code>' . $db_check->get_error_message() . '</code></p>';
+			$body  = sprintf( esc_html__( 'Please make sure the command line interface is setup correct. Run this command in your terminal to check: %s', 'snapshots' ), '<br><code>' . esc_html( $cli_command ) . '</code>' );
+			$body .= '<p>Following error was returned:<br><code>' . esc_html( $db_check->get_error_message() ) . '</code></p>';
 			$body .= '<p>If you are running MySQL via a socked try to add the path to the socket to the <code>DB_HOST</code> constant in your <code>wp-config.php</code> file like:</p>';
 			$body .= '<p><code>define( \'DB_HOST\', \'localhost:[ABSOLUTE_PATH_TO_YOUR_SOCKET]/mysql/mysqld.sock\' );</code></p>';
-			$this->error( $body, $heading, array( 'command' => 'wp option get home' ) );
-
-		} else {
-			// Get the home URL to make sure we are in the correct database.
-			$home_url = $this->command( 'option get home', false, false );
-
-			$result = wp_parse_url( $home_url, PHP_URL_HOST );
-
-			$home = wp_parse_url( home_url(), PHP_URL_HOST );
-
+			$this->error( $body, $heading, array( 'command' => 'wp db check' ) );
 			return;
-			if ( $result !== $home ) {
+		}
 
-				// This is in place if the cron URL triggers this process.
-				if ( ! headers_sent() && ! isset( $_GET['snapshot_redirect'] ) ) {
-					$redirect = add_query_arg( 'snapshot_redirect', 1 );
-					error_log( 'redirect ' . print_r( $redirect, true ) );
-					wp_redirect( $redirect );
-					exit;
-				}
+		$home_url = $this->command( 'option get home', false, false );
 
-				$heading = esc_html__( 'Your Home URLs do not match!', 'snapshots' );
-				/* translators: 1: home_url() host, 2: WP-CLI option get home host. */
-				$body = sprintf( esc_html__( 'The `home_url()` (%1$s) returns a different result than the WP CLI command `wp option get home` (%2$s).', 'snapshots' ), $home, $result );
+		if ( is_wp_error( $home_url ) ) {
+			$heading     = esc_html__( 'SnapShots cannot read the site URL via WP-CLI!', 'snapshots' );
+			$error_data  = $home_url->get_error_data();
+			$cli_command = ( is_array( $error_data ) && isset( $error_data['command'] ) ) ? $error_data['command'] : 'wp option get home';
+			/* translators: %s: Suggested WP-CLI command to run. */
+			$body  = sprintf( esc_html__( 'Please make sure the command line interface is setup correct. Run this command in your terminal to check: %s', 'snapshots' ), '<br><code>' . esc_html( $cli_command ) . '</code>' );
+			$body .= '<p>Following error was returned:<br><code>' . esc_html( $home_url->get_error_message() ) . '</code></p>';
+			$this->error( $body, $heading, array( 'command' => 'wp option get home' ) );
+			return;
+		}
 
-				$this->error( $body, $heading, array( 'command' => $command ) );
+		$result = wp_parse_url( (string) $home_url, PHP_URL_HOST );
+		$home   = wp_parse_url( home_url(), PHP_URL_HOST );
 
+		if ( $result !== $home ) {
+			// This is in place if the cron URL triggers this process.
+			if ( ! headers_sent() && ! isset( $_GET['snapshot_redirect'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+				$redirect = add_query_arg( 'snapshot_redirect', 1 );
+				wp_safe_redirect( $redirect );
+				exit;
 			}
+
+			$heading = esc_html__( 'Your Home URLs do not match!', 'snapshots' );
+			/* translators: 1: home_url() host, 2: WP-CLI option get home host. */
+			$body = sprintf( esc_html__( 'The `home_url()` (%1$s) returns a different result than the WP CLI command `wp option get home` (%2$s).', 'snapshots' ), $home, $result );
+
+			$this->error( $body, $heading, array( 'command' => 'wp option get home' ) );
 		}
 	}
 
