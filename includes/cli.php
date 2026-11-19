@@ -523,7 +523,11 @@ class CLI_Command extends WP_CLI_Command {
 
 
 	/**
-	 * Exports or imports the SQLite database with the Studio CLI.
+	 * Exports or imports the SQLite database.
+	 *
+	 * Export uses `studio export`. Import uses Studio's `wp sqlite import`
+	 * in this process. `studio import` stops the site server, which drops the
+	 * admin request before it can redirect.
 	 *
 	 * `studio export` has no flag for excluded tables. Callers warn and
 	 * write the full database.
@@ -535,6 +539,11 @@ class CLI_Command extends WP_CLI_Command {
 	 * @return void
 	 */
 	private function studio_sql( $action, $file ) {
+		if ( 'import' === $action ) {
+			$this->import_sqlite( $file );
+			return;
+		}
+
 		snapshots_prepare_path();
 
 		$studio = snapshots_resolve_binary( 'studio' );
@@ -542,22 +551,70 @@ class CLI_Command extends WP_CLI_Command {
 			WP_CLI::error( 'WordPress Studio CLI (studio) was not found.' );
 		}
 
-		if ( 'export' === $action ) {
-			$command = escapeshellarg( $studio ) . ' export ' . escapeshellarg( $file ) . ' --mode db --path=' . escapeshellarg( ABSPATH );
-		} else {
-			$command = escapeshellarg( $studio ) . ' import ' . escapeshellarg( $file ) . ' --path=' . escapeshellarg( ABSPATH );
-		}
+		$command = escapeshellarg( $studio ) . ' export ' . escapeshellarg( $file ) . ' --mode db --path=' . escapeshellarg( ABSPATH );
+		$output  = array();
+		$code    = 0;
 
-		$output = array();
-		$code   = 0;
-
-		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec -- Studio export and import are child processes.
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec -- Studio export is a child process.
 		exec( $command . ' 2>&1', $output, $code );
 
 		if ( 0 !== $code ) {
 			$message = trim( implode( "\n", $output ) );
 			if ( '' === $message ) {
-				$message = 'WordPress Studio could not ' . $action . ' the database.';
+				$message = 'WordPress Studio could not export the database.';
+			}
+			WP_CLI::error( $message );
+		}
+	}
+
+	/**
+	 * Imports a SQLite snapshot without stopping the Studio site server.
+	 *
+	 * @since [Unreleased]
+	 *
+	 * @param string $file Absolute path to the SQL file.
+	 * @return void
+	 */
+	private function import_sqlite( $file ) {
+		$command_file = snapshots_studio_sqlite_command_file();
+		if ( '' === $command_file ) {
+			WP_CLI::error( 'WordPress Studio SQLite import command was not found.' );
+		}
+
+		require_once $command_file;
+
+		// This process opened the database while bootstrapping. Release it so
+		// the importer can write, then reconnect for the rest of the restore.
+		snapshots_release_database();
+
+		$result = WP_CLI::runcommand(
+			'sqlite import ' . escapeshellarg( $file ) . ' --enable-ast-driver',
+			array(
+				'return'     => 'all',
+				'launch'     => false,
+				'exit_error' => false,
+			)
+		);
+
+		snapshots_reconnect_database();
+
+		$code    = 0;
+		$message = '';
+		if ( is_wp_error( $result ) ) {
+			$code    = 1;
+			$message = $result->get_error_message();
+		} elseif ( is_object( $result ) ) {
+			$code    = isset( $result->return_code ) ? (int) $result->return_code : 1;
+			$message = isset( $result->stderr ) && is_string( $result->stderr ) ? $result->stderr : '';
+		} elseif ( is_array( $result ) ) {
+			$code    = isset( $result['return_code'] ) ? (int) $result['return_code'] : 1;
+			$message = isset( $result['stderr'] ) && is_string( $result['stderr'] ) ? $result['stderr'] : '';
+		}
+
+		if ( 0 !== $code ) {
+			$message = trim( (string) preg_replace( '/^Error:\s*/', '', $message ) );
+			if ( '' === $message ) {
+				$message = 'WordPress Studio could not import the database.';
 			}
 			WP_CLI::error( $message );
 		}

@@ -291,8 +291,10 @@ define( 'SNAPSHOTS_PHP_PATH', '/usr/local/bin' );</pre>
 					by the system path separator. Those directories are prepended to
 					<code>PATH</code>.
 					<code>SNAPSHOTS_CLI_PATH</code> is not a field on the settings screen.
-					Set it in <code>wp-config.php</code> when <code>wp</code> or
-					<code>studio</code> is outside the server's search path.
+					Set it in <code>wp-config.php</code> when <code>wp</code> is outside
+					the server's search path. <code>studio</code> in
+					<code>~/.local/bin</code> is added automatically. Set the constant
+					when <code>studio</code> lives in another directory.
 				</p>
 				<p>The settings screen also controls:</p>
 				<ul>
@@ -354,11 +356,14 @@ define( 'SNAPSHOTS_PHP_PATH', '/usr/local/bin' );</pre>
 				</p>
 				<p>
 					On WordPress Studio, enable Studio CLI for terminal or install the
-					standalone <code>studio</code> command. If <code>studio</code> is not
-					in <code>/usr/local/bin</code>, set <code>SNAPSHOTS_CLI_PATH</code> to
-					its directory. A default Studio site uses SQLite. SnapShots exports
+					standalone <code>studio</code> command. SnapShots finds
+					<code>studio</code> in <code>~/.local/bin</code>. Set
+					<code>SNAPSHOTS_CLI_PATH</code> when it lives in another directory.
+					A default Studio site uses SQLite. SnapShots exports
 					that database with <code>studio export --mode db</code> and imports it
-					with <code>studio import</code>. Keep snapshots in
+					inside the same <code>studio wp</code> process, so the site server
+					keeps running and the browser can return to the saved admin screen.
+					Keep snapshots in
 					<code>wp-content/.snapshots</code> so Studio's site-directory file
 					access can read them. Table exclusion applies to MySQL dumps.
 				</p>

@@ -90,10 +90,10 @@ Only delete when the user asks. Deletion is permanent on this server.
 
 ## Requirements you cannot bypass
 
-- WP-CLI must be installed and runnable (often `SNAPSHOTS_CLI_PATH` in `wp-config.php`). On WordPress Studio the binary is `studio`, and the admin runs `studio wp`. Set `SNAPSHOTS_CLI_PATH` to the directory that contains `studio` when it is outside `/usr/local/bin`.
+- WP-CLI must be installed and runnable (often `SNAPSHOTS_CLI_PATH` in `wp-config.php`). On WordPress Studio the binary is `studio`, and the admin runs `studio wp`. `studio` in `~/.local/bin` is found automatically. Set `SNAPSHOTS_CLI_PATH` when it lives in another directory.
 - PHP `exec` must be allowed.
 - The web user must be able to run `php`. `SNAPSHOTS_PHP_PATH` is one or more directories prepended to PATH. The web server PATH is often only the Ghostscript directory.
-- A default Studio site uses SQLite. Backup and restore use `studio export --mode db` and `studio import`. A Studio site pointed at MySQL still uses `wp db`. Table exclusion applies to MySQL dumps.
+- A default Studio site uses SQLite. Backup uses `studio export --mode db`. Restore imports that SQL with Studio's `wp sqlite import` inside the running `studio wp` process. Do not replace that with `studio import`: it stops the site server, and the admin request never receives the redirect. A Studio site pointed at MySQL still uses `wp db`. Table exclusion applies to MySQL dumps.
 
 If backup or restore fails, read the error output. Do not retry restore in a loop without understanding the failure.
 

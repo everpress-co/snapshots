@@ -2,7 +2,7 @@
 
 > WordPress plugin for named development snapshots of the database and uploads.
 
-SnapShots saves and restores site state on the same server via the admin bar or `wp snapshot` WP-CLI commands. On WordPress Studio the admin runs `studio wp`. A default Studio site uses SQLite (`studio export --mode db` and `studio import`). It is for local and development sites, not off-site production backup.
+SnapShots saves and restores site state on the same server via the admin bar or `wp snapshot` WP-CLI commands. On WordPress Studio the admin runs `studio wp`. A default Studio site uses SQLite (`studio export --mode db`, and `wp sqlite import` inside that same process so the site server stays up). It is for local and development sites, not off-site production backup.
 
 ## Docs
 

@@ -288,9 +288,9 @@ class Plugin {
 			$files    = snapshots_option( 'save_files' );
 			$location = snapshots_option( 'save_location' ) ? true : null;
 			if ( array_key_exists( 'snapshot_location', $_GET ) ) {
-				$redirect_to = $this->same_site_url( sanitize_text_field( wp_unslash( $_GET['snapshot_location'] ) ) );
+				$redirect_to = $this->same_site_url( snapshots_return_path( sanitize_text_field( wp_unslash( $_GET['snapshot_location'] ) ) ) );
 			} else {
-				$redirect_to = remove_query_arg( array( 'snaphot_create', 'snapshots_nonce' ) );
+				$redirect_to = remove_query_arg( array( 'snaphot_create', 'snapshots_nonce', 'snapshot_location' ) );
 			}
 			$snapshot_create = sanitize_text_field( wp_unslash( $_GET['snaphot_create'] ) );
 			$this->backup( $snapshot_create, $files, $location );
@@ -342,6 +342,46 @@ class Plugin {
 		}
 
 		return wp_validate_redirect( $candidate, home_url( '/' ) );
+	}
+
+	/**
+	 * Reads the return address stored in a snapshot manifest.
+	 *
+	 * The admin restore passes a folder id. A name without a timestamp uses the
+	 * newest matching folder. The manifest is on disk, so the redirect does not
+	 * depend on CLI stdout surviving `studio wp`.
+	 *
+	 * @since [Unreleased]
+	 *
+	 * @param string $id Snapshot folder id or name prefix.
+	 * @return string Stored location, or an empty string when none is saved.
+	 */
+	private function snapshot_saved_location( $id ) {
+		$base = trailingslashit( snapshots_option( 'folder' ) );
+		$dir  = $base . $id;
+		if ( ! is_dir( $dir ) ) {
+			if ( preg_match( '/_\d+$/', $id ) ) {
+				return '';
+			}
+			$latest = $this->latest_snapshot_file_for_prefix( $id . '_' );
+			if ( '' === $latest ) {
+				return '';
+			}
+			$dir = $base . $latest;
+		}
+
+		$manifest = trailingslashit( $dir ) . 'manifest.json';
+		if ( ! is_file( $manifest ) ) {
+			return '';
+		}
+
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local manifest, not a remote URL.
+		$data = json_decode( (string) file_get_contents( $manifest ), true );
+		if ( ! is_array( $data ) || empty( $data['location'] ) || ! is_string( $data['location'] ) ) {
+			return '';
+		}
+
+		return $data['location'];
 	}
 
 	/**
@@ -759,9 +799,15 @@ class Plugin {
 		$location_arg = null;
 		if ( true === $location ) {
 			if ( array_key_exists( 'snapshot_location', $_GET ) ) {
-				$location_arg = htmlspecialchars_decode( sanitize_text_field( wp_unslash( $_GET['snapshot_location'] ) ) );
+				$raw_location = htmlspecialchars_decode( sanitize_text_field( wp_unslash( $_GET['snapshot_location'] ) ) );
+			} elseif ( isset( $_SERVER['REQUEST_URI'] ) ) {
+				$raw_location = sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) );
 			} else {
-				$location_arg = remove_query_arg( 'snaphot_create' );
+				$raw_location = '';
+			}
+			$location_arg = snapshots_return_path( $raw_location );
+			if ( '' === $location_arg ) {
+				$location_arg = null;
 			}
 		} elseif ( is_string( $location ) && '' !== $location ) {
 			$location_arg = $location;
@@ -882,8 +928,20 @@ class Plugin {
 
 		$this->check_environment();
 
+		// The browser request holds the SQLite file. `studio wp` imports in
+		// another process, so this request has to let go of the file first.
+		// Reconnect afterwards so the redirect can read this site's address.
+		$release_database = snapshots_is_sqlite();
+		if ( $release_database ) {
+			snapshots_release_database();
+		}
+
 		$command = 'snapshot restore ' . escapeshellarg( $name );
 		$result  = $this->command( $command );
+
+		if ( $release_database ) {
+			snapshots_reconnect_database();
+		}
 
 		if ( is_wp_error( $result ) ) {
 			return $result;
@@ -894,13 +952,21 @@ class Plugin {
 
 		$this->clear_cache();
 
-		$redirect_matches = array_values( preg_grep( '/^Redirect to: (.*?)/', $result ) );
-		if ( ! empty( $redirect_matches ) ) {
-			$redirect = trim( str_replace( 'Redirect to:', '', $redirect_matches[0] ) );
-			return home_url( $redirect );
+		$redirect = $this->snapshot_saved_location( $name );
+		if ( '' === $redirect ) {
+			$redirect_matches = array_values( preg_grep( '/^Redirect to: (.*?)/', $result ) );
+			if ( ! empty( $redirect_matches ) ) {
+				$redirect = trim( str_replace( 'Redirect to:', '', $redirect_matches[0] ) );
+			}
 		}
 
-		return remove_query_arg( 'snapshot_restore' );
+		$redirect = snapshots_return_path( $redirect );
+		if ( '' !== $redirect ) {
+			// Use this site's address, including a Studio port, rather than assuming the path is already absolute.
+			return $this->same_site_url( $redirect );
+		}
+
+		return remove_query_arg( array( 'snapshot_restore', 'snapshots_nonce' ) );
 	}
 
 	/**

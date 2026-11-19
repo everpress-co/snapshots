@@ -85,7 +85,7 @@ These options are on **Settings → Snapshots**. The matching constant in `wp-co
 
 `SNAPSHOTS_PHP_PATH` is one directory, or several directories separated by the system path separator. Do not include the `php` binary in that path. Those directories are prepended to `PATH`. Extra directories can hold the MySQL client (`mysqlcheck`, `mysqldump`) when the web server PATH does not.
 
-`SNAPSHOTS_CLI_PATH` is also a directory, and it is not a field on the settings screen. Set it in `wp-config.php` to the folder that contains the `wp` binary, or the `studio` binary on WordPress Studio. Do not include `wp` or `studio` itself.
+`SNAPSHOTS_CLI_PATH` is also a directory, and it is not a field on the settings screen. Set it in `wp-config.php` to the folder that contains the `wp` binary when that folder is outside the server PATH. On WordPress Studio, `studio` in `~/.local/bin` is added automatically. Set `SNAPSHOTS_CLI_PATH` only when `studio` lives in another directory. Do not include `wp` or `studio` itself.
 
     define( 'SNAPSHOTS_CLI_PATH', '/usr/local/bin' );
     define( 'SNAPSHOTS_PHP_PATH', '/usr/local/bin' );
@@ -102,7 +102,7 @@ These options are on **Settings → Snapshots**. The matching constant in `wp-co
 1. Install [WP-CLI](https://wp-cli.org/) 2.2 or newer and make sure PHP can run external programs with [`exec`](https://www.php.net/manual/en/function.exec.php). On WordPress Studio, enable Studio CLI for terminal, or install the standalone `studio` command. Studio does not need a separate `wp` binary.
 2. Upload the `snapshots` folder to `/wp-content/plugins/`, or install the plugin from the Plugins screen.
 3. Activate SnapShots. Activation stops with an error when `exec`, PHP, or WP-CLI is missing.
-4. In `wp-config.php`, set `SNAPSHOTS_CLI_PATH` to the directory that contains the `wp` binary. On Studio, set it to the directory that contains `studio` when that command is outside `/usr/local/bin`.
+4. In `wp-config.php`, set `SNAPSHOTS_CLI_PATH` to the directory that contains the `wp` binary when it is outside the server PATH. WordPress Studio's `studio` command in `~/.local/bin` is found automatically. Set the constant only when `studio` lives somewhere else.
 5. In the admin bar, choose "Click here to create your first Snapshot!" and give it a name.
 6. Restore that snapshot from the admin bar or from **Tools → Snapshots**, then confirm.
 7. A restore drops database tables with this site's prefix that are not in the snapshot, and replaces the uploads folder when the snapshot includes files.
@@ -133,9 +133,9 @@ Use the socket path from your Local site. If the error names `mysqlcheck`, add L
 
 ### Does it work with WordPress Studio?
 
-Yes. When `studio status` recognizes the site, SnapShots runs `studio wp` instead of a standalone `wp` binary. A default Studio site uses SQLite. SnapShots exports that database with `studio export --mode db` and imports it with `studio import`. Table exclusion applies to MySQL dumps. A SQLite snapshot includes every table.
+Yes. When `studio status` recognizes the site, SnapShots runs `studio wp` instead of a standalone `wp` binary. A default Studio site uses SQLite. SnapShots exports that database with `studio export --mode db` and imports it inside the same `studio wp` process. That leaves the site server running, so the browser can return to the admin screen where the snapshot was saved. Table exclusion applies to MySQL dumps. A SQLite snapshot includes every table.
 
-Set `SNAPSHOTS_CLI_PATH` to the directory that contains `studio` when it is not in `/usr/local/bin` (the standalone installer often uses `~/.local/bin`). Keep the snapshot folder inside the site, at `wp-content/.snapshots`, so Studio's site-directory file access can read it. A Studio site pointed at MySQL still uses `wp db`.
+SnapShots finds `studio` in `~/.local/bin`, which is where the Studio app and the standalone installer put it. Set `SNAPSHOTS_CLI_PATH` when `studio` lives in another directory. Keep the snapshot folder inside the site, at `wp-content/.snapshots`, so Studio's site-directory file access can read it. A Studio site pointed at MySQL still uses `wp db`.
 
 ### Where are WordPress snapshots stored?
 
@@ -171,7 +171,7 @@ SnapShots uses PHP [`exec`](https://www.php.net/manual/en/function.exec.php) to 
 
 ### SnapShots requires WP-CLI
 
-Install [WP-CLI](https://wp-cli.org/#installing) and make sure the web server can run `wp`. On WordPress Studio, install the `studio` command instead. When `wp` or `studio` lives outside the default search path, set the directory in `wp-config.php`:
+Install [WP-CLI](https://wp-cli.org/#installing) and make sure the web server can run `wp`. On WordPress Studio, install the `studio` command instead. `studio` in `~/.local/bin` is found automatically. When `wp` or `studio` lives in another directory, set that directory in `wp-config.php`:
 
     define( 'SNAPSHOTS_CLI_PATH', '/usr/local/bin' );
 
@@ -200,7 +200,9 @@ On **Settings → Snapshots**, enter a comma-separated list in **Exclude Tables*
 
 ### Unreleased
 
+- fixed: restoring a snapshot on WordPress Studio returns to the admin screen where it was saved
 - fixed: snapshots run when the web server PATH does not include PHP or WP-CLI
+- fixed: admin bar snapshots on WordPress Studio save the database when studio is installed in the home directory
 - fixed: Settings → Snapshots no longer crashes when WP-CLI cannot read the site URL
 - fixed: wp snapshot list no longer fatals on PHP 8 and no longer triggers a usort deprecation
 - fixed: restore and delete return not-found for a missing folder id instead of falling back to another snapshot

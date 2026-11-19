@@ -91,6 +91,13 @@ function snapshots_prepare_path() {
 		$dirs[] = untrailingslashit( $cli_path );
 	}
 
+	// Studio installs `studio` in ~/.local/bin. The web server PATH does not
+	// include that directory, so the admin-bar backup cannot export the database.
+	$studio_home_bin = snapshots_studio_home_bin();
+	if ( '' !== $studio_home_bin ) {
+		$dirs[] = $studio_home_bin;
+	}
+
 	if ( '/' === DIRECTORY_SEPARATOR ) {
 		$dirs[] = '/usr/local/bin';
 		$dirs[] = '/usr/bin';
@@ -180,6 +187,155 @@ function snapshots_resolve_binary_in_dir( $name, $dir ) {
 	// PATH is only this directory so a later system php is not chosen.
 	// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec -- Binary lookup cannot use file_exists() under open_basedir.
 	exec( 'PATH=' . escapeshellarg( $dir ) . ' ' . $lookup . escapeshellarg( $name ), $output, $code );
+
+	if ( 0 !== $code || empty( $output[0] ) || ! is_string( $output[0] ) ) {
+		return '';
+	}
+
+	$found = trim( $output[0] );
+	if ( '' === $found || false === strpos( $found, DIRECTORY_SEPARATOR ) ) {
+		return '';
+	}
+
+	return $found;
+}
+
+/**
+ * Returns ~/.local/bin when that directory contains the studio command.
+ *
+ * The lookup is a shell probe. Studio's site-directory file access hides
+ * paths outside the site from PHP, so file_exists() cannot see this directory.
+ * An empty result leaves PATH unchanged. SNAPSHOTS_CLI_PATH is still prepended
+ * ahead of this directory when studio is installed somewhere else.
+ *
+ * @since [Unreleased]
+ *
+ * @return string Absolute directory, or an empty string when studio is not there.
+ */
+function snapshots_studio_home_bin() {
+	$home = getenv( 'HOME' );
+	if ( ! is_string( $home ) || '' === trim( $home ) ) {
+		$home = getenv( 'USERPROFILE' );
+	}
+	if ( ! is_string( $home ) || '' === trim( $home ) ) {
+		return '';
+	}
+
+	$dir = untrailingslashit( $home ) . '/.local/bin';
+	if ( '' === snapshots_resolve_binary_in_dir( 'studio', $dir ) ) {
+		return '';
+	}
+
+	return $dir;
+}
+
+/**
+ * Closes the current database connection.
+ *
+ * The admin request keeps Studio's SQLite file open for the whole request.
+ * Restore has to release that connection before another process writes the
+ * snapshot, or the import waits on a lock held by the request that is waiting
+ * on the import.
+ *
+ * @since [Unreleased]
+ *
+ * @return void
+ */
+function snapshots_release_database() {
+	global $wpdb;
+
+	if ( is_object( $wpdb ) && method_exists( $wpdb, 'close' ) ) {
+		$wpdb->close();
+	}
+}
+
+/**
+ * Reopens the database after snapshots_release_database().
+ *
+ * The SQLite driver marks the connection unusable until db_connect() runs.
+ *
+ * @since [Unreleased]
+ *
+ * @return void
+ */
+function snapshots_reconnect_database() {
+	global $wpdb;
+
+	if ( ! is_object( $wpdb ) || ! method_exists( $wpdb, 'db_connect' ) ) {
+		return;
+	}
+
+	if ( ! empty( $wpdb->dbh ) ) {
+		return;
+	}
+
+	$wpdb->db_connect();
+}
+
+/**
+ * Absolute path to Studio's bundled wp sqlite command file.
+ *
+ * The file sits next to the studio binary, outside the site. `studio wp` can
+ * read it. The web request cannot, because Studio limits PHP to the site
+ * directory.
+ *
+ * @since [Unreleased]
+ *
+ * @return string Absolute path, or an empty string when it cannot be resolved.
+ */
+function snapshots_studio_sqlite_command_file() {
+	$studio = snapshots_resolve_binary( 'studio' );
+	if ( '' === $studio ) {
+		return '';
+	}
+
+	$resolved = snapshots_resolve_path( $studio );
+	if ( '' === $resolved ) {
+		return '';
+	}
+
+	$file = dirname( $resolved, 2 ) . '/cli/wp-files/sqlite-command/command.php';
+	if ( ! is_file( $file ) ) {
+		return '';
+	}
+
+	return $file;
+}
+
+/**
+ * Resolves a filesystem path, including a symlink outside the site.
+ *
+ * PHP realpath() is tried first. When Studio's site-directory file access
+ * hides the target, a PHP subprocess resolves it instead.
+ *
+ * @since [Unreleased]
+ *
+ * @param string $path Path to resolve.
+ * @return string Absolute path, or an empty string.
+ */
+function snapshots_resolve_path( $path ) {
+	if ( ! is_string( $path ) || '' === $path ) {
+		return '';
+	}
+
+	$resolved = realpath( $path );
+	if ( is_string( $resolved ) && '' !== $resolved ) {
+		return $resolved;
+	}
+
+	$php = snapshots_resolve_binary( 'php' );
+	if ( '' === $php && is_string( PHP_BINARY ) ) {
+		$php = PHP_BINARY;
+	}
+	if ( '' === $php ) {
+		return '';
+	}
+
+	$output = array();
+	$code   = 0;
+
+	// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec -- realpath() cannot see outside the site under open_basedir.
+	exec( escapeshellarg( $php ) . ' -r ' . escapeshellarg( 'echo realpath($argv[1]);' ) . ' -- ' . escapeshellarg( $path ), $output, $code );
 
 	if ( 0 !== $code || empty( $output[0] ) || ! is_string( $output[0] ) ) {
 		return '';
@@ -310,6 +466,55 @@ function snapshots_wp_invocation() {
 	}
 
 	return escapeshellarg( $php ) . ' ' . escapeshellarg( $wp );
+}
+
+/**
+ * Turns a return address into a site path without snapshot action arguments.
+ *
+ * The admin-bar create link adds `snaphot_create` and `snapshots_nonce` to the
+ * current screen. Those arguments are not the screen to reopen after restore.
+ *
+ * @since [Unreleased]
+ *
+ * @param string $url Absolute URL or path, including an optional query and fragment.
+ * @return string Path, query, and fragment, or an empty string when nothing remains.
+ */
+function snapshots_return_path( $url ) {
+	$url = trim( (string) $url );
+	if ( '' === $url ) {
+		return '';
+	}
+
+	$fragment = wp_parse_url( $url, PHP_URL_FRAGMENT );
+	$cleaned  = remove_query_arg(
+		array(
+			'snaphot_create',
+			'snapshots_nonce',
+			'snapshot_location',
+			'snapshot_restore',
+			'snapshot_delete',
+			'snapshot_redirect',
+		),
+		$url
+	);
+
+	$parts = wp_parse_url( $cleaned );
+	if ( ! is_array( $parts ) ) {
+		return '';
+	}
+
+	$path = isset( $parts['path'] ) ? (string) $parts['path'] : '';
+	if ( '' === $path ) {
+		$path = '/';
+	}
+	if ( ! empty( $parts['query'] ) ) {
+		$path .= '?' . $parts['query'];
+	}
+	if ( is_string( $fragment ) && '' !== $fragment && false === strpos( $path, '#' ) ) {
+		$path .= '#' . $fragment;
+	}
+
+	return $path;
 }
 
 /**
