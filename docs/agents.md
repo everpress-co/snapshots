@@ -11,7 +11,7 @@ Do not use SnapShots as a substitute for production backups or remote disaster r
 
 ## Commands
 
-Prefer **WP-CLI** when you have a shell on the WordPress root (where `wp-config.php` lives). On WordPress 6.9+, you may instead use the **Abilities API** abilities below when the host exposes them (for example via `wp-abilities/v1` or an MCP bridge). Both paths require the same server setup (WP-CLI, `exec`, PHP). Ability callers need a user with `manage_options`.
+Prefer **WP-CLI** when you have a shell on the WordPress root (where `wp-config.php` lives). On WordPress Studio, run the same commands as `studio wp snapshot …`. On WordPress 6.9+, you may instead use the **Abilities API** abilities below when the host exposes them (for example via `wp-abilities/v1` or an MCP bridge). Both paths require the same server setup (WP-CLI or `studio wp`, `exec`, PHP). Ability callers need a user with `manage_options`.
 
 REST runs use `GET …/abilities/snapshots/list/run` for list, and `POST …/abilities/snapshots/backup/run`, `…/restore/run`, and `…/delete/run` with JSON body `{ "input": { … } }`. Delete is destructive but not idempotent (a slug can match more than one folder), so it uses POST like restore—not DELETE.
 
@@ -51,7 +51,7 @@ Ability: `snapshots/restore` with input `{ "id": "before-the-experiment_15870394
 
 Pass the full folder id from `file`. This restores that exact snapshot and avoids ambiguous slug matches.
 
-Do not pass the display name from `name` when it contains capitals or spaces. `wp snapshot restore "Before the experiment"` does not match the folder `before-the-experiment_1587039434`.
+Do not pass the display name from `name` when it contains capitals or spaces. `wp snapshot restore "Before the experiment"` does not match the folder `before-the-experiment_1587039434`. On WordPress Studio the same matching applies to `studio wp snapshot restore`.
 
 Restore only:
 
@@ -90,9 +90,10 @@ Only delete when the user asks. Deletion is permanent on this server.
 
 ## Requirements you cannot bypass
 
-- WP-CLI must be installed and runnable (often `SNAPSHOTS_CLI_PATH` in `wp-config.php`).
+- WP-CLI must be installed and runnable (often `SNAPSHOTS_CLI_PATH` in `wp-config.php`). On WordPress Studio the binary is `studio`, and the admin runs `studio wp`. Set `SNAPSHOTS_CLI_PATH` to the directory that contains `studio` when it is outside `/usr/local/bin`.
 - PHP `exec` must be allowed.
-- The web user must be able to run `php` (often `SNAPSHOTS_PHP_PATH`).
+- The web user must be able to run `php`. `SNAPSHOTS_PHP_PATH` is one or more directories prepended to PATH. The web server PATH is often only the Ghostscript directory.
+- A default Studio site uses SQLite. Backup and restore use `studio export --mode db` and `studio import`. A Studio site pointed at MySQL still uses `wp db`. Table exclusion applies to MySQL dumps.
 
 If backup or restore fails, read the error output. Do not retry restore in a loop without understanding the failure.
 

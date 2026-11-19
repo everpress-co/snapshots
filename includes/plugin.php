@@ -1003,8 +1003,18 @@ class Plugin {
 	 * @return mixed Command output, echoed string, or WP_Error.
 	 */
 	private function command( $cmd, $echo = false, $output = ARRAY_A ) {
-		$cmd = escapeshellarg( trailingslashit( snapshots_option( 'cli_path' ) ) . 'wp' ) . ' ' . $cmd;
-		if ( snapshots_option( 'cli_allow_root' ) ) {
+		$invocation = snapshots_wp_invocation();
+		if ( '' === $invocation ) {
+			return new \WP_Error(
+				'snapshots_cli_missing',
+				__( 'WP-CLI was not found.', 'snapshots' ),
+				array( 'command' => $cmd )
+			);
+		}
+
+		$cmd = $invocation . ' ' . $cmd;
+		// Studio sets WP_CLI_ALLOW_ROOT for its own PHP process.
+		if ( ! snapshots_is_studio_site() && snapshots_option( 'cli_allow_root' ) ) {
 			$cmd .= ' --allow-root';
 		}
 
@@ -1066,31 +1076,14 @@ class Plugin {
 
 
 	/**
-	 * Prepends the configured PHP path to the process PATH once per request.
+	 * Repairs the process PATH once per request.
 	 *
 	 * @since 1.0.0
 	 *
-	 * @return bool|null True when PATH was updated, null when already done.
+	 * @return bool True when PATH preparation has run.
 	 */
 	private function may_add_paths() {
-
-		static $added = false;
-
-		if ( $added ) {
-			return;
-		}
-
-		$php_path = snapshots_option( 'php_path' );
-		if ( $php_path ) {
-			if ( function_exists( 'putenv' ) ) {
-				putenv( 'PATH=$PATH:' . $php_path );
-			} else {
-				$cmd = 'export PATH=$PATH:' . $php_path;
-				$this->exec( $cmd );
-			}
-		}
-		$added = true;
-
+		snapshots_prepare_path();
 		return true;
 	}
 
@@ -1156,16 +1149,23 @@ class Plugin {
 			return;
 		}
 
-		$php_path = $this->exec( 'which php' );
+		if ( ! snapshots_is_studio_site() ) {
+			$php = snapshots_php_binary();
+			if ( '' === $php ) {
+				$php_probe = new \WP_Error( 'snapshots_php_missing', __( 'PHP was not found.', 'snapshots' ) );
+			} else {
+				$php_probe = $this->exec( escapeshellarg( $php ) . ' -r ' . escapeshellarg( 'echo PHP_VERSION;' ) );
+			}
 
-		if ( is_wp_error( $php_path ) ) {
-			$heading = esc_html__( 'SnapShots requires the php in your PATH environment!', 'snapshots' );
-			/* translators: %s: SNAPSHOTS_PHP_PATH constant name. */
-			$body  = sprintf( esc_html__( 'Please make sure the PHP binaries can be found in your PATH by defining the folder in %s constant.', 'snapshots' ), '<code>SNAPSHOTS_PHP_PATH</code>' );
-			$body .= '<p>Run following command in your terminal to get the path: <br><code>which php</code></p>';
+			if ( is_wp_error( $php_probe ) ) {
+				$heading = esc_html__( 'SnapShots requires the php in your PATH environment!', 'snapshots' );
+				/* translators: %s: SNAPSHOTS_PHP_PATH constant name. */
+				$body  = sprintf( esc_html__( 'Please make sure the PHP binaries can be found in your PATH by defining the folder in %s constant.', 'snapshots' ), '<code>SNAPSHOTS_PHP_PATH</code>' );
+				$body .= '<p>' . esc_html__( 'The web server PATH is often too short to include php. In a terminal, this prints the directory to set:', 'snapshots' ) . '<br><code>dirname $(which php)</code></p>';
 
-			$this->error( $body, $heading, array( 'command' => 'which php' ) );
-			return;
+				$this->error( $body, $heading, array( 'command' => 'php -r "echo PHP_VERSION;"' ) );
+				return;
+			}
 		}
 
 		$cli_version = $this->command( 'cli version' );
@@ -1178,19 +1178,24 @@ class Plugin {
 			return;
 		}
 
-		$db_check = $this->command( 'db check' );
+		if ( ! snapshots_is_sqlite() ) {
+			$db_check = $this->command( 'db check' );
 
-		if ( is_wp_error( $db_check ) ) {
-			$heading     = esc_html__( 'SnapShots cannot talk to your Database!', 'snapshots' );
-			$error_data  = $db_check->get_error_data();
-			$cli_command = ( is_array( $error_data ) && isset( $error_data['command'] ) ) ? $error_data['command'] : 'wp db check';
-			/* translators: %s: Suggested WP-CLI command to run. */
-			$body  = sprintf( esc_html__( 'Please make sure the command line interface is setup correct. Run this command in your terminal to check: %s', 'snapshots' ), '<br><code>' . esc_html( $cli_command ) . '</code>' );
-			$body .= '<p>Following error was returned:<br><code>' . esc_html( $db_check->get_error_message() ) . '</code></p>';
-			$body .= '<p>If you are running MySQL via a socked try to add the path to the socket to the <code>DB_HOST</code> constant in your <code>wp-config.php</code> file like:</p>';
-			$body .= '<p><code>define( \'DB_HOST\', \'localhost:[ABSOLUTE_PATH_TO_YOUR_SOCKET]/mysql/mysqld.sock\' );</code></p>';
-			$this->error( $body, $heading, array( 'command' => 'wp db check' ) );
-			return;
+			if ( is_wp_error( $db_check ) ) {
+				$heading     = esc_html__( 'SnapShots cannot talk to your Database!', 'snapshots' );
+				$error_data  = $db_check->get_error_data();
+				$cli_command = ( is_array( $error_data ) && isset( $error_data['command'] ) ) ? $error_data['command'] : 'wp db check';
+				/* translators: %s: Suggested WP-CLI command to run. */
+				$body  = sprintf( esc_html__( 'Please make sure the command line interface is setup correct. Run this command in your terminal to check: %s', 'snapshots' ), '<br><code>' . esc_html( $cli_command ) . '</code>' );
+				$body .= '<p>Following error was returned:<br><code>' . esc_html( $db_check->get_error_message() ) . '</code></p>';
+				if ( false !== stripos( $db_check->get_error_message(), 'mysqlcheck' ) ) {
+					$body .= '<p>' . esc_html__( 'The mysqlcheck client was not found. Add the directory that contains it to SNAPSHOTS_PHP_PATH. On Local that directory is the Lightning MySQL bin, which is not on the web server PATH.', 'snapshots' ) . '</p>';
+				}
+				$body .= '<p>If you are running MySQL via a socked try to add the path to the socket to the <code>DB_HOST</code> constant in your <code>wp-config.php</code> file like:</p>';
+				$body .= '<p><code>define( \'DB_HOST\', \'localhost:[ABSOLUTE_PATH_TO_YOUR_SOCKET]/mysql/mysqld.sock\' );</code></p>';
+				$this->error( $body, $heading, array( 'command' => 'wp db check' ) );
+				return;
+			}
 		}
 
 		$home_url = $this->command( 'option get home', false, false );

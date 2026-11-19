@@ -2,7 +2,7 @@
 
 > WordPress plugin for named development snapshots of the database and uploads.
 
-SnapShots saves and restores site state on the same server via the admin bar or `wp snapshot` WP-CLI commands. It is for local and development sites, not off-site production backup.
+SnapShots saves and restores site state on the same server via the admin bar or `wp snapshot` WP-CLI commands. On WordPress Studio the admin runs `studio wp`. A default Studio site uses SQLite (`studio export --mode db` and `studio import`). It is for local and development sites, not off-site production backup.
 
 ## Docs
 
@@ -14,7 +14,9 @@ SnapShots saves and restores site state on the same server via the admin bar or 
 
 ## Agent quick reference
 
-When SnapShots is installed on a dev site (WP-CLI shell, or WordPress 6.9+ Abilities API with `manage_options`):
+When SnapShots is installed on a dev site (WP-CLI shell, WordPress Studio `studio wp`, or WordPress 6.9+ Abilities API with `manage_options`):
+
+`restore` matches the slug or the `file` folder id from `wp snapshot list`, not a display name that still has capitals or spaces. On Studio, prefix the commands with `studio wp`.
 
 1. List: `wp snapshot list --format=json` or ability `snapshots/list`
 2. Backup: `wp snapshot backup "Before <task>" --files` or ability `snapshots/backup` before risky changes. Names must sanitize to a URL-safe slug starting with a letter or digit.

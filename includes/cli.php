@@ -319,7 +319,15 @@ class CLI_Command extends WP_CLI_Command {
 			'last_used' => $timestamp,
 		);
 
-		$this->command( 'db export ' . $location, $command_args );
+		if ( snapshots_is_sqlite() ) {
+			// studio export has no exclude-tables flag. MySQL dumps still honor it.
+			if ( $tables ) {
+				WP_CLI::warning( 'Excluding tables is not available for a WordPress Studio SQLite database. The snapshot includes every table.' );
+			}
+			$this->studio_sql( 'export', $location );
+		} else {
+			$this->command( 'db export ' . $location, $command_args );
+		}
 
 		if ( ! file_exists( $location ) ) {
 			WP_CLI::error( sprintf( 'No snapshots found for %s', $snapshot_name ) );
@@ -408,7 +416,11 @@ class CLI_Command extends WP_CLI_Command {
 			}
 		}
 
-		$this->command( 'db import ' . $location . ' --skip-optimization' );
+		if ( snapshots_is_sqlite() ) {
+			$this->studio_sql( 'import', $location );
+		} else {
+			$this->command( 'db import ' . $location . ' --skip-optimization' );
+		}
 
 		$sql_data = file_get_contents( $location );
 
@@ -416,8 +428,18 @@ class CLI_Command extends WP_CLI_Command {
 		if ( preg_match_all( '/-- Table structure for table `(.*?)`/', $sql_data, $matches ) ) {
 			$tables = $matches[1];
 
-			$all_tables = $this->command( 'db tables --all-tables-with-prefix' );
-			$to_remove  = array_filter( array_diff( $all_tables, $tables ) );
+			if ( snapshots_is_sqlite() ) {
+				$all_tables = $this->prefixed_tables();
+			} else {
+				$all_tables = $this->command( 'db tables --all-tables-with-prefix' );
+				if ( is_string( $all_tables ) && '' !== $all_tables ) {
+					$all_tables = array( $all_tables );
+				}
+				if ( ! is_array( $all_tables ) ) {
+					$all_tables = array();
+				}
+			}
+			$to_remove = array_filter( array_diff( $all_tables, $tables ) );
 			if ( ! empty( $to_remove ) ) {
 				global $wpdb;
 				foreach ( $to_remove as $t ) {
@@ -499,6 +521,78 @@ class CLI_Command extends WP_CLI_Command {
 		return $result;
 	}
 
+
+	/**
+	 * Exports or imports the SQLite database with the Studio CLI.
+	 *
+	 * `studio export` has no flag for excluded tables. Callers warn and
+	 * write the full database.
+	 *
+	 * @since [Unreleased]
+	 *
+	 * @param string $action export or import.
+	 * @param string $file   Absolute path to the SQL file.
+	 * @return void
+	 */
+	private function studio_sql( $action, $file ) {
+		snapshots_prepare_path();
+
+		$studio = snapshots_resolve_binary( 'studio' );
+		if ( '' === $studio ) {
+			WP_CLI::error( 'WordPress Studio CLI (studio) was not found.' );
+		}
+
+		if ( 'export' === $action ) {
+			$command = escapeshellarg( $studio ) . ' export ' . escapeshellarg( $file ) . ' --mode db --path=' . escapeshellarg( ABSPATH );
+		} else {
+			$command = escapeshellarg( $studio ) . ' import ' . escapeshellarg( $file ) . ' --path=' . escapeshellarg( ABSPATH );
+		}
+
+		$output = array();
+		$code   = 0;
+
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec -- Studio export and import are child processes.
+		exec( $command . ' 2>&1', $output, $code );
+
+		if ( 0 !== $code ) {
+			$message = trim( implode( "\n", $output ) );
+			if ( '' === $message ) {
+				$message = 'WordPress Studio could not ' . $action . ' the database.';
+			}
+			WP_CLI::error( $message );
+		}
+	}
+
+	/**
+	 * Lists tables that use this site's table prefix.
+	 *
+	 * Used after a SQLite import. `wp db tables` calls the MySQL client.
+	 *
+	 * @since [Unreleased]
+	 *
+	 * @return string[] Table names.
+	 */
+	private function prefixed_tables() {
+		global $wpdb;
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Schema list after an external import.
+		$found = $wpdb->get_col( 'SHOW TABLES' );
+		if ( ! is_array( $found ) ) {
+			return array();
+		}
+
+		$tables = array();
+		foreach ( $found as $table ) {
+			if ( ! is_string( $table ) || '' === $table ) {
+				continue;
+			}
+			if ( 0 === strpos( $table, $wpdb->prefix ) ) {
+				$tables[] = $table;
+			}
+		}
+
+		return $tables;
+	}
 
 	/**
 	 * Runs a nested WP-CLI command via WP_CLI::runcommand().

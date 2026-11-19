@@ -328,7 +328,9 @@
 								<th scope="row">WP-CLI</th>
 								<td>
 									Required. SnapShots runs <code>wp snapshot</code> for save,
-									restore, and delete.
+									restore, and delete. WordPress Studio uses
+									<code>studio wp</code>. A default Studio site stores the
+									database in SQLite.
 								</td>
 							</tr>
 							<tr>
@@ -420,6 +422,7 @@
 						<!-- changelog -->
 <h3>Unreleased</h3>
 <ul>
+<li>fixed: snapshots run when the web server PATH does not include PHP or WP-CLI</li>
 <li>fixed: Settings → Snapshots no longer crashes when WP-CLI cannot read the site URL</li>
 <li>fixed: wp snapshot list no longer fatals on PHP 8 and no longer triggers a usort deprecation</li>
 <li>fixed: restore and delete return not-found for a missing folder id instead of falling back to another snapshot</li>
@@ -432,6 +435,7 @@
 <li>fixed: backup keeps the current-snapshot marker when a persistent object cache is enabled</li>
 <li>fixed: backup rejects names that cannot form a listable folder id</li>
 <li>fixed: snapshots/list returns no matches when a name filter cannot form a usable slug prefix</li>
+<li>added: create and restore snapshots on WordPress Studio, including SQLite sites</li>
 <li>added: WordPress Abilities API endpoints to list, create, restore, and delete snapshots (WordPress 6.9+)</li>
 </ul>
 <ul>
