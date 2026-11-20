@@ -70,6 +70,8 @@ function snapshots_prepare_path() {
 
 	$prepared = true;
 
+	// putenv() may be disabled while exec() remains available. Configured CLI
+	// directories are still probed directly in snapshots_resolve_binary().
 	if ( ! function_exists( 'putenv' ) ) {
 		return;
 	}
@@ -127,8 +129,12 @@ function snapshots_prepare_path() {
 }
 
 /**
- * Resolves php, wp, or studio with command -v after PATH is repaired.
+ * Resolves php, wp, or studio.
  *
+ * The wp and studio binaries are resolved from SNAPSHOTS_CLI_PATH first.
+ * The studio binary is also resolved from ~/.local/bin. Those probes do
+ * not use putenv(). Anything still missing is looked up with a shell
+ * command after PATH is repaired.
  * The lookup runs in a child process. Studio's site-directory file access
  * hides paths outside the site from PHP itself, so this does not use
  * file_exists() or which.
@@ -142,6 +148,11 @@ function snapshots_resolve_binary( $name ) {
 	$allowed = array( 'php', 'wp', 'studio' );
 	if ( ! in_array( $name, $allowed, true ) ) {
 		return '';
+	}
+
+	$configured = snapshots_resolve_configured_binary( $name );
+	if ( '' !== $configured ) {
+		return $configured;
 	}
 
 	snapshots_prepare_path();
@@ -166,7 +177,53 @@ function snapshots_resolve_binary( $name ) {
 }
 
 /**
+ * Builds a shell command that searches one directory for a binary.
+ *
+ * POSIX shells accept a one-command PATH assignment, and command -v is a
+ * shell builtin. cmd.exe does not apply that assignment. On Windows the
+ * command sets PATH for one statement and calls System32\where.exe by
+ * absolute path, because replacing PATH would hide where.exe.
+ *
+ * @since [Unreleased]
+ *
+ * @param string $name Binary name.
+ * @param string $dir  Directory to search.
+ * @return string Command string, or an empty string when the directory cannot be probed.
+ */
+function snapshots_binary_probe_command( $name, $dir ) {
+	if ( '/' === DIRECTORY_SEPARATOR ) {
+		return 'PATH=' . escapeshellarg( $dir ) . ' command -v ' . escapeshellarg( $name );
+	}
+
+	$dir = rtrim( $dir, '/\\' );
+	// A trailing slash on a drive root would become "C:" and search the wrong place.
+	if ( '' === $dir || 1 === preg_match( '/^[A-Za-z]:$/', $dir ) ) {
+		return '';
+	}
+
+	// cmd.exe expands % and !, and a quote would close the set "PATH=..." value.
+	if ( false !== strpbrk( $dir, "%!\"\r\n" ) ) {
+		return '';
+	}
+
+	$windows = getenv( 'SystemRoot' );
+	if ( ! is_string( $windows ) || '' === trim( $windows ) ) {
+		$windows = getenv( 'WINDIR' );
+	}
+	if ( ! is_string( $windows ) || '' === trim( $windows ) || false !== strpbrk( $windows, "%!\"\r\n" ) ) {
+		return '';
+	}
+
+	$where = untrailingslashit( $windows ) . '\\System32\\where.exe';
+
+	return 'set "PATH=' . $dir . '" && ' . escapeshellarg( $where ) . ' ' . escapeshellarg( $name );
+}
+
+/**
  * Locates one binary in a single directory via the shell.
+ *
+ * PATH for the child process is only this directory, so a later system
+ * binary is not chosen. The result is cached for the request.
  *
  * @since [Unreleased]
  *
@@ -175,29 +232,75 @@ function snapshots_resolve_binary( $name ) {
  * @return string Absolute path, or an empty string when it is not found.
  */
 function snapshots_resolve_binary_in_dir( $name, $dir ) {
+	static $cache = array();
+
 	$allowed = array( 'php', 'wp', 'studio' );
 	if ( ! in_array( $name, $allowed, true ) || '' === $dir ) {
 		return '';
 	}
 
-	$lookup = ( '/' === DIRECTORY_SEPARATOR ) ? 'command -v ' : 'where ';
+	$cache_key = $name . "\n" . $dir;
+	if ( array_key_exists( $cache_key, $cache ) ) {
+		return $cache[ $cache_key ];
+	}
+
+	$command = snapshots_binary_probe_command( $name, $dir );
+	if ( '' === $command ) {
+		$cache[ $cache_key ] = '';
+		return '';
+	}
+
 	$output = array();
 	$code   = 0;
 
-	// PATH is only this directory so a later system php is not chosen.
 	// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec -- Binary lookup cannot use file_exists() under open_basedir.
-	exec( 'PATH=' . escapeshellarg( $dir ) . ' ' . $lookup . escapeshellarg( $name ), $output, $code );
+	exec( $command, $output, $code );
 
-	if ( 0 !== $code || empty( $output[0] ) || ! is_string( $output[0] ) ) {
-		return '';
+	$found = '';
+	if ( 0 === $code && ! empty( $output[0] ) && is_string( $output[0] ) ) {
+		$found = trim( $output[0] );
+		if ( '' === $found || false === strpos( $found, DIRECTORY_SEPARATOR ) ) {
+			$found = '';
+		}
 	}
 
-	$found = trim( $output[0] );
-	if ( '' === $found || false === strpos( $found, DIRECTORY_SEPARATOR ) ) {
-		return '';
-	}
-
+	$cache[ $cache_key ] = $found;
 	return $found;
+}
+
+/**
+ * Resolves wp or studio without putenv().
+ *
+ * SNAPSHOTS_CLI_PATH is checked first. studio is then checked in ~/.local/bin.
+ * A host can allow exec() while disabling putenv(), and the repaired PATH is
+ * never published in that case.
+ *
+ * @since [Unreleased]
+ *
+ * @param string $name Binary name.
+ * @return string Absolute path, or an empty string when it is not found.
+ */
+function snapshots_resolve_configured_binary( $name ) {
+	if ( in_array( $name, array( 'wp', 'studio' ), true ) ) {
+		$cli_path = snapshots_option( 'cli_path' );
+		if ( is_string( $cli_path ) && '' !== trim( $cli_path ) ) {
+			$found = snapshots_resolve_binary_in_dir( $name, untrailingslashit( trim( $cli_path ) ) );
+			if ( '' !== $found ) {
+				return $found;
+			}
+		}
+	}
+
+	if ( 'studio' !== $name ) {
+		return '';
+	}
+
+	$home = snapshots_studio_home_bin();
+	if ( '' === $home ) {
+		return '';
+	}
+
+	return snapshots_resolve_binary_in_dir( 'studio', $home );
 }
 
 /**
@@ -205,8 +308,9 @@ function snapshots_resolve_binary_in_dir( $name, $dir ) {
  *
  * The lookup is a shell probe. Studio's site-directory file access hides
  * paths outside the site from PHP, so file_exists() cannot see this directory.
- * An empty result leaves PATH unchanged. SNAPSHOTS_CLI_PATH is still prepended
- * ahead of this directory when studio is installed somewhere else.
+ * An empty result leaves PATH unchanged. SNAPSHOTS_CLI_PATH is still checked
+ * ahead of this directory when studio is installed somewhere else. The same
+ * directory is probed directly, so discovery does not depend on putenv().
  *
  * @since [Unreleased]
  *
