@@ -63,15 +63,22 @@ class Settings {
 			'',
 			function () {
 
-				$result = Plugin::get_instance()->exec( 'which php' );
-				if ( is_wp_error( $result ) ) {
-					wp_admin_notice(
-						'Not able to use PHP: ' . $result->get_error_message(),
-						array(
-							'type'               => 'error',
-							'additional_classes' => array( 'inline' ),
-						)
-					);
+				if ( ! snapshots_is_studio_site() ) {
+					$php = snapshots_php_binary();
+					if ( '' === $php ) {
+						$result = new \WP_Error( 'snapshots_php_missing', __( 'PHP was not found. Set SNAPSHOTS_PHP_PATH to the directory that contains the php binary.', 'snapshots' ) );
+					} else {
+						$result = Plugin::get_instance()->exec( escapeshellarg( $php ) . ' -r ' . escapeshellarg( 'echo PHP_VERSION;' ) );
+					}
+					if ( is_wp_error( $result ) ) {
+						wp_admin_notice(
+							esc_html( 'Not able to use PHP: ' . $result->get_error_message() ),
+							array(
+								'type'               => 'error',
+								'additional_classes' => array( 'inline' ),
+							)
+						);
+					}
 				}
 				wp_admin_notice(
 					esc_html__( 'Options are global! They will not change if you reload a SnapShot.', 'snapshots' ),

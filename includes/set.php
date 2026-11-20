@@ -28,7 +28,7 @@ return array(
 	'php_path'       => array(
 		'name'        => 'PHP Path',
 		'type'        => 'text',
-		'description' => 'The path to the PHP binaries.',
+		'description' => 'Directories prepended to PATH when locating php. One directory, or several separated by the system path separator. Extra directories can include the MySQL client bin.',
 		'default'     => '',
 	),
 	'save_files'     => array(

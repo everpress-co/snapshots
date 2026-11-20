@@ -36,7 +36,7 @@ class CLI_Command extends WP_CLI_Command {
 	 * ## OPTIONS
 	 *
 	 * <name>
-	 * : Name of your SnapShot.
+	 * : Name of your SnapShot. When omitted, the current snapshot name is used, or the site title when none is current.
 	 *
 	 * [--files]
 	 * : Include the content folder as zip file.
@@ -319,7 +319,15 @@ class CLI_Command extends WP_CLI_Command {
 			'last_used' => $timestamp,
 		);
 
-		$this->command( 'db export ' . $location, $command_args );
+		if ( snapshots_is_sqlite() ) {
+			// studio export has no exclude-tables flag. MySQL dumps still honor it.
+			if ( $tables ) {
+				WP_CLI::warning( 'Excluding tables is not available for a WordPress Studio SQLite database. The snapshot includes every table.' );
+			}
+			$this->studio_sql( 'export', $location );
+		} else {
+			$this->command( 'db export ' . $location, $command_args );
+		}
 
 		if ( ! file_exists( $location ) ) {
 			WP_CLI::error( sprintf( 'No snapshots found for %s', $snapshot_name ) );
@@ -408,7 +416,11 @@ class CLI_Command extends WP_CLI_Command {
 			}
 		}
 
-		$this->command( 'db import ' . $location . ' --skip-optimization' );
+		if ( snapshots_is_sqlite() ) {
+			$this->studio_sql( 'import', $location );
+		} else {
+			$this->command( 'db import ' . $location . ' --skip-optimization' );
+		}
 
 		$sql_data = file_get_contents( $location );
 
@@ -416,8 +428,18 @@ class CLI_Command extends WP_CLI_Command {
 		if ( preg_match_all( '/-- Table structure for table `(.*?)`/', $sql_data, $matches ) ) {
 			$tables = $matches[1];
 
-			$all_tables = $this->command( 'db tables --all-tables-with-prefix' );
-			$to_remove  = array_filter( array_diff( $all_tables, $tables ) );
+			if ( snapshots_is_sqlite() ) {
+				$all_tables = $this->prefixed_tables();
+			} else {
+				$all_tables = $this->command( 'db tables --all-tables-with-prefix' );
+				if ( is_string( $all_tables ) && '' !== $all_tables ) {
+					$all_tables = array( $all_tables );
+				}
+				if ( ! is_array( $all_tables ) ) {
+					$all_tables = array();
+				}
+			}
+			$to_remove = array_filter( array_diff( $all_tables, $tables ) );
 			if ( ! empty( $to_remove ) ) {
 				global $wpdb;
 				foreach ( $to_remove as $t ) {
@@ -499,6 +521,135 @@ class CLI_Command extends WP_CLI_Command {
 		return $result;
 	}
 
+
+	/**
+	 * Exports or imports the SQLite database.
+	 *
+	 * Export uses `studio export`. Import uses Studio's `wp sqlite import`
+	 * in this process. `studio import` stops the site server, which drops the
+	 * admin request before it can redirect.
+	 *
+	 * `studio export` has no flag for excluded tables. Callers warn and
+	 * write the full database.
+	 *
+	 * @since [Unreleased]
+	 *
+	 * @param string $action export or import.
+	 * @param string $file   Absolute path to the SQL file.
+	 * @return void
+	 */
+	private function studio_sql( $action, $file ) {
+		if ( 'import' === $action ) {
+			$this->import_sqlite( $file );
+			return;
+		}
+
+		snapshots_prepare_path();
+
+		$studio = snapshots_resolve_binary( 'studio' );
+		if ( '' === $studio ) {
+			WP_CLI::error( 'WordPress Studio CLI (studio) was not found.' );
+		}
+
+		$command = escapeshellarg( $studio ) . ' export ' . escapeshellarg( $file ) . ' --mode db --path=' . escapeshellarg( ABSPATH );
+		$output  = array();
+		$code    = 0;
+
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec -- Studio export is a child process.
+		exec( $command . ' 2>&1', $output, $code );
+
+		if ( 0 !== $code ) {
+			$message = trim( implode( "\n", $output ) );
+			if ( '' === $message ) {
+				$message = 'WordPress Studio could not export the database.';
+			}
+			WP_CLI::error( $message );
+		}
+	}
+
+	/**
+	 * Imports a SQLite snapshot without stopping the Studio site server.
+	 *
+	 * @since [Unreleased]
+	 *
+	 * @param string $file Absolute path to the SQL file.
+	 * @return void
+	 */
+	private function import_sqlite( $file ) {
+		$command_file = snapshots_studio_sqlite_command_file();
+		if ( '' === $command_file ) {
+			WP_CLI::error( 'WordPress Studio SQLite import command was not found.' );
+		}
+
+		require_once $command_file;
+
+		// This process opened the database while bootstrapping. Release it so
+		// the importer can write, then reconnect for the rest of the restore.
+		snapshots_release_database();
+
+		$result = WP_CLI::runcommand(
+			'sqlite import ' . escapeshellarg( $file ) . ' --enable-ast-driver',
+			array(
+				'return'     => 'all',
+				'launch'     => false,
+				'exit_error' => false,
+			)
+		);
+
+		snapshots_reconnect_database();
+
+		$code    = 0;
+		$message = '';
+		if ( is_wp_error( $result ) ) {
+			$code    = 1;
+			$message = $result->get_error_message();
+		} elseif ( is_object( $result ) ) {
+			$code    = isset( $result->return_code ) ? (int) $result->return_code : 1;
+			$message = isset( $result->stderr ) && is_string( $result->stderr ) ? $result->stderr : '';
+		} elseif ( is_array( $result ) ) {
+			$code    = isset( $result['return_code'] ) ? (int) $result['return_code'] : 1;
+			$message = isset( $result['stderr'] ) && is_string( $result['stderr'] ) ? $result['stderr'] : '';
+		}
+
+		if ( 0 !== $code ) {
+			$message = trim( (string) preg_replace( '/^Error:\s*/', '', $message ) );
+			if ( '' === $message ) {
+				$message = 'WordPress Studio could not import the database.';
+			}
+			WP_CLI::error( $message );
+		}
+	}
+
+	/**
+	 * Lists tables that use this site's table prefix.
+	 *
+	 * Used after a SQLite import. `wp db tables` calls the MySQL client.
+	 *
+	 * @since [Unreleased]
+	 *
+	 * @return string[] Table names.
+	 */
+	private function prefixed_tables() {
+		global $wpdb;
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Schema list after an external import.
+		$found = $wpdb->get_col( 'SHOW TABLES' );
+		if ( ! is_array( $found ) ) {
+			return array();
+		}
+
+		$tables = array();
+		foreach ( $found as $table ) {
+			if ( ! is_string( $table ) || '' === $table ) {
+				continue;
+			}
+			if ( 0 === strpos( $table, $wpdb->prefix ) ) {
+				$tables[] = $table;
+			}
+		}
+
+		return $tables;
+	}
 
 	/**
 	 * Runs a nested WP-CLI command via WP_CLI::runcommand().
@@ -789,14 +940,16 @@ class CLI_Command extends WP_CLI_Command {
 	}
 
 	/**
-	 * Returns the default snapshot name based on the site title.
+	 * Returns the default snapshot name when no name was passed.
+	 *
+	 * Uses the current snapshot name, or the site title when none is current.
 	 *
 	 * @since 1.0.0
 	 *
-	 * @return string Sanitized site name.
+	 * @return string Snapshot name.
 	 */
 	private function get_default_name() {
-		return sanitize_title( get_option( 'blogname', '' ) );
+		return snapshots_default_name();
 	}
 
 

@@ -120,9 +120,14 @@
 				</p>
 				<h3>Create one</h3>
 				<p>
-					In the admin bar, choose the prompt to create a snapshot. The suggested
-					name is the current snapshot, or the site title when none is current.
-					Type a name you will recognize later, such as
+					In the admin bar, choose create. The current name becomes a text field,
+					focused, with that name selected so typing replaces it. An OK button
+					sits beside it. The name is the current snapshot, or the site title
+					when none is current. Press Enter or OK to save. Press Esc, or click
+					away, to cancel.
+					An empty field uses that same name, as does
+					<code>wp snapshot backup</code> when no name is given. Type a name you
+					will recognize later, such as
 					<code>Before the product import</code>.
 				</p>
 				<p>
@@ -285,11 +290,16 @@ define( 'SNAPSHOTS_CLI_PATH', '/usr/local/bin' );
 define( 'SNAPSHOTS_PHP_PATH', '/usr/local/bin' );</pre>
 				<p>
 					<code>SNAPSHOTS_CLI_PATH</code> and <code>SNAPSHOTS_PHP_PATH</code> are
-					directories. They are the folder that contains <code>wp</code> or
-					<code>php</code>, not the file itself.
+					directories. They are the folder that contains <code>wp</code>,
+					<code>studio</code>, or <code>php</code>, not the file itself.
+					<code>SNAPSHOTS_PHP_PATH</code> may list several directories separated
+					by the system path separator. Those directories are prepended to
+					<code>PATH</code>.
 					<code>SNAPSHOTS_CLI_PATH</code> is not a field on the settings screen.
-					Set it in <code>wp-config.php</code> when <code>wp</code> is outside the
-					server's search path.
+					Set it in <code>wp-config.php</code> when <code>wp</code> is outside
+					the server's search path. <code>studio</code> in
+					<code>~/.local/bin</code> is added automatically. Set the constant
+					when <code>studio</code> lives in another directory.
 				</p>
 				<p>The settings screen also controls:</p>
 				<ul>
@@ -328,16 +338,20 @@ define( 'SNAPSHOTS_PHP_PATH', '/usr/local/bin' );</pre>
 				<ul>
 					<li>
 						<a href="https://wp-cli.org/">WP-CLI</a> 2.2 or newer, and a web
-						server that can run the <code>wp</code> binary.
+						server that can run the <code>wp</code> binary. WordPress Studio
+						uses <code>studio wp</code> instead of a separate <code>wp</code>
+						install.
 					</li>
 					<li>
 						PHP <code>exec()</code>. If the host disables it, there is no other
 						way to run the command.
 					</li>
 					<li>
-						A <code>php</code> binary the web server can find. When
-						<code>which php</code> fails, set <code>SNAPSHOTS_PHP_PATH</code> to
-						the directory from <code>dirname $(which php)</code>.
+						A <code>php</code> binary the web server can run. Set
+						<code>SNAPSHOTS_PHP_PATH</code> to the directory from
+						<code>dirname $(which php)</code> in a terminal. The web server
+						PATH is often only the Ghostscript directory and does not include
+						<code>php</code>.
 					</li>
 				</ul>
 				<p>
@@ -346,10 +360,25 @@ define( 'SNAPSHOTS_PHP_PATH', '/usr/local/bin' );</pre>
 					plans, cannot use the plugin.
 				</p>
 				<p>
-					It has been tested with Local. Local often reaches MySQL through a
+					On WordPress Studio, enable Studio CLI for terminal or install the
+					standalone <code>studio</code> command. SnapShots finds
+					<code>studio</code> in <code>~/.local/bin</code>. Set
+					<code>SNAPSHOTS_CLI_PATH</code> when it lives in another directory.
+					A default Studio site uses SQLite. SnapShots exports
+					that database with <code>studio export --mode db</code> and imports it
+					inside the same <code>studio wp</code> process, so the site server
+					keeps running and the browser can return to the saved admin screen.
+					Keep snapshots in
+					<code>wp-content/.snapshots</code> so Studio's site-directory file
+					access can read them. Table exclusion applies to MySQL dumps.
+				</p>
+				<p>
+					It has been tested with Local. Local's PHP-FPM PATH is often only the
+					Ghostscript directory. Local often reaches MySQL through a
 					socket. If WP-CLI cannot talk to the database, set
 					<code>DB_HOST</code> to <code>localhost:</code> plus that site's socket
-					path:
+					path. If the error names <code>mysqlcheck</code>, add Local's Lightning
+					MySQL bin to <code>SNAPSHOTS_PHP_PATH</code>:
 				</p>
 				<pre>define( 'DB_HOST', 'localhost:/absolute/path/to/mysql/mysqld.sock' );</pre>
 

@@ -20,6 +20,7 @@ import './style.scss';
 		var defaultEl = document.getElementById(
 			'wp-admin-bar-snapshots-default'
 		);
+
 		snapshotsElements = defaultEl
 			? nodeListToArray( defaultEl.querySelectorAll( 'li' ) )
 			: [];
@@ -45,9 +46,20 @@ import './style.scss';
 
 		var createLink = t.closest( '#wp-admin-bar-snapshots > a' );
 		if ( createLink ) {
-			if ( ! createSnapshot.call( createLink, e ) ) {
-				e.preventDefault();
+			e.preventDefault();
+			var submitButton = t.closest( '.snapshot-name-submit' );
+			if ( submitButton ) {
+				submitNameEdit(
+					createLink.querySelector( '.snapshot-name-input' )
+				);
+				return;
 			}
+			var nameInput = t.closest( '.snapshot-name-input' );
+			if ( nameInput ) {
+				focusNameInput( nameInput );
+				return;
+			}
+			beginNameEdit( createLink );
 			return;
 		}
 
@@ -80,29 +92,159 @@ import './style.scss';
 		searchSnapshot.call( input, e );
 	}
 
-	function createSnapshot() {
-		var name = getLastName() || snapshots.blogname;
-		var snapshotsname = window.prompt( snapshots.prompt, name );
-
-		if ( snapshotsname ) {
-			this.href = this.href.replace(
-				'snaphot_create=1',
-				'snaphot_create=' + encodeURIComponent( snapshotsname )
-			);
-			this.href +=
-				'&snapshot_location=' +
-				encodeURIComponent(
-					document.location.pathname +
-						document.location.search +
-						document.location.hash
-				);
-			var root = getSnapshotsRoot();
-			if ( root ) {
-				root.classList.add( 'loading', 'create' );
-			}
+	function beginNameEdit( link ) {
+		var existing = link.querySelector( '.snapshot-name-input' );
+		if ( existing ) {
+			focusNameInput( existing );
+			return;
 		}
 
-		return !! snapshotsname;
+		var label = link.querySelector( '.snapshot-extra-title' );
+		var original = label
+			? label.textContent.replace( /^\s+|\s+$/g, '' )
+			: '';
+		var fallback = original || snapshots.blogname || '';
+		var field = document.createElement( 'span' );
+		field.className = 'snapshot-name-field';
+
+		var input = document.createElement( 'input' );
+		input.type = 'text';
+		input.className = 'snapshot-name-input';
+		input.value = fallback;
+		input.placeholder = fallback;
+		input.setAttribute(
+			'aria-label',
+			snapshots.nameLabel || snapshots.prompt || ''
+		);
+		input.setAttribute( 'data-original', original );
+		input.setAttribute( 'data-fallback', fallback );
+
+		var button = document.createElement( 'button' );
+		button.type = 'button';
+		button.className = 'snapshot-name-submit';
+		button.textContent = snapshots.createLabel || 'OK';
+		button.setAttribute(
+			'aria-label',
+			snapshots.createAction || button.textContent
+		);
+
+		field.appendChild( input );
+		field.appendChild( button );
+
+		if ( label && label.parentNode ) {
+			label.parentNode.replaceChild( field, label );
+		} else {
+			link.appendChild( field );
+		}
+
+		input.addEventListener( 'keydown', onNameInputKeydown );
+		input.addEventListener( 'click', function ( event ) {
+			event.preventDefault();
+			event.stopPropagation();
+		} );
+		button.addEventListener( 'mousedown', function ( event ) {
+			event.preventDefault();
+		} );
+		button.addEventListener( 'click', function ( event ) {
+			event.preventDefault();
+			event.stopPropagation();
+			submitNameEdit( input );
+		} );
+		input.addEventListener( 'blur', function () {
+			window.setTimeout( function () {
+				closeNameEditOnBlur( input );
+			}, 0 );
+		} );
+		button.addEventListener( 'blur', function () {
+			window.setTimeout( function () {
+				closeNameEditOnBlur( input );
+			}, 0 );
+		} );
+		focusNameInput( input );
+	}
+
+	function focusNameInput( input ) {
+		input.focus();
+		input.select();
+		window.setTimeout( function () {
+			if ( document.activeElement !== input ) {
+				input.focus();
+				input.select();
+			}
+		}, 0 );
+	}
+
+	function onNameInputKeydown( event ) {
+		if ( event.key === 'Enter' ) {
+			event.preventDefault();
+			event.stopPropagation();
+			submitNameEdit( event.currentTarget );
+			return;
+		}
+		if ( event.key === 'Escape' ) {
+			event.preventDefault();
+			event.stopPropagation();
+			cancelNameEdit( event.currentTarget );
+		}
+	}
+
+	function submitNameEdit( input ) {
+		var link = input.closest( '#wp-admin-bar-snapshots > a' );
+		if ( ! link || input.disabled ) {
+			return;
+		}
+		input.disabled = true;
+		var name = input.value.replace( /^\s+|\s+$/g, '' );
+		if ( ! name ) {
+			name = ( input.getAttribute( 'data-fallback' ) || '' ).replace(
+				/^\s+|\s+$/g,
+				''
+			);
+		}
+		if ( name ) {
+			link.href = link.href.replace(
+				/([?&])snaphot_create=?[^&#]*/,
+				'$1snaphot_create=' + encodeURIComponent( name )
+			);
+		}
+		link.href +=
+			'&snapshot_location=' +
+			encodeURIComponent(
+				document.location.pathname +
+					document.location.search +
+					document.location.hash
+			);
+		var root = getSnapshotsRoot();
+		if ( root ) {
+			root.classList.add( 'loading', 'create' );
+		}
+		window.location.href = link.href;
+	}
+
+	function closeNameEditOnBlur( input ) {
+		if ( ! input.parentNode || input.disabled ) {
+			return;
+		}
+		var active = document.activeElement;
+		if (
+			active &&
+			active.closest &&
+			active.closest( '.snapshot-name-field' )
+		) {
+			return;
+		}
+		cancelNameEdit( input );
+	}
+
+	function cancelNameEdit( input ) {
+		var field = input.closest( '.snapshot-name-field' ) || input;
+		var original = input.getAttribute( 'data-original' ) || '';
+		var span = document.createElement( 'span' );
+		span.className = 'snapshot-extra-title';
+		span.textContent = original;
+		if ( field.parentNode ) {
+			field.parentNode.replaceChild( span, field );
+		}
 	}
 
 	function restoreSnapshot( event ) {
@@ -193,13 +335,6 @@ import './style.scss';
 		}, 50 );
 	}
 
-	function getLastName() {
-		var el = document.querySelector(
-			'#wp-admin-bar-snapshots .snapshot-extra-title'
-		);
-		return el ? el.textContent : '';
-	}
-
 	function enabledKeyboardSearch() {
 		document.addEventListener( 'keypress', keyPressEvent );
 	}
@@ -208,7 +343,14 @@ import './style.scss';
 		document.removeEventListener( 'keypress', keyPressEvent );
 	}
 
-	function keyPressEvent() {
+	function keyPressEvent( event ) {
+		if (
+			event.target &&
+			event.target.closest &&
+			event.target.closest( 'input, textarea, select' )
+		) {
+			return;
+		}
 		var searchInput = document.querySelector(
 			'#wp-admin-bar-snapshots .search-snapshot input'
 		);
