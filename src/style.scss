@@ -109,6 +109,67 @@
 		padding-right: 0.5em;
 	}
 
+	.snapshot-name-field {
+		display: inline-flex;
+		align-items: stretch;
+		height: 32px;
+		max-height: 32px;
+		margin: 0;
+		padding: 0;
+		vertical-align: top;
+		line-height: 32px;
+		box-sizing: border-box;
+	}
+
+	#wp-admin-bar-snapshots > a .snapshot-name-input,
+	#wp-admin-bar-snapshots > a .snapshot-name-submit {
+		box-sizing: border-box;
+		height: 32px;
+		min-height: 0;
+		max-height: 32px;
+		margin: 0;
+		padding: 0 8px;
+		border: 0;
+		border-radius: 0;
+		background: transparent;
+		color: #f0f6fc;
+		font-size: 13px;
+		line-height: 32px;
+		box-shadow: none;
+	}
+
+	#wp-admin-bar-snapshots > a .snapshot-name-input {
+		width: 8em;
+		max-width: 40vw;
+		transition: width 0.16s ease;
+	}
+
+	#wp-admin-bar-snapshots > a .snapshot-name-input::placeholder {
+		color: rgba(240, 246, 252, 0.7);
+		opacity: 1;
+	}
+
+	#wp-admin-bar-snapshots > a .snapshot-name-input:focus {
+		width: 18em;
+		background: #2c3338;
+		outline: none;
+	}
+
+	#wp-admin-bar-snapshots > a .snapshot-name-submit {
+		margin-left: 2px;
+		padding: 0 10px;
+		background: #2271b1;
+		color: #fff;
+		cursor: pointer;
+	}
+
+	#wp-admin-bar-snapshots > a .snapshot-name-submit:hover,
+	#wp-admin-bar-snapshots > a .snapshot-name-submit:focus {
+		background: #135e96;
+		color: #fff;
+		outline: none;
+	}
+
 	#wp-admin-bar-snapshots:hover .snapshot-extra-title {
 		opacity: 1;
 	}

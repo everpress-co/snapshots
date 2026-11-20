@@ -411,9 +411,11 @@ class Plugin {
 			return;
 		}
 
-		$version = '2.8.2';
+		$script_file = plugin_dir_path( SNAPSHOTS_FILE ) . 'build/script.js';
+		$style_file  = plugin_dir_path( SNAPSHOTS_FILE ) . 'build/style.css';
+		$version     = is_readable( $script_file ) ? (string) filemtime( $script_file ) : '3.0.0';
 		wp_enqueue_script( 'snapshots-script', plugin_dir_url( SNAPSHOTS_FILE ) . 'build/script.js', array(), $version, true );
-		wp_enqueue_style( 'snapshots-style', plugin_dir_url( SNAPSHOTS_FILE ) . 'build/style.css', array(), $version );
+		wp_enqueue_style( 'snapshots-style', plugin_dir_url( SNAPSHOTS_FILE ) . 'build/style.css', array(), is_readable( $style_file ) ? (string) filemtime( $style_file ) : $version );
 
 		/* translators: %s: Snapshot creation date. */
 		$restore_string = esc_attr__( 'Restore this Backup from %s?', 'snapshots' );
@@ -426,11 +428,14 @@ class Plugin {
 			'snapshots-script',
 			'snapshots',
 			array(
-				'prompt'    => esc_attr__( 'Create a new Snapshot. Please define a name:', 'snapshots' ),
-				'restore'   => $restore_string,
-				'delete'    => $delete_string,
-				'currently' => $currently_string,
-				'blogname'  => get_option( 'blogname', 'snapshots' ),
+				'prompt'       => esc_attr__( 'Create a new Snapshot. Please define a name:', 'snapshots' ),
+				'nameLabel'    => esc_attr__( 'Snapshot name', 'snapshots' ),
+				'createLabel'  => esc_attr__( 'OK', 'snapshots' ),
+				'createAction' => esc_attr__( 'Create snapshot', 'snapshots' ),
+				'restore'      => $restore_string,
+				'delete'       => $delete_string,
+				'currently'    => $currently_string,
+				'blogname'     => get_option( 'blogname', 'snapshots' ),
 			)
 		);
 	}

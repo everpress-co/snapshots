@@ -21,7 +21,7 @@ Use it while you build and test on a local or development site. A restore replac
 
 ### Create and restore a snapshot
 
-- Name each snapshot from the admin bar. The prompt suggests the current snapshot name, or the site title when none is current. A create with no name, from the admin bar or from `wp snapshot backup`, uses that same name.
+- Name each snapshot from the admin bar. Choosing create turns the current name into a focused field with the text selected, beside a filled OK button. The field starts with the current snapshot name, or the site title when none is current. Typing replaces it. Enter or OK saves the name. Esc, or clicking away, cancels. An empty field, or `wp snapshot backup` with no name, uses that same name.
 - Search the admin bar list by name. Press Ctrl+S to open the menu and focus search. Press Enter to restore the first match.
 - Store the current admin URL and return there after restore, including URL fragments.
 - Stay logged in as the same user after a restore started from the admin screen.
@@ -200,6 +200,7 @@ On **Settings → Snapshots**, enter a comma-separated list in **Exclude Tables*
 
 ### Unreleased
 
+- changed: the admin bar edits the snapshot name in a focused field; Enter or OK saves it, and leaving the field cancels
 - fixed: creating a snapshot without a name uses the current snapshot name, or the site title
 - fixed: restoring a snapshot on WordPress Studio returns to the admin screen where it was saved
 - fixed: snapshots run when the web server PATH does not include PHP or WP-CLI
