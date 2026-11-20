@@ -257,6 +257,17 @@ class Plugin {
 	}
 
 	/**
+	 * Returns the name used when a snapshot is created without one.
+	 *
+	 * @since [Unreleased]
+	 *
+	 * @return string Current snapshot name, or the site title.
+	 */
+	public function default_snapshot_name() {
+		return snapshots_default_name();
+	}
+
+	/**
 	 * Handles snapshot create, restore, and delete requests from query args.
 	 *
 	 * @since 1.0.0
@@ -293,6 +304,9 @@ class Plugin {
 				$redirect_to = remove_query_arg( array( 'snaphot_create', 'snapshots_nonce', 'snapshot_location' ) );
 			}
 			$snapshot_create = sanitize_text_field( wp_unslash( $_GET['snaphot_create'] ) );
+			if ( '' === $snapshot_create ) {
+				$snapshot_create = $this->default_snapshot_name();
+			}
 			$this->backup( $snapshot_create, $files, $location );
 
 			wp_safe_redirect( $redirect_to );
@@ -452,7 +466,7 @@ class Plugin {
 			array(
 				'id'    => 'snapshots',
 				'title' => '<span class="ab-icon dashicons dashicons-backup" style="margin-top:2px"></span>' . esc_html( $title ) . '<span class="snapshot-extra-title" title="">' . esc_html( $last ) . '</span>',
-				'href'  => wp_nonce_url( add_query_arg( 'snaphot_create', '1' ), 'snapshots_create', 'snapshots_nonce' ),
+				'href'  => wp_nonce_url( add_query_arg( 'snaphot_create', '' ), 'snapshots_create', 'snapshots_nonce' ),
 
 			)
 		);

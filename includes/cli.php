@@ -36,7 +36,7 @@ class CLI_Command extends WP_CLI_Command {
 	 * ## OPTIONS
 	 *
 	 * <name>
-	 * : Name of your SnapShot.
+	 * : Name of your SnapShot. When omitted, the current snapshot name is used, or the site title when none is current.
 	 *
 	 * [--files]
 	 * : Include the content folder as zip file.
@@ -940,14 +940,16 @@ class CLI_Command extends WP_CLI_Command {
 	}
 
 	/**
-	 * Returns the default snapshot name based on the site title.
+	 * Returns the default snapshot name when no name was passed.
+	 *
+	 * Uses the current snapshot name, or the site title when none is current.
 	 *
 	 * @since 1.0.0
 	 *
-	 * @return string Sanitized site name.
+	 * @return string Snapshot name.
 	 */
 	private function get_default_name() {
-		return sanitize_title( get_option( 'blogname', '' ) );
+		return snapshots_default_name();
 	}
 
 

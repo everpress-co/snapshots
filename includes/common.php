@@ -569,6 +569,41 @@ function snapshots_harden_folder( $folder ) {
 	}
 }
 
+/**
+ * Returns the snapshot name used when a create request has no name.
+ *
+ * Uses the display name of the current snapshot when that snapshot is still
+ * on disk. Otherwise uses the site title. A missing site title becomes
+ * "snapshots".
+ *
+ * @since [Unreleased]
+ *
+ * @return string Snapshot name.
+ */
+function snapshots_default_name() {
+	$current = get_transient( 'snapshot_current' );
+	if ( is_string( $current ) && '' !== $current ) {
+		$current = basename( $current );
+		if ( 1 === preg_match( '/^[a-z0-9_-]+$/', $current ) ) {
+			$manifest = trailingslashit( snapshots_option( 'folder' ) ) . $current . '/manifest.json';
+			if ( is_file( $manifest ) ) {
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local manifest, not a remote URL.
+				$data = json_decode( (string) file_get_contents( $manifest ), true );
+				if ( is_array( $data ) && isset( $data['name'] ) && is_string( $data['name'] ) && '' !== trim( $data['name'] ) ) {
+					return $data['name'];
+				}
+			}
+		}
+	}
+
+	$title = get_option( 'blogname', 'snapshots' );
+	if ( ! is_string( $title ) || '' === trim( $title ) ) {
+		return 'snapshots';
+	}
+
+	return $title;
+}
+
 if ( ! function_exists( 'wp_date' ) ) {
 
 	// phpcs:disable Squiz.Commenting.FunctionComment.Missing -- WordPress core polyfill for older sites.

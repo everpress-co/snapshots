@@ -19,7 +19,7 @@ When SnapShots is installed on a dev site (WP-CLI shell, WordPress Studio `studi
 `restore` matches the slug or the `file` folder id from `wp snapshot list`, not a display name that still has capitals or spaces. On Studio, prefix the commands with `studio wp`.
 
 1. List: `wp snapshot list --format=json` or ability `snapshots/list`
-2. Backup: `wp snapshot backup "Before <task>" --files` or ability `snapshots/backup` before risky changes. Names must sanitize to a URL-safe slug starting with a letter or digit.
+2. Backup: `wp snapshot backup "Before <task>" --files` or ability `snapshots/backup` before risky changes. Names must sanitize to a URL-safe slug starting with a letter or digit. With no name, backup uses the current snapshot name, or the site title.
 3. Restore: `wp snapshot restore <file-id>` or ability `snapshots/restore` only for your task snapshot or when the user asks. Use the exact `file` id from list, not a shortened slug or the display name.
 4. Do not delete (`wp snapshot delete` / ability `snapshots/delete`) unless the user asks
 
